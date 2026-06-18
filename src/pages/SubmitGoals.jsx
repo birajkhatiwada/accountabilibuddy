@@ -17,13 +17,16 @@ export default function SubmitGoals() {
   const checkExisting = async (nameVal) => {
     if (!nameVal.trim()) return
     setChecking(true)
-    const q = query(
-      collection(db, 'entries'),
-      where('weekId', '==', weekId),
-      where('nameLower', '==', nameVal.trim().toLowerCase())
-    )
-    const snap = await getDocs(q)
-    setAlreadySubmitted(!snap.empty)
+    try {
+      const q = query(collection(db, 'entries'), where('weekId', '==', weekId))
+      const snap = await getDocs(q)
+      const exists = snap.docs.some(
+        d => (d.data().nameLower || d.data().name.toLowerCase()) === nameVal.trim().toLowerCase()
+      )
+      setAlreadySubmitted(exists)
+    } catch {
+      setAlreadySubmitted(false)
+    }
     setChecking(false)
   }
 
