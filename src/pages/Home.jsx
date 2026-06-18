@@ -12,15 +12,24 @@ export default function Home() {
   const [proofInputs, setProofInputs] = useState({})
   const [submitting, setSubmitting] = useState({})
   const [confirmFail, setConfirmFail] = useState(null)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     const q = query(collection(db, 'entries'), where('weekId', '==', weekId))
-    const unsub = onSnapshot(q, (snap) => {
-      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      data.sort((a, b) => a.name.localeCompare(b.name))
-      setEntries(data)
-      setLoading(false)
-    })
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const data = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        data.sort((a, b) => a.name.localeCompare(b.name))
+        setEntries(data)
+        setLoading(false)
+      },
+      (err) => {
+        console.error('Firestore error:', err)
+        setError(err.message)
+        setLoading(false)
+      }
+    )
     return unsub
   }, [weekId])
 
@@ -48,6 +57,16 @@ export default function Home() {
 
   if (loading) {
     return <div className="text-zinc-500 text-sm mt-8 text-center">Loading...</div>
+  }
+
+  if (error) {
+    return (
+      <div className="mt-8 bg-red-950/40 border border-red-800/50 rounded-2xl p-4 space-y-2">
+        <p className="text-red-400 font-semibold text-sm">Firestore connection error</p>
+        <p className="text-red-300/70 text-xs break-all">{error}</p>
+        <p className="text-zinc-500 text-xs mt-2">Check that Firestore is enabled in your Firebase console and your security rules allow reads.</p>
+      </div>
+    )
   }
 
   return (
