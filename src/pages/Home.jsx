@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react'
-import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, serverTimestamp, Timestamp } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, Timestamp } from 'firebase/firestore'
 import { db } from '../firebase'
 import { getCurrentWeekId, formatWeekLabel, formatTimestamp } from '../utils'
-import { CheckCircle, XCircle, ChevronDown, ChevronUp, Send, AlertTriangle } from 'lucide-react'
+import { CheckCircle, XCircle, ChevronDown, ChevronUp, Send, AlertTriangle, Clock } from 'lucide-react'
+
+const MEMBERS_DOC = doc(db, 'config', 'members')
 
 export default function Home() {
   const weekId = getCurrentWeekId()
   const [entries, setEntries] = useState([])
+  const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState({})
   const [proofInputs, setProofInputs] = useState({})
@@ -32,6 +35,13 @@ export default function Home() {
     )
     return unsub
   }, [weekId])
+
+  useEffect(() => {
+    const unsub = onSnapshot(MEMBERS_DOC, (snap) => {
+      setMembers(snap.exists() ? (snap.data().names || []) : [])
+    })
+    return unsub
+  }, [])
 
   const toggle = (id) => setExpanded(p => ({ ...p, [id]: !p[id] }))
 
@@ -81,13 +91,29 @@ export default function Home() {
         </span>
       </div>
 
-      {entries.length === 0 && (
+      {entries.length === 0 && members.length === 0 && (
         <div className="text-center py-16 text-zinc-600">
           <p className="text-4xl mb-3">🎯</p>
           <p className="font-medium text-zinc-400">No goals yet this week</p>
           <p className="text-sm mt-1">Be the first to submit yours</p>
         </div>
       )}
+
+      {/* Members who haven't submitted yet */}
+      {members
+        .filter(m => !entries.some(e => e.nameLower === m.toLowerCase() || e.name.toLowerCase() === m.toLowerCase()))
+        .map(name => (
+          <div key={name} className="rounded-2xl border border-zinc-800/50 bg-zinc-900/40 px-4 py-3 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-sm font-bold text-zinc-500">
+              {name[0].toUpperCase()}
+            </div>
+            <span className="flex-1 font-medium text-zinc-500">{name}</span>
+            <span className="text-xs text-zinc-600 flex items-center gap-1">
+              <Clock size={12} /> no goals yet
+            </span>
+          </div>
+        ))
+      }
 
       {entries.map(entry => (
         <div

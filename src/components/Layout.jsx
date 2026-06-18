@@ -1,5 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom'
-import { Target, DollarSign, Plus } from 'lucide-react'
+import { Target, DollarSign, Plus, Users } from 'lucide-react'
 
 export default function Layout() {
   const linkClass = ({ isActive }) =>
@@ -32,6 +32,10 @@ export default function Layout() {
         <NavLink to="/pot" className={linkClass}>
           <DollarSign size={20} />
           The Pot
+        </NavLink>
+        <NavLink to="/members" className={linkClass}>
+          <Users size={20} />
+          Members
         </NavLink>
       </nav>
     </div>
