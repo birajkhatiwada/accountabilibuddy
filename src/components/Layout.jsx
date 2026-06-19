@@ -3,39 +3,70 @@ import { Target, DollarSign, Clock, Users } from 'lucide-react'
 
 export default function Layout() {
   const linkClass = ({ isActive }) =>
-    `flex flex-col items-center gap-0.5 px-4 py-2 text-xs font-medium transition-colors ${
-      isActive ? 'text-emerald-400' : 'text-zinc-500 hover:text-zinc-300'
+    `flex flex-col items-center gap-0.5 px-5 py-2 text-[11px] font-bold uppercase tracking-wider transition-all ${
+      isActive ? 'text-white' : 'text-zinc-600 hover:text-zinc-400'
     }`
 
   return (
-    <div className="min-h-screen flex flex-col max-w-lg mx-auto">
-      <header className="px-4 pt-6 pb-2">
-        <h1 className="text-2xl font-extrabold tracking-tight text-white">
-          accountability<span className="text-emerald-400">.</span>
-        </h1>
-        <p className="text-xs text-zinc-500 mt-0.5">honor system — no cheating yourself</p>
+    <div className="min-h-screen flex flex-col max-w-lg mx-auto relative">
+      {/* Header */}
+      <header className="px-5 pt-8 pb-3">
+        <div className="flex items-end justify-between">
+          <div>
+            <h1 className="text-3xl font-black tracking-tight text-white leading-none">
+              accountabili<span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">buddy</span>
+            </h1>
+            <p className="text-[11px] text-zinc-600 mt-1 font-medium tracking-wide uppercase">honor system · no cheating yourself</p>
+          </div>
+          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse mb-1" />
+        </div>
       </header>
 
-      <main className="flex-1 px-4 py-4 overflow-y-auto pb-20">
+      <main className="flex-1 px-4 py-3 overflow-y-auto pb-24">
         <Outlet />
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 max-w-lg mx-auto bg-zinc-900 border-t border-zinc-800 flex justify-around py-1">
+      {/* Nav */}
+      <nav className="fixed bottom-0 left-0 right-0 max-w-lg mx-auto bg-zinc-950/90 backdrop-blur border-t border-zinc-800/60 flex justify-around py-2">
         <NavLink to="/" end className={linkClass}>
-          <Target size={20} />
-          This Week
+          {({ isActive }) => (
+            <>
+              <div className={`p-1.5 rounded-xl transition-all ${isActive ? 'bg-zinc-800' : ''}`}>
+                <Target size={18} />
+              </div>
+              This Week
+            </>
+          )}
         </NavLink>
         <NavLink to="/history" className={linkClass}>
-          <Clock size={20} />
-          History
+          {({ isActive }) => (
+            <>
+              <div className={`p-1.5 rounded-xl transition-all ${isActive ? 'bg-zinc-800' : ''}`}>
+                <Clock size={18} />
+              </div>
+              History
+            </>
+          )}
         </NavLink>
         <NavLink to="/pot" className={linkClass}>
-          <DollarSign size={20} />
-          The Pot
+          {({ isActive }) => (
+            <>
+              <div className={`p-1.5 rounded-xl transition-all ${isActive ? 'bg-zinc-800' : ''}`}>
+                <DollarSign size={18} />
+              </div>
+              The Pot
+            </>
+          )}
         </NavLink>
         <NavLink to="/members" className={linkClass}>
-          <Users size={20} />
-          Members
+          {({ isActive }) => (
+            <>
+              <div className={`p-1.5 rounded-xl transition-all ${isActive ? 'bg-zinc-800' : ''}`}>
+                <Users size={18} />
+              </div>
+              Members
+            </>
+          )}
         </NavLink>
       </nav>
     </div>
