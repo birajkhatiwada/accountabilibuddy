@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, addDoc, Timestamp } from 'firebase/firestore'
 import { db } from '../firebase'
 import { getCurrentWeekId, formatWeekLabel, formatTimestamp } from '../utils'
-import { CheckCircle, XCircle, Send, AlertTriangle, ArrowLeft } from 'lucide-react'
+import { CheckCircle, XCircle, Send, AlertTriangle, ArrowLeft, Plus, Check } from 'lucide-react'
 
 const MEMBERS_DOC = doc(db, 'config', 'members')
 const PENALTY = 15
@@ -40,6 +40,8 @@ export default function Home() {
   const [proofInput, setProofInput] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [confirmFail, setConfirmFail] = useState(false)
+  const [addingMember, setAddingMember] = useState(false)
+  const [newMemberName, setNewMemberName] = useState('')
 
   useEffect(() => {
     const unsub = onSnapshot(MEMBERS_DOC, (snap) => {
@@ -89,6 +91,24 @@ export default function Home() {
     setSubmitting(false)
   }
 
+  const addMember = async () => {
+    const name = newMemberName.trim()
+    if (!name || members.some(m => m.toLowerCase() === name.toLowerCase())) {
+      setAddingMember(false)
+      setNewMemberName('')
+      return
+    }
+    try {
+      await updateDoc(MEMBERS_DOC, { names: arrayUnion(name) })
+    } catch {
+      const { setDoc } = await import('firebase/firestore')
+      await setDoc(MEMBERS_DOC, { names: [...members, name] })
+    }
+    setNewMemberName('')
+    setAddingMember(false)
+    switchTab(name)
+  }
+
   const markDone = (entry) => updateDoc(doc(db, 'entries', entry.id), { status: 'completed' })
   const markFailed = async (entry) => {
     await updateDoc(doc(db, 'entries', entry.id), { status: 'failed' })
@@ -124,7 +144,7 @@ export default function Home() {
       <p className="text-xs text-zinc-500 mb-3 font-medium">{formatWeekLabel(weekId)}</p>
 
       {/* Tab bar */}
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-3">
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-3 items-center">
         <button
           onClick={() => switchTab(ALL)}
           className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all shrink-0 ${
@@ -135,6 +155,7 @@ export default function Home() {
         >
           All
         </button>
+
         {members.map(name => {
           const e = getEntry(name)
           const isActive = activeTab === name
@@ -157,6 +178,31 @@ export default function Home() {
             </button>
           )
         })}
+
+        {/* Inline add member */}
+        {addingMember ? (
+          <div className="flex items-center gap-1 shrink-0">
+            <input
+              autoFocus
+              type="text"
+              placeholder="Name..."
+              value={newMemberName}
+              onChange={e => setNewMemberName(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') addMember(); if (e.key === 'Escape') { setAddingMember(false); setNewMemberName('') } }}
+              className="w-28 bg-zinc-800 border border-zinc-600 rounded-xl px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors"
+            />
+            <button onClick={addMember} className="p-2 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-white transition-colors">
+              <Check size={14} />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setAddingMember(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold whitespace-nowrap bg-zinc-800/80 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-700/80 transition-all shrink-0 border border-dashed border-zinc-700"
+          >
+            <Plus size={14} /> Add
+          </button>
+        )}
       </div>
 
       {/* ALL VIEW — 2-col grid */}
