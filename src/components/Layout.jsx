@@ -1,5 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom'
-import { Target, DollarSign, Plus, Users } from 'lucide-react'
+import { Target, DollarSign, Clock, Users } from 'lucide-react'
 
 export default function Layout() {
   const linkClass = ({ isActive }) =>
@@ -16,18 +16,18 @@ export default function Layout() {
         <p className="text-xs text-zinc-500 mt-0.5">honor system — no cheating yourself</p>
       </header>
 
-      <main className="flex-1 px-4 py-4 overflow-y-auto">
+      <main className="flex-1 px-4 py-4 overflow-y-auto pb-20">
         <Outlet />
       </main>
 
-      <nav className="sticky bottom-0 bg-zinc-900 border-t border-zinc-800 flex justify-around py-1">
+      <nav className="fixed bottom-0 left-0 right-0 max-w-lg mx-auto bg-zinc-900 border-t border-zinc-800 flex justify-around py-1">
         <NavLink to="/" end className={linkClass}>
           <Target size={20} />
           This Week
         </NavLink>
-        <NavLink to="/submit" className={linkClass}>
-          <Plus size={20} />
-          Submit
+        <NavLink to="/history" className={linkClass}>
+          <Clock size={20} />
+          History
         </NavLink>
         <NavLink to="/pot" className={linkClass}>
           <DollarSign size={20} />
