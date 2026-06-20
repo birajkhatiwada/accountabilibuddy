@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { collection, doc, onSnapshot, setDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { getCurrentWeekId } from '../utils'
-import { Send } from 'lucide-react'
+import { Send, Plus, Minus } from 'lucide-react'
 
 function getWeekDays(weekId) {
   const base = new Date(weekId + 'T00:00:00')
@@ -13,11 +13,27 @@ function getWeekDays(weekId) {
   })
 }
 
+// Parse goal text into { label, target, unit }
+// e.g. "Read 20 pages" → { label: "Read 20 pages", target: 20, unit: "pages" }
+// e.g. "Go to gym" → { label: "Go to gym", target: null, unit: null }
+function parseGoal(text) {
+  const match = text.match(/(\d+)\s*([a-zA-Z]+)?/)
+  if (match) {
+    return {
+      label: text,
+      target: parseInt(match[1], 10),
+      unit: match[2] || '',
+    }
+  }
+  return { label: text, target: null, unit: null }
+}
+
 function parseGoals(goalsText) {
   return goalsText
     .split('\n')
     .map(l => l.replace(/^[-•*]\s*/, '').trim())
     .filter(Boolean)
+    .map(parseGoal)
 }
 
 function dateKey(date) {
@@ -33,8 +49,6 @@ export default function WeekCalendar({ entryId, goals }) {
 
   const [selectedDay, setSelectedDay] = useState(todayKey)
   const [logs, setLogs] = useState({})
-  // progressInputs: { [goal]: string } — local state while typing
-  const [progressInputs, setProgressInputs] = useState({})
   const [noteInput, setNoteInput] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -50,22 +64,32 @@ export default function WeekCalendar({ entryId, goals }) {
     return unsub
   }, [entryId])
 
-  // Reset local inputs when switching days
   useEffect(() => {
-    setProgressInputs({})
     setNoteInput('')
   }, [selectedDay])
 
   const getDayLog = (key) => logs[key] || { progress: {}, notes: [] }
 
-  const saveProgress = async (dayKey, goal, value) => {
+  // Sum a numeric goal's progress across all days this week
+  const weeklyTotal = (goalLabel) =>
+    Object.values(logs).reduce((sum, log) => sum + (Number(log.progress?.[goalLabel]) || 0), 0)
+
+  const setGoalCount = async (dayKey, goalLabel, value) => {
+    if (!entryId || value < 0) return
+    const current = getDayLog(dayKey)
+    await setDoc(doc(db, 'entries', entryId, 'dailyLogs', dayKey), {
+      ...current,
+      progress: { ...current.progress, [goalLabel]: value },
+    })
+  }
+
+  const setGoalText = async (dayKey, goalLabel, value) => {
     if (!entryId) return
     const current = getDayLog(dayKey)
-    const updated = {
+    await setDoc(doc(db, 'entries', entryId, 'dailyLogs', dayKey), {
       ...current,
-      progress: { ...current.progress, [goal]: value },
-    }
-    await setDoc(doc(db, 'entries', entryId, 'dailyLogs', dayKey), updated)
+      progress: { ...current.progress, [goalLabel]: value },
+    })
   }
 
   const addNote = async (dayKey) => {
@@ -83,7 +107,8 @@ export default function WeekCalendar({ entryId, goals }) {
   const dayHasActivity = (key) => {
     const log = logs[key]
     if (!log) return false
-    return (log.notes?.length > 0) || Object.values(log.progress || {}).some(v => v?.trim())
+    return (log.notes?.length > 0) ||
+      Object.values(log.progress || {}).some(v => v !== undefined && v !== '' && v !== 0)
   }
 
   const selectedLog = getDayLog(selectedDay)
@@ -101,7 +126,6 @@ export default function WeekCalendar({ entryId, goals }) {
           const isSelected = key === selectedDay
           const hasActivity = dayHasActivity(key)
           const isFuture = key > todayKey
-
           return (
             <button
               key={key}
@@ -115,13 +139,48 @@ export default function WeekCalendar({ entryId, goals }) {
             >
               <span className="text-[10px] font-bold uppercase tracking-wide">{DAY_LABELS[i]}</span>
               <span className="text-sm font-black">{day.getDate()}</span>
-              <span className={`w-1.5 h-1.5 rounded-full transition-all ${
+              <span className={`w-1.5 h-1.5 rounded-full ${
                 hasActivity ? (isSelected ? 'bg-emerald-500' : 'bg-emerald-400') : 'bg-transparent'
               }`} />
             </button>
           )
         })}
       </div>
+
+      {/* Weekly progress summary — numeric goals only */}
+      {goalItems.some(g => g.target !== null) && (
+        <div className="space-y-2">
+          {goalItems.filter(g => g.target !== null).map(({ label, target, unit }) => {
+            const total = weeklyTotal(label)
+            const pct = Math.min((total / target) * 100, 100)
+            const remaining = Math.max(target - total, 0)
+            const done = total >= target
+            return (
+              <div key={label} className="bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2.5 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-zinc-400 truncate pr-2">{label}</span>
+                  <span className={`text-xs font-black shrink-0 ${done ? 'text-emerald-400' : 'text-zinc-300'}`}>
+                    {total}/{target} {unit}
+                  </span>
+                </div>
+                {/* Progress bar */}
+                <div className="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${done ? 'bg-emerald-400' : 'bg-emerald-600'}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                {!done && (
+                  <p className="text-[10px] text-zinc-600">{remaining} {unit} left this week</p>
+                )}
+                {done && (
+                  <p className="text-[10px] text-emerald-500 font-semibold">Goal reached! 🎉</p>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       {/* Selected day panel */}
       {selectedDate && (
@@ -133,62 +192,64 @@ export default function WeekCalendar({ entryId, goals }) {
             )}
           </p>
 
-          {/* Goal progress inputs */}
+          {/* Goals */}
           {goalItems.length > 0 && (
             <div className="space-y-3">
-              {goalItems.map(goal => {
-                const saved = selectedLog.progress?.[goal] || ''
-                const localVal = progressInputs[goal] ?? saved
-                const isDone = !!saved.trim()
+              {goalItems.map(({ label, target, unit }) => {
+                const savedVal = selectedLog.progress?.[label]
 
                 return (
-                  <div key={goal} className="space-y-1.5">
-                    {/* Goal label + done badge */}
-                    <div className="flex items-center gap-2">
-                      <span className={`w-2 h-2 rounded-full shrink-0 ${isDone ? 'bg-emerald-400' : 'bg-zinc-700'}`} />
-                      <span className={`text-sm font-medium ${isDone ? 'text-zinc-300' : 'text-zinc-400'}`}>
-                        {goal}
-                      </span>
-                      {isDone && (
-                        <span className="ml-auto text-[10px] text-emerald-400 font-bold uppercase tracking-wide">✓ logged</span>
-                      )}
-                    </div>
+                  <div key={label}>
+                    <p className="text-xs text-zinc-500 mb-1.5 truncate">{label}</p>
 
-                    {/* Progress input */}
-                    <div className="flex gap-2 pl-4">
+                    {target !== null ? (
+                      /* Numeric counter */
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => setGoalCount(selectedDay, label, Math.max((Number(savedVal) || 0) - 1, 0))}
+                          className="w-9 h-9 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 flex items-center justify-center transition-colors"
+                        >
+                          <Minus size={14} />
+                        </button>
+                        <div className="flex-1 flex items-center justify-center gap-2">
+                          <input
+                            type="number"
+                            min="0"
+                            value={Number(savedVal) || 0}
+                            onChange={e => setGoalCount(selectedDay, label, Math.max(Number(e.target.value) || 0, 0))}
+                            className="w-16 bg-zinc-800 border border-zinc-700 rounded-xl px-2 py-2 text-center text-lg font-black text-white focus:outline-none focus:border-emerald-500 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          />
+                          <span className="text-sm text-zinc-500">{unit}</span>
+                        </div>
+                        <button
+                          onClick={() => setGoalCount(selectedDay, label, (Number(savedVal) || 0) + 1)}
+                          className="w-9 h-9 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 flex items-center justify-center transition-colors"
+                        >
+                          <Plus size={14} />
+                        </button>
+                      </div>
+                    ) : (
+                      /* Text input for non-numeric goals */
                       <input
                         type="text"
-                        placeholder={`What did you do? (e.g. 15 pages, 30 min)`}
-                        value={localVal}
-                        onChange={e => setProgressInputs(p => ({ ...p, [goal]: e.target.value }))}
-                        onBlur={() => {
-                          if (localVal !== saved) saveProgress(selectedDay, goal, localVal)
-                        }}
-                        onKeyDown={e => {
-                          if (e.key === 'Enter') {
-                            e.target.blur()
-                            saveProgress(selectedDay, goal, localVal)
-                          }
-                        }}
-                        className={`flex-1 bg-zinc-800 border rounded-xl px-3 py-2 text-sm placeholder-zinc-600 focus:outline-none transition-colors ${
-                          isDone
-                            ? 'border-emerald-800/50 text-emerald-300 focus:border-emerald-500'
-                            : 'border-zinc-700 text-zinc-200 focus:border-emerald-500'
+                        placeholder="Did you do it? Add a note..."
+                        value={savedVal || ''}
+                        onChange={e => setGoalText(selectedDay, label, e.target.value)}
+                        onBlur={e => setGoalText(selectedDay, label, e.target.value)}
+                        className={`w-full bg-zinc-800 border rounded-xl px-3 py-2 text-sm placeholder-zinc-600 focus:outline-none transition-colors ${
+                          savedVal ? 'border-emerald-800/50 text-emerald-300 focus:border-emerald-500' : 'border-zinc-700 text-zinc-200 focus:border-emerald-500'
                         }`}
                       />
-                    </div>
+                    )}
                   </div>
                 )
               })}
             </div>
           )}
 
-          {/* Divider if there are both goals and notes */}
-          {goalItems.length > 0 && (
-            <div className="border-t border-zinc-800" />
-          )}
+          {goalItems.length > 0 && <div className="border-t border-zinc-800" />}
 
-          {/* Existing extra notes */}
+          {/* Extra notes */}
           {selectedLog.notes?.length > 0 && (
             <div className="space-y-1.5">
               <p className="text-xs text-zinc-600 uppercase tracking-wider">Extra notes</p>
@@ -201,7 +262,6 @@ export default function WeekCalendar({ entryId, goals }) {
             </div>
           )}
 
-          {/* Add extra note */}
           <div className="flex gap-2">
             <input
               type="text"
