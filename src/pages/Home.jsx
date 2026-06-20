@@ -4,6 +4,7 @@ import { db } from '../firebase'
 import { getCurrentWeekId, formatWeekLabel, formatTimestamp } from '../utils'
 import { CheckCircle, XCircle, Send, AlertTriangle, ArrowLeft, Plus, Check } from 'lucide-react'
 import WeekCalendar from '../components/WeekCalendar'
+import GoalBuilder from '../components/GoalBuilder'
 
 const MEMBERS_DOC = doc(db, 'config', 'members')
 const PENALTY = 15
@@ -37,7 +38,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState(ALL)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [goalsInput, setGoalsInput] = useState('')
+  const [goalsInput, setGoalsInput] = useState([])  // array of goal objects from GoalBuilder
   const [proofInput, setProofInput] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [confirmFail, setConfirmFail] = useState(false)
@@ -71,14 +72,25 @@ export default function Home() {
   }
 
   const submitGoals = async (name) => {
-    if (!goalsInput.trim()) return
+    const validGoals = goalsInput.filter(g => g.text.trim())
+    if (!validGoals.length) return
     setSubmitting(true)
+    // Build a plain text summary for display on cards
+    const goalsSummary = validGoals.map(g =>
+      g.hasTarget && g.target ? `${g.text} (${g.target} ${g.unit})` : g.text
+    ).join('\n')
     await addDoc(collection(db, 'entries'), {
       weekId, name, nameLower: name.toLowerCase(),
-      goals: goalsInput.trim(), status: 'active', updates: [],
+      goals: goalsSummary,
+      goalItems: validGoals.map(g => ({
+        text: g.text.trim(),
+        target: g.hasTarget && g.target ? Number(g.target) : null,
+        unit: g.hasTarget ? g.unit.trim() : '',
+      })),
+      status: 'active', updates: [],
       createdAt: Timestamp.now(),
     })
-    setGoalsInput('')
+    setGoalsInput([])
     setSubmitting(false)
   }
 
@@ -276,16 +288,10 @@ export default function Home() {
                   <p className="text-zinc-500 text-xs">No goals yet — lock them in</p>
                 </div>
               </div>
-              <textarea
-                placeholder={"- Run 3x this week\n- Read 20 pages/day\n- No takeout"}
-                value={goalsInput}
-                onChange={e => setGoalsInput(e.target.value)}
-                rows={5}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors resize-none text-sm"
-              />
+              <GoalBuilder onChange={setGoalsInput} />
               <button
                 onClick={() => submitGoals(activeTab)}
-                disabled={submitting || !goalsInput.trim()}
+                disabled={submitting || !goalsInput.some(g => g.text.trim())}
                 className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-40 text-white font-bold rounded-xl py-3 transition-all shadow-lg shadow-emerald-900/30"
               >
                 {submitting ? 'Locking in...' : 'Lock in goals 🔒'}
@@ -331,7 +337,7 @@ export default function Home() {
               )}
 
               {/* Week calendar */}
-              <WeekCalendar entryId={entry.id} goals={entry.goals} />
+              <WeekCalendar entryId={entry.id} goalItems={entry.goalItems} goals={entry.goals} />
 
               {/* Actions */}
               {entry.status === 'active' && (

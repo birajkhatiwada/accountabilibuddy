@@ -13,27 +13,17 @@ function getWeekDays(weekId) {
   })
 }
 
-// Parse goal text into { label, target, unit }
-// e.g. "Read 20 pages" → { label: "Read 20 pages", target: 20, unit: "pages" }
-// e.g. "Go to gym" → { label: "Go to gym", target: null, unit: null }
-function parseGoal(text) {
-  const match = text.match(/(\d+)\s*([a-zA-Z]+)?/)
-  if (match) {
-    return {
-      label: text,
-      target: parseInt(match[1], 10),
-      unit: match[2] || '',
-    }
-  }
-  return { label: text, target: null, unit: null }
-}
-
-function parseGoals(goalsText) {
-  return goalsText
-    .split('\n')
+// Fallback parser for old entries that only have goals as plain text
+function parseGoalsText(goalsText) {
+  return (goalsText || '').split('\n')
     .map(l => l.replace(/^[-•*]\s*/, '').trim())
     .filter(Boolean)
-    .map(parseGoal)
+    .map(text => {
+      const match = text.match(/(\d+)\s*([a-zA-Z]+)?/)
+      return match
+        ? { text, target: parseInt(match[1], 10), unit: match[2] || '' }
+        : { text, target: null, unit: '' }
+    })
 }
 
 function dateKey(date) {
@@ -42,7 +32,7 @@ function dateKey(date) {
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-export default function WeekCalendar({ entryId, goals }) {
+export default function WeekCalendar({ entryId, goalItems, goals }) {
   const weekId = getCurrentWeekId()
   const days = getWeekDays(weekId)
   const todayKey = dateKey(new Date())
@@ -52,7 +42,8 @@ export default function WeekCalendar({ entryId, goals }) {
   const [noteInput, setNoteInput] = useState('')
   const [saving, setSaving] = useState(false)
 
-  const goalItems = parseGoals(goals || '')
+  // Use structured goalItems if available, else fall back to parsing plain text
+  const resolvedGoals = goalItems?.length ? goalItems : parseGoalsText(goals)
 
   useEffect(() => {
     if (!entryId) return
@@ -148,9 +139,9 @@ export default function WeekCalendar({ entryId, goals }) {
       </div>
 
       {/* Weekly progress summary — numeric goals only */}
-      {goalItems.some(g => g.target !== null) && (
+      {resolvedGoals.some(g => g.target !== null) && (
         <div className="space-y-2">
-          {goalItems.filter(g => g.target !== null).map(({ label, target, unit }) => {
+          {resolvedGoals.filter(g => g.target !== null).map(({ label, target, unit }) => {
             const total = weeklyTotal(label)
             const pct = Math.min((total / target) * 100, 100)
             const remaining = Math.max(target - total, 0)
@@ -193,9 +184,9 @@ export default function WeekCalendar({ entryId, goals }) {
           </p>
 
           {/* Goals */}
-          {goalItems.length > 0 && (
+          {resolvedGoals.length > 0 && (
             <div className="space-y-3">
-              {goalItems.map(({ label, target, unit }) => {
+              {resolvedGoals.map(({ label, target, unit }) => {
                 const savedVal = selectedLog.progress?.[label]
 
                 return (
@@ -247,7 +238,7 @@ export default function WeekCalendar({ entryId, goals }) {
             </div>
           )}
 
-          {goalItems.length > 0 && <div className="border-t border-zinc-800" />}
+          {resolvedGoals.length > 0 && <div className="border-t border-zinc-800" />}
 
           {/* Extra notes */}
           {selectedLog.notes?.length > 0 && (
