@@ -3,6 +3,7 @@ import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, addDo
 import { db } from '../firebase'
 import { getCurrentWeekId, formatWeekLabel, formatTimestamp } from '../utils'
 import { CheckCircle, XCircle, Send, AlertTriangle, ArrowLeft, Plus, Check } from 'lucide-react'
+import WeekCalendar from '../components/WeekCalendar'
 
 const MEMBERS_DOC = doc(db, 'config', 'members')
 const PENALTY = 15
@@ -328,6 +329,9 @@ export default function Home() {
                   ))}
                 </div>
               )}
+
+              {/* Week calendar */}
+              <WeekCalendar entryId={entry.id} goals={entry.goals} />
 
               {/* Actions */}
               {entry.status === 'active' && (
