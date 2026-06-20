@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, addDoc, Timestamp } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, addDoc, setDoc, Timestamp } from 'firebase/firestore'
 import { db } from '../firebase'
 import { getCurrentWeekId, formatWeekLabel, formatTimestamp } from '../utils'
 import { CheckCircle, XCircle, Send, AlertTriangle, ArrowLeft, Plus, Check } from 'lucide-react'
@@ -68,7 +68,7 @@ export default function Home() {
     setActiveTab(tab)
     setConfirmFail(false)
     setProofInput('')
-    setGoalsInput('')
+    setGoalsInput([])
   }
 
   const submitGoals = async (name) => {
@@ -111,12 +111,7 @@ export default function Home() {
       setNewMemberName('')
       return
     }
-    try {
-      await updateDoc(MEMBERS_DOC, { names: arrayUnion(name) })
-    } catch {
-      const { setDoc } = await import('firebase/firestore')
-      await setDoc(MEMBERS_DOC, { names: [...members, name] })
-    }
+    await setDoc(MEMBERS_DOC, { names: [...members, name] }, { merge: true })
     setNewMemberName('')
     setAddingMember(false)
     switchTab(name)
