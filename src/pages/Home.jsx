@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, addDoc, setDoc, Timestamp } from 'firebase/firestore'
 import { db } from '../firebase'
 import { getCurrentWeekId, formatWeekLabel, formatTimestamp } from '../utils'
-import { CheckCircle, XCircle, Send, AlertTriangle, ArrowLeft, Plus, Check } from 'lucide-react'
+import { CheckCircle, XCircle, Send, AlertTriangle, ArrowLeft, Plus, Check, Pencil } from 'lucide-react'
 import WeekCalendar from '../components/WeekCalendar'
 import GoalBuilder from '../components/GoalBuilder'
 
@@ -334,9 +334,14 @@ export default function Home() {
                   </div>
                   <button
                     onClick={() => setEditingGoals(v => !v)}
-                    className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors px-2 py-1 rounded-lg hover:bg-zinc-800"
+                    className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-xl transition-colors ${
+                      editingGoals
+                        ? 'bg-zinc-700 text-zinc-300'
+                        : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200'
+                    }`}
                   >
-                    {editingGoals ? 'cancel' : 'edit goals'}
+                    <Pencil size={11} />
+                    {editingGoals ? 'cancel' : 'edit'}
                   </button>
                 </div>
 
