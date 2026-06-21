@@ -428,7 +428,7 @@ export default function Home() {
           <p className="text-sm text-zinc-500">Add your crew below</p>
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           {members.map(name => {
             const e = getEntry(name)
             const color = getAvatarColor(name)
@@ -451,20 +451,26 @@ export default function Home() {
                 className="text-left rounded-2xl overflow-hidden transition-all active:scale-[0.95] hover:scale-[1.03] flex flex-col items-center"
               >
                 {/* Avatar bubble */}
-                <div className={`w-full bg-gradient-to-br ${color} flex flex-col items-center pt-5 pb-4 relative overflow-hidden`}>
-                  <div className="absolute -top-4 -right-4 w-16 h-16 rounded-full bg-white/10" />
-                  <div className={`w-14 h-14 rounded-full bg-white/25 flex items-center justify-center text-white font-black text-2xl ring-2 ring-offset-2 ring-offset-transparent ${ringColor} mb-2`}>
+                <div className={`w-full bg-gradient-to-br ${color} flex flex-col items-center pt-7 pb-5 relative overflow-hidden`}>
+                  <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/10" />
+                  <div className="absolute -bottom-4 -left-4 w-16 h-16 rounded-full bg-black/10" />
+                  <div className={`w-20 h-20 rounded-full bg-white/25 flex items-center justify-center text-white font-black text-3xl ring-3 ring-offset-2 ring-offset-transparent ${ringColor} mb-3 relative z-10`}>
                     {name[0].toUpperCase()}
                   </div>
-                  <p className="text-white font-black text-sm text-center leading-tight px-1 truncate w-full text-center">{name}</p>
+                  <p className="text-white font-black text-base text-center leading-tight px-2 w-full truncate relative z-10">{name}</p>
                   {streak >= 2 && (
-                    <span className="text-[10px] font-black text-white/80 mt-0.5">🔥{streak}</span>
+                    <span className="text-xs font-black text-white/80 mt-1 relative z-10">🔥 {streak} streak</span>
                   )}
                 </div>
 
                 {/* Status */}
-                <div className="w-full bg-zinc-900 py-2 flex items-center justify-center">
-                  <span className="text-sm">{statusEmoji}</span>
+                <div className="w-full bg-zinc-900 py-2.5 flex items-center justify-center gap-1.5">
+                  <span className="text-base">{statusEmoji}</span>
+                  <span className={`text-xs font-bold ${
+                    e?.status === 'completed' ? 'text-emerald-400' :
+                    e?.status === 'failed' ? 'text-red-400' :
+                    e ? 'text-amber-400' : 'text-zinc-600'
+                  }`}>{e?.status === 'completed' ? 'Done!' : e?.status === 'failed' ? 'Failed' : e ? 'Active' : 'No goals'}</span>
                 </div>
               </button>
             )
@@ -472,7 +478,7 @@ export default function Home() {
 
           {/* Add member */}
           {addingMember ? (
-            <div className="col-span-3 rounded-2xl border border-zinc-700 bg-zinc-900 px-4 py-4 space-y-3">
+            <div className="col-span-2 rounded-2xl border border-zinc-700 bg-zinc-900 px-4 py-4 space-y-3">
               <input
                 autoFocus
                 type="text"
