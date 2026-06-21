@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { collection, doc, onSnapshot, setDoc } from 'firebase/firestore'
+import { useState, useEffect, useRef } from 'react'
+import { collection, doc, onSnapshot, setDoc, updateDoc, increment } from 'firebase/firestore'
 import { db } from '../firebase'
 import { getCurrentWeekId } from '../utils'
 import { Send, Plus, Minus } from 'lucide-react'
@@ -54,6 +54,9 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
   const [logs, setLogs] = useState({})     // { 'YYYY-MM-DD': { habit, count, total, notes } }
   const [noteInput, setNoteInput] = useState('')
   const [saving, setSaving] = useState(false)
+  // Local optimistic state for totals so UI updates instantly
+  const [localTotals, setLocalTotals] = useState({})
+  const saveTimers = useRef({})
 
   const resolvedGoals = goalItems?.length ? goalItems : parseGoalsText(goals)
 
@@ -67,7 +70,11 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
     return unsub
   }, [entryId])
 
-  useEffect(() => { setNoteInput('') }, [selectedDay])
+  // Reset local totals when switching days
+  useEffect(() => {
+    setNoteInput('')
+    setLocalTotals({})
+  }, [selectedDay])
 
   const getDayLog = (key) => logs[key] || {}
 
@@ -79,7 +86,7 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
 
   // ── per-goal helpers ──────────────────────────────────────────────────────
 
-  // habit: toggle checked for a day
+  // habit: simple toggle, no race condition possible
   const toggleHabit = (dayKey, goalText) => {
     const current = getDayLog(dayKey)
     const habits = { ...(current.habits || {}) }
@@ -87,22 +94,52 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
     patchDay(dayKey, { habits })
   }
 
-  // count: increment/decrement total times done (not per-day)
-  const adjustCount = (goalText, delta) => {
-    const current = getDayLog('__count__') // stored on a special key
-    const counts = { ...(current.counts || {}) }
-    counts[goalText] = Math.max((counts[goalText] || 0) + delta, 0)
-    // store counts in a special non-date doc
+  // count: use Firestore atomic increment — no stale read possible
+  const adjustCount = async (goalText, delta) => {
     if (!entryId) return
-    setDoc(doc(db, 'entries', entryId, 'dailyLogs', '__count__'), { ...current, counts })
+    const countDoc = doc(db, 'entries', entryId, 'dailyLogs', '__count__')
+    const current = logs['__count__']
+    if (!current) {
+      // Doc doesn't exist yet — create it
+      await setDoc(countDoc, { counts: { [goalText]: Math.max(delta, 0) } })
+    } else {
+      const newVal = Math.max((current.counts?.[goalText] || 0) + delta, 0)
+      await setDoc(countDoc, { counts: { ...(current.counts || {}), [goalText]: newVal } })
+    }
   }
 
-  // total: set amount for a specific day
-  const setTotal = (dayKey, goalText, value) => {
-    const current = getDayLog(dayKey)
-    const totals = { ...(current.totals || {}) }
-    totals[goalText] = Math.max(Number(value) || 0, 0)
-    patchDay(dayKey, { totals })
+  // total: optimistic local state + debounced save to Firestore
+  const adjustTotal = (dayKey, goalText, delta) => {
+    const firestoreVal = logs[dayKey]?.totals?.[goalText] || 0
+    const localKey = `${dayKey}__${goalText}`
+    const currentLocal = localTotals[localKey] ?? firestoreVal
+    const newVal = Math.max(currentLocal + delta, 0)
+
+    setLocalTotals(p => ({ ...p, [localKey]: newVal }))
+
+    // Debounce the Firestore write by 400ms
+    clearTimeout(saveTimers.current[localKey])
+    saveTimers.current[localKey] = setTimeout(async () => {
+      const current = getDayLog(dayKey)
+      await setDoc(doc(db, 'entries', entryId, 'dailyLogs', dayKey), {
+        ...current,
+        totals: { ...(current.totals || {}), [goalText]: newVal },
+      })
+    }, 400)
+  }
+
+  const setTotalFromInput = (dayKey, goalText, value) => {
+    const newVal = Math.max(Number(value) || 0, 0)
+    const localKey = `${dayKey}__${goalText}`
+    setLocalTotals(p => ({ ...p, [localKey]: newVal }))
+    clearTimeout(saveTimers.current[localKey])
+    saveTimers.current[localKey] = setTimeout(async () => {
+      const current = getDayLog(dayKey)
+      await setDoc(doc(db, 'entries', entryId, 'dailyLogs', dayKey), {
+        ...current,
+        totals: { ...(current.totals || {}), [goalText]: newVal },
+      })
+    }, 400)
   }
 
   const addNote = async (dayKey) => {
@@ -290,23 +327,25 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
                 }
 
                 if (type === 'total') {
-                  const val = selectedLog.totals?.[text] || 0
+                  const localKey = `${selectedDay}__${text}`
+                  const firestoreVal = selectedLog.totals?.[text] || 0
+                  const val = localTotals[localKey] ?? firestoreVal
                   return (
                     <div key={text} className="space-y-1.5">
                       <p className="text-xs text-zinc-500">{text} — how much today?</p>
                       <div className="flex items-center gap-3">
-                        <button onClick={() => setTotal(selectedDay, text, val - 1)}
+                        <button onClick={() => adjustTotal(selectedDay, text, -1)}
                           className="w-10 h-10 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 flex items-center justify-center transition-colors">
                           <Minus size={16} />
                         </button>
                         <div className="flex-1 flex items-center justify-center gap-2">
                           <input type="number" min="0" value={val}
-                            onChange={e => setTotal(selectedDay, text, e.target.value)}
+                            onChange={e => setTotalFromInput(selectedDay, text, e.target.value)}
                             className="w-20 bg-zinc-800 border border-zinc-700 rounded-xl px-2 py-2 text-center text-xl font-black text-white focus:outline-none focus:border-emerald-500 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                           />
                           <span className="text-sm text-zinc-500">{unit}</span>
                         </div>
-                        <button onClick={() => setTotal(selectedDay, text, val + 1)}
+                        <button onClick={() => adjustTotal(selectedDay, text, 1)}
                           className="w-10 h-10 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white flex items-center justify-center transition-colors">
                           <Plus size={16} />
                         </button>
