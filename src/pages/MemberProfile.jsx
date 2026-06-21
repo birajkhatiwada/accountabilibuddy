@@ -34,7 +34,7 @@ export default function MemberProfile() {
   const weekId = getCurrentWeekId()
 
   const [members, setMembers] = useState([])
-  const [entry, setEntry] = useState(null)
+  const [entry, setEntry] = useState(undefined) // undefined = not yet loaded, null = loaded but no entry
   const [allEntries, setAllEntries] = useState([])
   const [memberLogs, setMemberLogs] = useState({})
   const [avatars, setAvatars] = useState({})
@@ -60,7 +60,7 @@ export default function MemberProfile() {
     return onSnapshot(q, snap => {
       const all = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       const mine = all.find(e => (e.nameLower || e.name?.toLowerCase()) === name.toLowerCase())
-      setEntry(mine || null)
+      setEntry(mine || null) // null = confirmed no entry this week
     })
   }, [weekId, name])
 
@@ -168,6 +168,17 @@ export default function MemberProfile() {
         return Math.round(Math.min(1, done / (Number(goal.target) || 1)) * 100)
       }
     })
+
+  if (entry === undefined) return (
+    <div className="flex flex-col space-y-4 animate-pulse">
+      <div className="h-5 w-24 bg-zinc-800 rounded-lg" />
+      <div className="h-40 -mx-4 bg-zinc-800 rounded-none" />
+      <div className="grid grid-cols-4 gap-2">
+        {[...Array(4)].map((_, i) => <div key={i} className="h-16 bg-zinc-800 rounded-2xl" />)}
+      </div>
+      <div className="h-32 bg-zinc-800 rounded-2xl" />
+    </div>
+  )
 
   return (
     <div className="flex flex-col space-y-4">
