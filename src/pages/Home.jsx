@@ -448,31 +448,42 @@ export default function Home() {
               <button
                 key={name}
                 onClick={() => openMember(name)}
-                className="w-full text-left rounded-2xl overflow-hidden transition-all active:scale-[0.98] flex"
+                className="w-full text-left rounded-2xl bg-zinc-900 border border-zinc-800 overflow-hidden transition-all active:scale-[0.99] hover:border-zinc-700"
               >
-                {/* Gradient left panel */}
-                <div className={`bg-gradient-to-br ${color} w-32 shrink-0 flex flex-col items-center justify-center py-5 relative overflow-hidden`}>
-                  <div className="absolute -top-4 -right-4 w-16 h-16 rounded-full bg-white/10" />
-                  <div className={`w-16 h-16 rounded-full bg-white/25 flex items-center justify-center text-white font-black text-2xl ring-2 ring-white/40 relative z-10`}>
-                    {name[0].toUpperCase()}
+                {/* Header: avatar + name + status */}
+                <div className={`bg-gradient-to-r ${color} px-4 py-3 flex items-center justify-between`}>
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-white/25 flex items-center justify-center text-white font-black text-sm shrink-0">
+                      {name[0].toUpperCase()}
+                    </div>
+                    <span className="text-white font-black text-base">{name}</span>
+                    {streak >= 2 && <span className="text-white/80 text-xs font-bold">🔥{streak}</span>}
                   </div>
-                  {streak >= 2 && (
-                    <span className="text-[10px] font-black text-white/80 mt-1.5 relative z-10">🔥{streak}</span>
-                  )}
+                  <span className="text-lg">{statusEmoji}</span>
                 </div>
 
-                {/* Right content */}
-                <div className="flex-1 bg-zinc-900 px-4 py-4 flex flex-col justify-center gap-1 min-w-0">
-                  <p className="text-white font-black text-lg leading-tight">{name}</p>
-                  <p className={`text-sm font-semibold ${
-                    e?.status === 'completed' ? 'text-emerald-400' :
-                    e?.status === 'failed' ? 'text-red-400' :
-                    e ? 'text-amber-400' : 'text-zinc-600'
-                  }`}>{statusEmoji} {e?.status === 'completed' ? 'Week done!' : e?.status === 'failed' ? 'Failed' : e ? 'In progress' : 'No goals yet'}</p>
-                  {e?.goalItems?.length > 0 && (
-                    <p className="text-zinc-500 text-xs mt-0.5 line-clamp-1">
-                      {e.goalItems.map(g => g.text).join(' · ')}
-                    </p>
+                {/* Goals — the main focus */}
+                <div className="px-4 py-3">
+                  {e?.goalItems?.length > 0 ? (
+                    <div className="space-y-2">
+                      {e.goalItems.map((g, i) => (
+                        <div key={i} className="flex items-center gap-2.5">
+                          <span className={`text-xs font-black w-5 h-5 rounded-md flex items-center justify-center shrink-0 ${
+                            g.type === 'habit' ? 'bg-violet-500/20 text-violet-400' :
+                            g.type === 'count' ? 'bg-blue-500/20 text-blue-400' :
+                            'bg-emerald-500/20 text-emerald-400'
+                          }`}>
+                            {g.type === 'habit' ? '✓' : g.type === 'count' ? '×' : '#'}
+                          </span>
+                          <span className="text-zinc-200 text-sm font-medium flex-1">{g.text}</span>
+                          {g.target && <span className="text-zinc-500 text-xs shrink-0">{g.target} {g.unit}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  ) : e ? (
+                    <p className="text-zinc-500 text-sm">{e.goals}</p>
+                  ) : (
+                    <p className="text-zinc-600 text-sm italic">No goals set yet — tap to add</p>
                   )}
                 </div>
               </button>
