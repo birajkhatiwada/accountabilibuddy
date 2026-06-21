@@ -201,8 +201,7 @@ export default function MemberProfile() {
     <div
       className="flex flex-col space-y-4 min-h-screen -mx-4 px-4 -mt-3 pt-3"
       style={{
-        backgroundImage: `radial-gradient(circle, ${colorHex}18 1.5px, transparent 1.5px)`,
-        backgroundSize: '22px 22px',
+        background: `radial-gradient(ellipse 100% 35% at 50% 0%, ${colorHex}30 0%, transparent 70%)`,
       }}
     >
 
