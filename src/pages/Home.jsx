@@ -398,7 +398,7 @@ export default function Home() {
           <p className="text-sm text-zinc-500">Add your crew below</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
           {members.map(name => {
             const e = getEntry(name)
             const color = getAvatarColor(name)
@@ -410,88 +410,86 @@ export default function Home() {
               e ? '🔥' : '💤'
 
             const statusLabel =
-              e?.status === 'completed' ? 'Week done!' :
-              e?.status === 'failed' ? 'Failed this week' :
-              e ? 'In progress' : 'No goals yet'
+              e?.status === 'completed' ? 'Done!' :
+              e?.status === 'failed' ? 'Failed' :
+              e ? 'Active' : 'No goals'
 
-            const statusColor =
-              e?.status === 'completed' ? 'text-emerald-400' :
-              e?.status === 'failed' ? 'text-red-400' :
-              e ? 'text-amber-400' : 'text-zinc-500'
+            const statusBg =
+              e?.status === 'completed' ? 'bg-emerald-500/20 text-emerald-300' :
+              e?.status === 'failed' ? 'bg-red-500/20 text-red-300' :
+              e ? 'bg-amber-500/20 text-amber-300' : 'bg-zinc-800 text-zinc-500'
 
             return (
               <button
                 key={name}
                 onClick={() => openMember(name)}
-                className="w-full text-left rounded-2xl overflow-hidden transition-all active:scale-[0.98] hover:brightness-110 flex h-28"
+                className="text-left rounded-3xl overflow-hidden transition-all active:scale-[0.96] hover:scale-[1.02]"
               >
-                {/* Gradient left panel */}
-                <div className={`bg-gradient-to-br ${color} w-28 shrink-0 flex flex-col items-center justify-center relative overflow-hidden`}>
-                  <div className="absolute -bottom-4 -right-4 w-16 h-16 rounded-full bg-white/10" />
-                  <div className="w-14 h-14 rounded-full bg-white/25 flex items-center justify-center text-white font-black text-2xl relative z-10">
+                {/* Full gradient card */}
+                <div className={`bg-gradient-to-br ${color} relative overflow-hidden p-4 flex flex-col items-center pt-6 pb-4`}>
+                  {/* Decorative blobs */}
+                  <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/10" />
+                  <div className="absolute -bottom-4 -left-4 w-16 h-16 rounded-full bg-black/10" />
+
+                  {/* Streak */}
+                  {streak >= 2 && (
+                    <span className="absolute top-2.5 right-2.5 text-[11px] font-black text-white bg-black/20 px-2 py-0.5 rounded-full z-10">
+                      🔥{streak}
+                    </span>
+                  )}
+
+                  {/* Avatar */}
+                  <div className="w-16 h-16 rounded-full bg-white/25 backdrop-blur-sm flex items-center justify-center text-white font-black text-3xl mb-3 relative z-10 shadow-lg">
                     {name[0].toUpperCase()}
                   </div>
+
+                  {/* Name */}
+                  <p className="font-black text-white text-base text-center leading-tight relative z-10">{name}</p>
                 </div>
 
-                {/* Right content */}
-                <div className="flex-1 bg-zinc-900 px-4 py-3.5 flex flex-col justify-between min-w-0">
-                  <div>
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <p className="font-black text-white text-base leading-tight">{name}</p>
-                      {streak >= 2 && (
-                        <span className="text-[11px] font-black text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded-lg shrink-0">🔥{streak}</span>
-                      )}
-                    </div>
-                    <p className={`text-xs font-semibold ${statusColor}`}>{statusEmoji} {statusLabel}</p>
-                  </div>
-                  {e?.goals ? (
-                    <p className="text-zinc-500 text-[11px] line-clamp-2 leading-relaxed">{e.goals}</p>
-                  ) : (
-                    <p className="text-zinc-600 text-xs italic">Tap to lock in goals</p>
+                {/* Status bar */}
+                <div className="bg-zinc-900 px-3 py-2.5 flex items-center justify-between">
+                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-lg ${statusBg}`}>
+                    {statusEmoji} {statusLabel}
+                  </span>
+                  {e?.goalItems?.length > 0 && (
+                    <span className="text-[10px] text-zinc-600">{e.goalItems.length} goals</span>
                   )}
                 </div>
               </button>
             )
           })}
 
-          {/* Add member */}
+          {/* Add member card */}
           {addingMember ? (
-            <div className="rounded-2xl border border-zinc-700 bg-zinc-900 px-4 py-3.5 flex items-center gap-3 h-28">
-              <div className="w-28 shrink-0 flex flex-col items-center justify-center gap-1 text-zinc-600">
-                <div className="w-14 h-14 rounded-full border-2 border-dashed border-zinc-700 flex items-center justify-center">
-                  <Plus size={18} />
-                </div>
-              </div>
-              <div className="flex-1 space-y-2">
-                <input
-                  autoFocus
-                  type="text"
-                  placeholder="Their name..."
-                  value={newMemberName}
-                  onChange={e => setNewMemberName(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') addMember()
-                    if (e.key === 'Escape') { setAddingMember(false); setNewMemberName('') }
-                  }}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors"
-                />
-                <div className="flex gap-1.5">
-                  <button onClick={addMember} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-1.5 text-xs font-bold transition-colors">Add</button>
-                  <button onClick={() => { setAddingMember(false); setNewMemberName('') }} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded-xl py-1.5 text-xs transition-colors">Cancel</button>
-                </div>
+            <div className="rounded-3xl border border-zinc-700 bg-zinc-900 p-4 space-y-2 flex flex-col items-center justify-center" style={{minHeight: '148px'}}>
+              <input
+                autoFocus
+                type="text"
+                placeholder="Their name..."
+                value={newMemberName}
+                onChange={e => setNewMemberName(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') addMember()
+                  if (e.key === 'Escape') { setAddingMember(false); setNewMemberName('') }
+                }}
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors"
+              />
+              <div className="flex gap-1.5 w-full">
+                <button onClick={addMember} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-2 text-xs font-bold transition-colors">Add</button>
+                <button onClick={() => { setAddingMember(false); setNewMemberName('') }} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded-xl py-2 text-xs transition-colors">Cancel</button>
               </div>
             </div>
           ) : (
             <button
               onClick={() => setAddingMember(true)}
-              className="w-full rounded-2xl border border-dashed border-zinc-800 hover:border-zinc-600 flex items-center gap-4 px-4 h-28 text-zinc-600 hover:text-zinc-400 transition-all"
+              className="rounded-3xl border-2 border-dashed border-zinc-800 hover:border-zinc-600 flex flex-col items-center justify-center gap-2 text-zinc-600 hover:text-zinc-400 transition-all"
+              style={{minHeight: '148px'}}
             >
-              <div className="w-28 shrink-0 flex items-center justify-center">
-                <div className="w-14 h-14 rounded-full border-2 border-dashed border-zinc-700 flex items-center justify-center">
-                  <Plus size={20} />
-                </div>
+              <div className="w-16 h-16 rounded-full border-2 border-dashed border-zinc-700 flex items-center justify-center">
+                <Plus size={22} />
               </div>
-              <span className="text-sm font-semibold">Add a member</span>
+              <span className="text-xs font-semibold">Add member</span>
             </button>
           )}
         </div>
