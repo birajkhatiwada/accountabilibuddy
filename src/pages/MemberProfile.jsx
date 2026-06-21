@@ -215,6 +215,12 @@ export default function MemberProfile() {
 
       {/* Hero */}
       <div className={`-mx-4 bg-gradient-to-br ${color} relative overflow-hidden px-6 pt-6 pb-5`}>
+        {/* Dot pattern overlay */}
+        <div className="absolute inset-0 opacity-20" style={{
+          backgroundImage: `radial-gradient(circle, white 1.5px, transparent 1.5px)`,
+          backgroundSize: '18px 18px',
+        }} />
+        {/* Floating blobs */}
         <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-white/10" />
         <div className="absolute -left-6 -bottom-8 w-36 h-36 rounded-full bg-black/10" />
         <div className="absolute right-8 bottom-4 w-16 h-16 rounded-full bg-white/10" />
