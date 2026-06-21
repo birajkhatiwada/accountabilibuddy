@@ -10,6 +10,13 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 const MEMBERS_DOC = doc(db, 'config', 'members')
 const PENALTY = 15
 
+const AVATAR_EMOJIS = [
+  '🐨','🦊','🐸','🐼','🦁','🐯','🐻','🐰','🐹','🐶',
+  '🐱','🐺','🦋','🐧','🦜','🐙','🦄','🐳','🦈','🦕',
+  '🌸','⭐','🔥','💎','🌈','🍕','🧁','🍩','🎸','🚀',
+  '🌙','🍀','🎯','💫','🎃','🦩','🐝','🦔','🐠','🌵',
+]
+
 const AVATAR_COLORS = [
   'from-violet-500 to-purple-600',
   'from-blue-500 to-cyan-600',
@@ -50,14 +57,24 @@ export default function Home() {
   const [bannerDismissed, setBannerDismissed] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [memberLogs, setMemberLogs] = useState({}) // entryId -> { dayKey -> logData }
+  const [avatars, setAvatars] = useState({}) // name -> emoji
+  const [pickingAvatar, setPickingAvatar] = useState(false)
 
   useEffect(() => {
     const unsub = onSnapshot(MEMBERS_DOC, snap => {
-      setMembers(snap.exists() ? (snap.data().names || []) : [])
+      if (snap.exists()) {
+        setMembers(snap.data().names || [])
+        setAvatars(snap.data().avatars || {})
+      }
       setLoading(false)
     }, err => { setError(err.message); setLoading(false) })
     return unsub
   }, [])
+
+  const saveAvatar = async (name, emoji) => {
+    await setDoc(MEMBERS_DOC, { avatars: { ...avatars, [name]: emoji } }, { merge: true })
+    setPickingAvatar(false)
+  }
 
   useEffect(() => {
     const q = query(collection(db, 'entries'), where('weekId', '==', weekId))
@@ -113,6 +130,7 @@ export default function Home() {
     setConfirmFail(false)
     setEditingGoals(false)
     setConfirmDelete(false)
+    setPickingAvatar(false)
   }
 
   const deleteMember = async (name) => {
@@ -366,10 +384,37 @@ export default function Home() {
 
           <div className="relative flex items-end justify-between">
             <div className="flex items-center gap-5">
-              {/* Big circular avatar */}
-              <div className="w-20 h-20 rounded-full bg-white/25 backdrop-blur-sm flex items-center justify-center text-white font-black text-4xl shadow-xl">
-                {selectedMember[0].toUpperCase()}
-              </div>
+              {/* Big circular avatar — tap to change */}
+              <button
+                onClick={() => setPickingAvatar(v => !v)}
+                className="w-20 h-20 rounded-full bg-white/25 backdrop-blur-sm flex items-center justify-center shadow-xl relative group transition-all hover:scale-105 active:scale-95"
+              >
+                {avatars[selectedMember]
+                  ? <span className="text-4xl">{avatars[selectedMember]}</span>
+                  : <span className="text-white font-black text-4xl">{selectedMember[0].toUpperCase()}</span>
+                }
+                <span className="absolute inset-0 rounded-full flex items-end justify-center pb-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span className="text-[10px] font-bold text-white/70 bg-black/30 rounded-full px-1.5">edit</span>
+                </span>
+              </button>
+
+              {/* Emoji picker */}
+              {pickingAvatar && (
+                <div className="absolute left-0 top-24 z-20 bg-zinc-900 border border-zinc-700 rounded-2xl p-3 shadow-2xl w-64">
+                  <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wide mb-2">Pick an avatar</p>
+                  <div className="grid grid-cols-8 gap-1">
+                    {AVATAR_EMOJIS.map(emoji => (
+                      <button
+                        key={emoji}
+                        onClick={() => saveAvatar(selectedMember, emoji)}
+                        className={`text-xl rounded-lg p-1 hover:bg-zinc-700 transition-colors ${avatars[selectedMember] === emoji ? 'bg-zinc-700 ring-1 ring-emerald-500' : ''}`}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div>
                 <h2 className="text-3xl font-black text-white leading-none mb-1">{selectedMember}</h2>
                 {streak >= 2
@@ -657,8 +702,8 @@ export default function Home() {
                   className="w-full text-left bg-zinc-900 border border-zinc-800 rounded-2xl px-3 py-3 hover:border-zinc-700 transition-colors"
                 >
                   <div className="flex items-center gap-2 mb-2">
-                    <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${color} flex items-center justify-center text-white font-black text-[9px] shrink-0`}>
-                      {name[0].toUpperCase()}
+                    <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${color} flex items-center justify-center shrink-0 ${avatars[name] ? 'text-sm' : 'text-white font-black text-[9px]'}`}>
+                      {avatars[name] ?? name[0].toUpperCase()}
                     </div>
                     <p className="text-zinc-300 text-xs font-bold">{name}</p>
                     <span className="ml-auto text-sm">
