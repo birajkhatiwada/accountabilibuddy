@@ -586,13 +586,16 @@ export default function Home() {
               {/* One line per member */}
               {members.map(name => {
                 const pts = getMemberDailyProgress(name)
-                if (!pts.length) return null
-                const path = buildMemberPath(pts)
                 const hex = getAvatarHex(name)
+                const today = new Date(); today.setHours(23,59,59,0)
+                const daysElapsed = weekDays.filter(d => d <= today).length
+                const displayPts = pts.length ? pts : Array(daysElapsed).fill(0)
+                if (!displayPts.length) return null
+                const path = buildMemberPath(displayPts)
                 return (
                   <g key={name}>
                     <path d={path} fill="none" stroke={hex} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.9" />
-                    <circle cx={dayX(pts.length - 1)} cy={rateY(pts[pts.length - 1])} r="3" fill={hex} />
+                    <circle cx={dayX(displayPts.length - 1)} cy={rateY(displayPts[displayPts.length - 1])} r="3" fill={hex} />
                   </g>
                 )
               })}
@@ -605,7 +608,7 @@ export default function Home() {
             </div>
             {/* Legend */}
             <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
-              {members.filter(name => getEntry(name)?.goalItems?.length).map(name => (
+              {members.map(name => (
                 <div key={name} className="flex items-center gap-1">
                   <div className="w-3 h-0.5 rounded-full" style={{ backgroundColor: getAvatarHex(name) }} />
                   <span className="text-[10px] text-zinc-500">{name}</span>
