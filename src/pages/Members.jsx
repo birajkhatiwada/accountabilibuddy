@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { doc, onSnapshot, updateDoc, arrayUnion, arrayRemove, setDoc } from 'firebase/firestore'
 import { db } from '../firebase'
-import { UserPlus, Trash2 } from 'lucide-react'
+import { UserPlus, Trash2, ChevronRight } from 'lucide-react'
 
 const MEMBERS_DOC = doc(db, 'config', 'members')
 
 export default function Members() {
+  const navigate = useNavigate()
   const [members, setMembers] = useState([])
   const [input, setInput] = useState('')
   const [adding, setAdding] = useState(false)
@@ -77,7 +79,18 @@ export default function Members() {
             <div className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center text-sm font-bold text-zinc-300">
               {name[0].toUpperCase()}
             </div>
-            <span className="flex-1 font-medium text-zinc-200">{name}</span>
+            <button
+              onClick={() => navigate(`/member/${encodeURIComponent(name)}`)}
+              className="flex-1 text-left font-medium text-zinc-200 hover:text-white transition-colors"
+            >
+              {name}
+            </button>
+            <button
+              onClick={() => navigate(`/member/${encodeURIComponent(name)}`)}
+              className="text-zinc-600 hover:text-zinc-400 transition-colors p-1"
+            >
+              <ChevronRight size={15} />
+            </button>
             <button
               onClick={() => removeMember(name)}
               className="text-zinc-600 hover:text-red-400 transition-colors p-1"

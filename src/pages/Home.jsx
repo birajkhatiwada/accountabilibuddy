@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react'
-import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, addDoc, setDoc, Timestamp } from 'firebase/firestore'
+import { useNavigate } from 'react-router-dom'
+import { collection, query, where, onSnapshot, doc, setDoc } from 'firebase/firestore'
 import { db } from '../firebase'
-import { getCurrentWeekId, formatWeekLabel, formatTimestamp } from '../utils'
-import { CheckCircle, XCircle, Send, AlertTriangle, ArrowLeft, Plus, Check, Pencil, X, UserPlus, Trash2 } from 'lucide-react'
-import WeekCalendar from '../components/WeekCalendar'
-import GoalBuilder from '../components/GoalBuilder'
+import { getCurrentWeekId } from '../utils'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 
@@ -42,24 +40,15 @@ const getAvatarHex = (name, members) =>
 
 export default function Home() {
   const weekId = getCurrentWeekId()
+  const navigate = useNavigate()
   const [members, setMembers] = useState([])
   const [entries, setEntries] = useState([])
   const [allEntries, setAllEntries] = useState([])
-  const [selectedMember, setSelectedMember] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [goalsInput, setGoalsInput] = useState([])
-  const [proofInput, setProofInput] = useState('')
-  const [submitting, setSubmitting] = useState(false)
-  const [confirmFail, setConfirmFail] = useState(false)
-  const [addingMember, setAddingMember] = useState(false)
-  const [newMemberName, setNewMemberName] = useState('')
-  const [editingGoals, setEditingGoals] = useState(false)
   const [bannerDismissed, setBannerDismissed] = useState(false)
-  const [confirmDelete, setConfirmDelete] = useState(false)
-  const [memberLogs, setMemberLogs] = useState({}) // entryId -> { dayKey -> logData }
-  const [avatars, setAvatars] = useState({}) // name -> emoji
-  const [pickingAvatar, setPickingAvatar] = useState(false)
+  const [memberLogs, setMemberLogs] = useState({})
+  const [avatars, setAvatars] = useState({})
 
   useEffect(() => {
     const unsub = onSnapshot(MEMBERS_DOC, snap => {
@@ -71,11 +60,6 @@ export default function Home() {
     }, err => { setError(err.message); setLoading(false) })
     return unsub
   }, [])
-
-  const saveAvatar = async (name, emoji) => {
-    await setDoc(MEMBERS_DOC, { avatars: { ...avatars, [name]: emoji } }, { merge: true })
-    setPickingAvatar(false)
-  }
 
   useEffect(() => {
     const q = query(collection(db, 'entries'), where('weekId', '==', weekId))
@@ -90,7 +74,6 @@ export default function Home() {
     })
   }, [])
 
-  // Load daily logs for all current-week entries
   useEffect(() => {
     if (!entries.length) return
     const unsubs = entries.map(entry =>
@@ -116,102 +99,6 @@ export default function Home() {
       else break
     }
     return streak
-  }
-
-  const openMember = (name) => {
-    setSelectedMember(name)
-    setConfirmFail(false)
-    setProofInput('')
-    setGoalsInput([])
-    setEditingGoals(false)
-  }
-
-  const closeMember = () => {
-    setSelectedMember(null)
-    setConfirmFail(false)
-    setEditingGoals(false)
-    setConfirmDelete(false)
-    setPickingAvatar(false)
-  }
-
-  const deleteMember = async (name) => {
-    await setDoc(MEMBERS_DOC, { names: members.filter(m => m !== name) }, { merge: true })
-    closeMember()
-  }
-
-  const submitGoals = async (name) => {
-    const validGoals = goalsInput.filter(g => g.text.trim())
-    if (!validGoals.length) return
-    setSubmitting(true)
-    const goalsSummary = validGoals.map(g =>
-      g.type === 'habit' ? `${g.text} (every day)` :
-      g.target ? `${g.text} (${g.target} ${g.unit})` : g.text
-    ).join('\n')
-    await addDoc(collection(db, 'entries'), {
-      weekId, name, nameLower: name.toLowerCase(),
-      goals: goalsSummary,
-      goalItems: validGoals.map(g => ({
-        text: g.text.trim(),
-        type: g.type || 'habit',
-        target: (g.type === 'count' || g.type === 'total') && g.target ? Number(g.target) : null,
-        unit: g.unit?.trim() || '',
-      })),
-      status: 'active', updates: [],
-      createdAt: Timestamp.now(),
-    })
-    setGoalsInput([])
-    setSubmitting(false)
-  }
-
-  const updateGoals = async (entry) => {
-    const validGoals = goalsInput.filter(g => g.text.trim())
-    if (!validGoals.length) return
-    setSubmitting(true)
-    const goalsSummary = validGoals.map(g =>
-      g.type === 'habit' ? `${g.text} (every day)` :
-      g.target ? `${g.text} (${g.target} ${g.unit})` : g.text
-    ).join('\n')
-    await updateDoc(doc(db, 'entries', entry.id), {
-      goals: goalsSummary,
-      goalItems: validGoals.map(g => ({
-        text: g.text.trim(),
-        type: g.type || 'habit',
-        target: (g.type === 'count' || g.type === 'total') && g.target ? Number(g.target) : null,
-        unit: g.unit?.trim() || '',
-      })),
-    })
-    setGoalsInput([])
-    setEditingGoals(false)
-    setSubmitting(false)
-  }
-
-  const addProof = async (entry) => {
-    if (!proofInput.trim()) return
-    setSubmitting(true)
-    await updateDoc(doc(db, 'entries', entry.id), {
-      updates: arrayUnion({ text: proofInput.trim(), timestamp: Timestamp.now() }),
-    })
-    setProofInput('')
-    setSubmitting(false)
-  }
-
-  const addMember = async () => {
-    const name = newMemberName.trim()
-    if (!name || members.some(m => m.toLowerCase() === name.toLowerCase())) {
-      setAddingMember(false)
-      setNewMemberName('')
-      return
-    }
-    await setDoc(MEMBERS_DOC, { names: [...members, name] }, { merge: true })
-    setNewMemberName('')
-    setAddingMember(false)
-    openMember(name)
-  }
-
-  const markDone = (entry) => updateDoc(doc(db, 'entries', entry.id), { status: 'completed' })
-  const markFailed = async (entry) => {
-    await updateDoc(doc(db, 'entries', entry.id), { status: 'failed' })
-    setConfirmFail(false)
   }
 
   const todayIsMonday = new Date().getDay() === 1
@@ -341,361 +228,6 @@ export default function Home() {
     </div>
   )
 
-  // ── MEMBER DETAIL VIEW ────────────────────────────────────────────────────
-  if (selectedMember) {
-    const entry = getEntry(selectedMember)
-    const streak = getStreak(selectedMember)
-    const color = getAvatarColor(selectedMember, members)
-    const goalCount = entry?.goalItems?.length || 0
-    const updateCount = entry?.updates?.length || 0
-
-    return (
-      <div className="flex flex-col space-y-4">
-        {/* Back + delete */}
-        <div className="flex items-center justify-between">
-          <button onClick={closeMember}
-            className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-200 transition-colors">
-            <ArrowLeft size={15} /> All members
-          </button>
-          {confirmDelete ? (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-zinc-500">Remove {selectedMember}?</span>
-              <button onClick={() => deleteMember(selectedMember)}
-                className="text-xs font-bold text-red-400 hover:text-red-300 transition-colors px-2 py-1 bg-red-950/40 rounded-lg">
-                Remove
-              </button>
-              <button onClick={() => setConfirmDelete(false)}
-                className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors px-2 py-1">
-                Cancel
-              </button>
-            </div>
-          ) : (
-            <button onClick={() => setConfirmDelete(true)}
-              className="p-1.5 text-zinc-700 hover:text-red-400 transition-colors rounded-lg hover:bg-red-950/30">
-              <Trash2 size={15} />
-            </button>
-          )}
-        </div>
-
-        {/* Hero — full bleed, taller, more immersive */}
-        <div className={`-mx-4 bg-gradient-to-br ${color} relative overflow-hidden px-6 pt-8 pb-6`}>
-          <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-white/10" />
-          <div className="absolute -left-6 -bottom-8 w-36 h-36 rounded-full bg-black/10" />
-          <div className="absolute right-8 bottom-4 w-16 h-16 rounded-full bg-white/10" />
-
-          <div className="relative flex items-end justify-between">
-            <div className="flex items-center gap-5">
-              {/* Big circular avatar — tap to change */}
-              <button
-                onClick={() => setPickingAvatar(v => !v)}
-                className="w-20 h-20 rounded-full bg-white/25 backdrop-blur-sm flex items-center justify-center shadow-xl relative group transition-all hover:scale-105 active:scale-95"
-              >
-                {avatars[selectedMember]
-                  ? <span className="text-4xl">{avatars[selectedMember]}</span>
-                  : <span className="text-white font-black text-4xl">{selectedMember[0].toUpperCase()}</span>
-                }
-                <span className="absolute inset-0 rounded-full flex items-end justify-center pb-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <span className="text-[10px] font-bold text-white/70 bg-black/30 rounded-full px-1.5">edit</span>
-                </span>
-              </button>
-
-              <div>
-                <h2 className="text-3xl font-black text-white leading-none mb-1">{selectedMember}</h2>
-                {streak >= 2
-                  ? <span className="text-white/80 text-sm font-bold">🔥 {streak}-week streak</span>
-                  : <span className="text-white/50 text-sm">{formatWeekLabel(weekId)}</span>
-                }
-              </div>
-            </div>
-            {entry && !editingGoals && (
-              <button
-                onClick={() => { if (entry.goalItems?.length) setGoalsInput(entry.goalItems); setEditingGoals(true) }}
-                className="bg-black/20 hover:bg-black/30 text-white/80 hover:text-white rounded-xl px-3 py-2 text-xs font-bold flex items-center gap-1.5 transition-colors"
-              >
-                <Pencil size={11} /> Edit
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Status + stats row */}
-        {entry && (
-          <div className="grid grid-cols-3 gap-2">
-            <div className={`rounded-2xl p-3 text-center ${
-              entry.status === 'completed' ? 'bg-emerald-950/60 border border-emerald-800/50' :
-              entry.status === 'failed' ? 'bg-red-950/60 border border-red-800/50' :
-              'bg-zinc-900 border border-zinc-800'
-            }`}>
-              <p className="text-xl mb-0.5">
-                {entry.status === 'completed' ? '✅' : entry.status === 'failed' ? '❌' : '🔄'}
-              </p>
-              <p className={`text-[10px] font-bold uppercase tracking-wide ${
-                entry.status === 'completed' ? 'text-emerald-400' :
-                entry.status === 'failed' ? 'text-red-400' : 'text-amber-400'
-              }`}>
-                {entry.status === 'completed' ? 'Done!' : entry.status === 'failed' ? 'Failed' : 'Active'}
-              </p>
-            </div>
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3 text-center">
-              <p className="text-xl font-black text-white mb-0.5">{goalCount}</p>
-              <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">Goal{goalCount !== 1 ? 's' : ''}</p>
-            </div>
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3 text-center">
-              <p className="text-xl font-black text-white mb-0.5">{updateCount}</p>
-              <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">Update{updateCount !== 1 ? 's' : ''}</p>
-            </div>
-          </div>
-        )}
-
-        {/* No goals state */}
-        {!entry && (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
-            <p className="text-zinc-400 text-sm font-medium">Lock in your goals for this week 🔒</p>
-            <GoalBuilder onChange={setGoalsInput} />
-            <button
-              onClick={() => submitGoals(selectedMember)}
-              disabled={submitting || !goalsInput.some(g => g.text.trim())}
-              className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-40 text-white font-bold rounded-xl py-3 transition-all shadow-lg shadow-emerald-900/30"
-            >
-              {submitting ? 'Locking in...' : 'Lock in goals 🔒'}
-            </button>
-          </div>
-        )}
-
-        {entry && (
-          <>
-            {/* Edit goals */}
-            {editingGoals && (
-              <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-bold text-zinc-300">Edit goals</p>
-                  <button onClick={() => setEditingGoals(false)} className="text-zinc-600 hover:text-zinc-400 transition-colors">
-                    <X size={16} />
-                  </button>
-                </div>
-                <GoalBuilder initialGoals={entry.goalItems} onChange={setGoalsInput} />
-                <button
-                  onClick={() => updateGoals(entry)}
-                  disabled={submitting || !goalsInput.some(g => g.text.trim())}
-                  className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-40 text-white font-bold rounded-xl py-2.5 transition-all"
-                >
-                  {submitting ? 'Saving...' : 'Save goals'}
-                </button>
-              </div>
-            )}
-
-            {/* Goals display — chips layout */}
-            {!editingGoals && entry.goalItems?.length > 0 && (
-              <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
-                <p className="text-xs text-zinc-500 uppercase tracking-wider mb-3 font-semibold">Goals this week</p>
-                <div className="space-y-2">
-                  {entry.goalItems.map((g, i) => (
-                    <div key={i} className="flex items-center gap-3 bg-zinc-800/60 rounded-xl px-3 py-2.5">
-                      <span className="text-base shrink-0">
-                        {g.type === 'habit' ? '✓' : g.type === 'count' ? '×' : '#'}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-zinc-200 font-medium">{g.text}</p>
-                        {g.target && <p className="text-xs text-zinc-500">{g.target} {g.unit}</p>}
-                      </div>
-                      <span className="text-[10px] text-zinc-600 shrink-0">
-                        {g.type === 'habit' ? 'daily' : g.type === 'count' ? 'count' : 'total'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Progress log */}
-            {entry.updates?.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold px-1">Progress log</p>
-                {entry.updates.map((u, i) => (
-                  <div key={i} className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 flex gap-3">
-                    <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
-                    <div>
-                      <p className="text-sm text-zinc-200">{u.text}</p>
-                      <p className="text-xs text-zinc-600 mt-0.5">{formatTimestamp(u.timestamp)}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Per-goal area chart */}
-            {entry?.goalItems?.length > 0 && (() => {
-              const GOAL_COLORS = ['#8b5cf6','#3b82f6','#10b981','#f97316','#ec4899','#14b8a6']
-              const today = new Date(); today.setHours(23,59,59,0)
-              const elapsed = weekDays.filter(d => d <= today)
-              const categories = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].slice(0, elapsed.length)
-
-              const getGoalDailyPct = (goal) => {
-                const logs = memberLogs[entry.id] || {}
-                return elapsed.map((_, dayIdx) => {
-                  const daysUpTo = weekDays.slice(0, dayIdx + 1)
-                  if (goal.type === 'habit') {
-                    const checked = daysUpTo.filter(d => logs[d.toISOString().split('T')[0]]?.habits?.[goal.text]).length
-                    return Math.round(checked / 7 * 100)
-                  } else if (goal.type === 'count') {
-                    const done = daysUpTo.reduce((s, d) => s + (Number(logs[d.toISOString().split('T')[0]]?.counts?.[goal.text]) || 0), 0)
-                    return Math.round(Math.min(1, done / (Number(goal.target) || 1)) * 100)
-                  } else {
-                    const done = daysUpTo.reduce((s, d) => s + (Number(logs[d.toISOString().split('T')[0]]?.totals?.[goal.text]) || 0), 0)
-                    return Math.round(Math.min(1, done / (Number(goal.target) || 1)) * 100)
-                  }
-                })
-              }
-
-              return (
-                <div className="bg-zinc-800/40 rounded-2xl p-4">
-                  <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-2">Goal progress this week</p>
-                  <HighchartsReact
-                    key={entry?.goalItems?.map(g => g.text).join(',')}
-                    immutable={true}
-                    highcharts={Highcharts}
-                    options={{
-                      chart: {
-                        type: 'areaspline',
-                        backgroundColor: 'transparent',
-                        height: 180,
-                        spacing: [8, 8, 8, 0],
-                        style: { fontFamily: 'inherit' },
-                      },
-                      title: { text: null },
-                      credits: { enabled: false },
-                      legend: { enabled: false },
-                      xAxis: {
-                        categories,
-                        labels: { style: { color: '#71717a', fontSize: '10px' } },
-                        lineColor: '#27272a',
-                        tickColor: 'transparent',
-                        gridLineColor: 'transparent',
-                      },
-                      yAxis: {
-                        min: 0, max: 100,
-                        title: { text: null },
-                        labels: { format: '{value}%', style: { color: '#71717a', fontSize: '10px' } },
-                        gridLineColor: '#27272a',
-                        tickPositions: [0, 25, 50, 75, 100],
-                      },
-                      tooltip: {
-                        shared: true,
-                        backgroundColor: '#18181b',
-                        borderColor: '#3f3f46',
-                        borderRadius: 12,
-                        style: { color: '#e4e4e7', fontSize: '11px' },
-                        pointFormat: '<span style="color:{series.color}">●</span> {series.name}: <b>{point.y}%</b><br/>',
-                      },
-                      plotOptions: {
-                        areaspline: {
-                          fillOpacity: 0.15,
-                          lineWidth: 2,
-                          marker: { enabled: true, radius: 3, lineWidth: 0 },
-                          states: { hover: { lineWidth: 2.5 } },
-                        },
-                      },
-                      series: entry.goalItems.map((g, i) => ({
-                        name: g.text,
-                        color: GOAL_COLORS[i % GOAL_COLORS.length],
-                        data: getGoalDailyPct(g),
-                      })),
-                    }}
-                  />
-                  <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
-                    {entry.goalItems.map((g, i) => (
-                      <div key={i} className="flex items-center gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-sm" style={{ background: GOAL_COLORS[i % GOAL_COLORS.length] }} />
-                        <span className="text-[10px] text-zinc-400">{g.text}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )
-            })()}
-
-            {/* Week calendar */}
-            <WeekCalendar entryId={entry.id} goalItems={entry.goalItems} goals={entry.goals} />
-
-            {/* Actions */}
-            {entry.status === 'active' && (
-              <div className="space-y-3">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Drop some proof..."
-                    value={proofInput}
-                    onChange={e => setProofInput(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && addProof(entry)}
-                    className="flex-1 bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors"
-                  />
-                  <button
-                    onClick={() => addProof(entry)}
-                    disabled={submitting || !proofInput.trim()}
-                    className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white rounded-xl px-4 transition-colors"
-                  >
-                    <Send size={16} />
-                  </button>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => markDone(entry)}
-                    className="flex-1 flex items-center justify-center gap-2 bg-emerald-900/30 hover:bg-emerald-900/50 border border-emerald-800/50 text-emerald-400 rounded-xl py-3 text-sm font-bold transition-colors"
-                  >
-                    <CheckCircle size={15} /> Week complete
-                  </button>
-                  <button
-                    onClick={() => setConfirmFail(true)}
-                    className="flex-1 flex items-center justify-center gap-2 bg-red-900/20 hover:bg-red-900/40 border border-red-800/40 text-red-400 rounded-xl py-3 text-sm font-bold transition-colors"
-                  >
-                    <XCircle size={15} /> I failed
-                  </button>
-                </div>
-                {confirmFail && (
-                  <div className="bg-red-950/40 border border-red-800/50 rounded-xl p-4 space-y-3">
-                    <p className="text-red-300 text-sm font-medium flex items-center gap-2">
-                      <AlertTriangle size={15} /> This adds ${PENALTY} to the pot. For real?
-                    </p>
-                    <div className="flex gap-2">
-                      <button onClick={() => markFailed(entry)} className="flex-1 bg-red-700 hover:bg-red-600 text-white rounded-lg py-2 text-sm font-bold transition-colors">
-                        Yeah, I failed
-                      </button>
-                      <button onClick={() => setConfirmFail(false)} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg py-2 text-sm transition-colors">
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </>
-        )}
-      {/* Emoji avatar picker — fixed overlay so it's never clipped */}
-      {pickingAvatar && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center pb-8 px-4" onClick={() => setPickingAvatar(false)}>
-          <div className="bg-zinc-900 border border-zinc-700 rounded-3xl p-4 shadow-2xl w-full max-w-sm" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-bold text-zinc-200">Pick your avatar</p>
-              <button onClick={() => setPickingAvatar(false)} className="text-zinc-500 hover:text-zinc-300"><X size={16} /></button>
-            </div>
-            <div className="grid grid-cols-8 gap-1.5">
-              {AVATAR_EMOJIS.map(emoji => (
-                <button
-                  key={emoji}
-                  onClick={() => saveAvatar(selectedMember, emoji)}
-                  className={`text-2xl rounded-xl p-1.5 hover:bg-zinc-700 transition-colors active:scale-90 ${avatars[selectedMember] === emoji ? 'bg-zinc-700 ring-2 ring-emerald-500' : ''}`}
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-    )
-  }
-
   // ── ALL MEMBERS GRID VIEW ─────────────────────────────────────────────────
   return (
     <div className="flex flex-col space-y-4">
@@ -821,7 +353,7 @@ export default function Home() {
               return (
                 <button
                   key={name}
-                  onClick={() => openMember(name)}
+                  onClick={() => navigate(`/member/${encodeURIComponent(name)}`)}
                   className={`w-full text-left rounded-2xl overflow-hidden transition-colors ${
                     !e
                       ? 'bg-zinc-900/50 border border-dashed border-zinc-700 hover:border-zinc-500'
