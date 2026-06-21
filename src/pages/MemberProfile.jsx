@@ -202,10 +202,10 @@ export default function MemberProfile() {
       className="flex flex-col space-y-4 min-h-screen -mx-4 px-4 -mt-3 pt-3"
       style={entry?.status === 'completed' ? {
         background: `
-          radial-gradient(ellipse 120% 25% at 50% 15%, #10b98122 0%, transparent 100%),
-          radial-gradient(ellipse 80% 20% at 15% 45%, #f59e0b18 0%, transparent 100%),
-          radial-gradient(ellipse 80% 20% at 85% 65%, #10b98118 0%, transparent 100%),
-          radial-gradient(ellipse 90% 20% at 40% 85%, #f59e0b14 0%, transparent 100%)
+          radial-gradient(ellipse 120% 25% at 50% 15%, #10b98140 0%, transparent 100%),
+          radial-gradient(ellipse 80% 20% at 15% 45%, #f59e0b38 0%, transparent 100%),
+          radial-gradient(ellipse 80% 20% at 85% 65%, #10b98138 0%, transparent 100%),
+          radial-gradient(ellipse 90% 20% at 40% 85%, #f59e0b30 0%, transparent 100%)
         `,
       } : {}}
     >
