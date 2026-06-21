@@ -212,19 +212,15 @@ export default function MemberProfile() {
             </button>
             <div>
               <h2 className="text-3xl font-black text-white leading-none mb-1">{name}</h2>
-              {streak >= 2
-                ? <span className="text-white/80 text-sm font-bold">🔥 {streak}-week streak</span>
-                : <span className="text-white/50 text-sm">{formatWeekLabel(weekId)}</span>
-              }
+              <div className="flex items-center gap-2 flex-wrap">
+                {streak >= 2 && <span className="text-white/80 text-sm font-bold">🔥 {streak}-week streak</span>}
+                {entry?.status === 'completed' && <span className="text-emerald-300 text-sm font-bold">✅ Week done!</span>}
+                {entry?.status === 'failed' && <span className="text-red-300 text-sm font-bold">❌ Week failed</span>}
+                {!entry?.status && <span className="text-white/50 text-sm">{formatWeekLabel(weekId)}</span>}
+              </div>
             </div>
           </div>
-          {entry?.status === 'completed' && (
-            <div className="bg-black/20 rounded-xl px-3 py-2 text-center">
-              <p className="text-white font-black text-lg leading-none">✅</p>
-              <p className="text-[10px] text-white/70 font-bold mt-0.5">Week done!</p>
-            </div>
-          )}
-          {entry && entry.status !== 'completed' && !editingGoals && (
+          {entry && !editingGoals && (
             <button
               onClick={() => { if (entry.goalItems?.length) setGoalsInput(entry.goalItems); setEditingGoals(true) }}
               className="bg-black/20 hover:bg-black/30 text-white/80 hover:text-white rounded-xl px-3 py-2 text-xs font-bold flex items-center gap-1.5 transition-colors"
