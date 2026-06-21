@@ -176,9 +176,12 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
     (logs['__count__']?.counts?.[goalText]) || 0
 
   const weeklyTotalValue = (goalText) =>
-    Object.entries(logs)
-      .filter(([k]) => k !== '__count__')
-      .reduce((sum, [, l]) => sum + (Number(l.totals?.[goalText]) || 0), 0)
+    days.reduce((sum, day) => {
+      const key = dateKey(day)
+      const localKey = `${key}__${goalText}`
+      const val = localTotals[localKey] ?? (Number(logs[key]?.totals?.[goalText]) || 0)
+      return sum + val
+    }, 0)
 
   // ── render ────────────────────────────────────────────────────────────────
 
