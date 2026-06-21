@@ -203,38 +203,50 @@ export default function MemberProfile() {
       </div>
 
       {/* Hero */}
-      <div className={`-mx-4 bg-gradient-to-br ${color} relative overflow-hidden px-6 pt-8 pb-6`}>
+      <div className={`-mx-4 bg-gradient-to-br ${color} relative overflow-hidden px-6 pt-6 pb-5`}>
         <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-white/10" />
         <div className="absolute -left-6 -bottom-8 w-36 h-36 rounded-full bg-black/10" />
         <div className="absolute right-8 bottom-4 w-16 h-16 rounded-full bg-white/10" />
-        <div className="relative flex items-end justify-between">
-          <div className="flex items-center gap-5">
+
+        {/* Week label top */}
+        <p className="relative text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-4">
+          {formatWeekLabel(weekId)}
+        </p>
+
+        <div className="relative flex items-center justify-between">
+          <div className="flex items-center gap-4">
             <button
               onClick={() => setPickingAvatar(v => !v)}
-              className="w-20 h-20 rounded-full bg-white/25 backdrop-blur-sm flex items-center justify-center shadow-xl relative group transition-all hover:scale-105 active:scale-95"
+              className="w-16 h-16 rounded-full bg-white/25 backdrop-blur-sm flex items-center justify-center shadow-xl relative group transition-all hover:scale-105 active:scale-95 shrink-0"
             >
               {avatars[name]
-                ? <span className="text-4xl">{avatars[name]}</span>
-                : <span className="text-white font-black text-4xl">{name[0].toUpperCase()}</span>
+                ? <span className="text-3xl">{avatars[name]}</span>
+                : <span className="text-white font-black text-3xl">{name[0].toUpperCase()}</span>
               }
               <span className="absolute inset-0 rounded-full flex items-end justify-center pb-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <span className="text-[10px] font-bold text-white/70 bg-black/30 rounded-full px-1.5">edit</span>
               </span>
             </button>
             <div>
-              <h2 className="text-3xl font-black text-white leading-none mb-1">{name}</h2>
-              <div className="flex items-center gap-2 flex-wrap">
-                {streak >= 2 && <span className="text-white/80 text-sm font-bold">🔥 {streak}-week streak</span>}
-                {entry?.status === 'completed' && <span className="text-emerald-300 text-sm font-bold">✅ Week done!</span>}
-                {entry?.status === 'failed' && <span className="text-red-300 text-sm font-bold">❌ Week failed</span>}
-                {!entry?.status && <span className="text-white/50 text-sm">{formatWeekLabel(weekId)}</span>}
+              <h2 className="text-2xl font-black text-white leading-none">{name}</h2>
+              <div className="flex items-center gap-2 flex-wrap mt-1">
+                {streak >= 2 && <span className="text-white/80 text-xs font-bold">🔥 {streak}-week streak</span>}
+                {entry?.status === 'completed' && <span className="text-emerald-300 text-xs font-bold">✅ Week done!</span>}
+                {entry?.status === 'failed' && <span className="text-red-300 text-xs font-bold">❌ Week failed</span>}
+                {entry?.status === 'active' && <span className="text-white/60 text-xs font-semibold">🔄 In progress</span>}
+                {!entry && <span className="text-white/40 text-xs">No goals set yet</span>}
               </div>
+              {entry?.goalItems?.length > 0 && (
+                <p className="text-white/50 text-[11px] mt-1.5">
+                  {entry.goalItems.length} goal{entry.goalItems.length !== 1 ? 's' : ''} · {entry.updates?.length || 0} proof{(entry.updates?.length || 0) !== 1 ? 's' : ''}
+                </p>
+              )}
             </div>
           </div>
           {entry && !editingGoals && (
             <button
               onClick={() => { if (entry.goalItems?.length) setGoalsInput(entry.goalItems); setEditingGoals(true) }}
-              className="bg-black/20 hover:bg-black/30 text-white/80 hover:text-white rounded-xl px-3 py-2 text-xs font-bold flex items-center gap-1.5 transition-colors"
+              className="bg-black/20 hover:bg-black/30 text-white/80 hover:text-white rounded-xl px-3 py-2 text-xs font-bold flex items-center gap-1.5 transition-colors shrink-0"
             >
               <Pencil size={11} /> Edit
             </button>
