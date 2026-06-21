@@ -428,7 +428,7 @@ export default function Home() {
           <p className="text-sm text-zinc-500">Add your crew below</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-3">
           {members.map(name => {
             const e = getEntry(name)
             const color = getAvatarColor(name)
@@ -440,59 +440,61 @@ export default function Home() {
               e ? '🔥' : '💤'
 
             const statusLabel =
-              e?.status === 'completed' ? 'Done!' :
-              e?.status === 'failed' ? 'Failed' :
-              e ? 'Active' : 'No goals'
+              e?.status === 'completed' ? 'Week done!' :
+              e?.status === 'failed' ? 'Failed this week' :
+              e ? 'In progress' : 'No goals yet'
 
-            const statusBg =
-              e?.status === 'completed' ? 'bg-emerald-500/20 text-emerald-300' :
-              e?.status === 'failed' ? 'bg-red-500/20 text-red-300' :
-              e ? 'bg-amber-500/20 text-amber-300' : 'bg-zinc-800 text-zinc-500'
+            const statusColor =
+              e?.status === 'completed' ? 'text-emerald-400' :
+              e?.status === 'failed' ? 'text-red-400' :
+              e ? 'text-amber-400' : 'text-zinc-500'
 
             return (
               <button
                 key={name}
                 onClick={() => openMember(name)}
-                className="text-left rounded-3xl overflow-hidden transition-all active:scale-[0.96] hover:scale-[1.02]"
+                className="w-full text-left rounded-3xl overflow-hidden transition-all active:scale-[0.98] hover:brightness-105"
               >
-                {/* Full gradient card */}
-                <div className={`bg-gradient-to-br ${color} relative overflow-hidden p-4 flex flex-col items-center pt-6 pb-4`}>
-                  {/* Decorative blobs */}
-                  <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/10" />
-                  <div className="absolute -bottom-4 -left-4 w-16 h-16 rounded-full bg-black/10" />
-
-                  {/* Streak */}
+                {/* Gradient top with avatar + name */}
+                <div className={`bg-gradient-to-br ${color} relative overflow-hidden px-5 pt-5 pb-4`}>
+                  <div className="absolute -right-8 -top-8 w-36 h-36 rounded-full bg-white/10" />
+                  <div className="absolute -left-4 -bottom-6 w-24 h-24 rounded-full bg-black/10" />
                   {streak >= 2 && (
-                    <span className="absolute top-2.5 right-2.5 text-[11px] font-black text-white bg-black/20 px-2 py-0.5 rounded-full z-10">
-                      🔥{streak}
-                    </span>
+                    <span className="absolute top-3 right-3 text-xs font-black text-white bg-black/20 px-2.5 py-1 rounded-full">🔥 {streak} streak</span>
                   )}
-
-                  {/* Avatar */}
-                  <div className="w-16 h-16 rounded-full bg-white/25 backdrop-blur-sm flex items-center justify-center text-white font-black text-3xl mb-3 relative z-10 shadow-lg">
-                    {name[0].toUpperCase()}
+                  <div className="relative flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-2xl bg-white/25 backdrop-blur-sm flex items-center justify-center text-white font-black text-3xl shadow-lg shrink-0">
+                      {name[0].toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-2xl font-black text-white leading-none">{name}</p>
+                      <p className={`text-sm font-semibold mt-1 ${statusColor}`}>{statusEmoji} {statusLabel}</p>
+                    </div>
                   </div>
-
-                  {/* Name */}
-                  <p className="font-black text-white text-base text-center leading-tight relative z-10">{name}</p>
                 </div>
 
-                {/* Status bar */}
-                <div className="bg-zinc-900 px-3 py-2.5 flex items-center justify-between">
-                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-lg ${statusBg}`}>
-                    {statusEmoji} {statusLabel}
-                  </span>
-                  {e?.goalItems?.length > 0 && (
-                    <span className="text-[10px] text-zinc-600">{e.goalItems.length} goals</span>
+                {/* Goals preview */}
+                <div className="bg-zinc-900 px-5 py-3.5">
+                  {e?.goalItems?.length ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {e.goalItems.map((g, i) => (
+                        <span key={i} className="text-xs bg-zinc-800 text-zinc-400 px-2.5 py-1 rounded-lg">
+                          {g.type === 'habit' ? '✓' : g.type === 'count' ? '×' : '#'} {g.text}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-zinc-600 text-sm italic">Tap to lock in goals →</p>
                   )}
                 </div>
               </button>
             )
           })}
 
-          {/* Add member card */}
+          {/* Add member */}
           {addingMember ? (
-            <div className="rounded-3xl border border-zinc-700 bg-zinc-900 p-4 space-y-2 flex flex-col items-center justify-center" style={{minHeight: '148px'}}>
+            <div className="rounded-3xl border border-zinc-700 bg-zinc-900 px-5 py-4 space-y-3">
+              <p className="text-sm font-bold text-zinc-300">Add a member</p>
               <input
                 autoFocus
                 type="text"
@@ -503,23 +505,20 @@ export default function Home() {
                   if (e.key === 'Enter') addMember()
                   if (e.key === 'Escape') { setAddingMember(false); setNewMemberName('') }
                 }}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors"
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors"
               />
-              <div className="flex gap-1.5 w-full">
-                <button onClick={addMember} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-2 text-xs font-bold transition-colors">Add</button>
-                <button onClick={() => { setAddingMember(false); setNewMemberName('') }} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded-xl py-2 text-xs transition-colors">Cancel</button>
+              <div className="flex gap-2">
+                <button onClick={addMember} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-2.5 text-sm font-bold transition-colors">Add</button>
+                <button onClick={() => { setAddingMember(false); setNewMemberName('') }} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded-xl py-2.5 text-sm transition-colors">Cancel</button>
               </div>
             </div>
           ) : (
             <button
               onClick={() => setAddingMember(true)}
-              className="rounded-3xl border-2 border-dashed border-zinc-800 hover:border-zinc-600 flex flex-col items-center justify-center gap-2 text-zinc-600 hover:text-zinc-400 transition-all"
-              style={{minHeight: '148px'}}
+              className="w-full rounded-3xl border-2 border-dashed border-zinc-800 hover:border-zinc-600 py-6 flex items-center justify-center gap-3 text-zinc-600 hover:text-zinc-400 transition-all"
             >
-              <div className="w-16 h-16 rounded-full border-2 border-dashed border-zinc-700 flex items-center justify-center">
-                <Plus size={22} />
-              </div>
-              <span className="text-xs font-semibold">Add member</span>
+              <Plus size={18} />
+              <span className="text-sm font-semibold">Add a member</span>
             </button>
           )}
         </div>
