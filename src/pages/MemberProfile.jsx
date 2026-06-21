@@ -304,7 +304,7 @@ export default function MemberProfile() {
                 entry.status === 'failed' ? 'text-red-400' : 'text-amber-400'
               }`}>{entry.status === 'completed' ? 'Done!' : entry.status === 'failed' ? 'Failed' : 'Active'}</p>
             </div>
-            <div className="rounded-2xl p-3 text-center" style={card}>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3 text-center">
               <p className="text-xl font-black text-white mb-0.5">{entry.goalItems?.length || 0}</p>
               <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">Goals</p>
             </div>
