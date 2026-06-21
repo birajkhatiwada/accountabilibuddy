@@ -5,7 +5,8 @@ import { getCurrentWeekId, formatWeekLabel, formatTimestamp } from '../utils'
 import { CheckCircle, XCircle, Send, AlertTriangle, ArrowLeft, Plus, Check, Pencil, X, UserPlus, Trash2 } from 'lucide-react'
 import WeekCalendar from '../components/WeekCalendar'
 import GoalBuilder from '../components/GoalBuilder'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import Highcharts from 'highcharts'
+import HighchartsReact from 'highcharts-react-official'
 
 const MEMBERS_DOC = doc(db, 'config', 'members')
 const PENALTY = 15
@@ -656,34 +657,58 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Per-member goal progress line chart (Recharts) */}
+          {/* Per-member goal progress line chart (Highcharts) */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
-            <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-4">Goal progress this week</p>
-            <ResponsiveContainer width="100%" height={180}>
-              <LineChart data={chartData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-                <XAxis dataKey="day" tick={{ fill: '#52525b', fontSize: 10 }} axisLine={false} tickLine={false} />
-                <YAxis domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fill: '#52525b', fontSize: 10 }} axisLine={false} tickLine={false} ticks={[0, 25, 50, 75, 100]} />
-                <Tooltip
-                  contentStyle={{ background: '#18181b', border: '1px solid #3f3f46', borderRadius: 12, fontSize: 12 }}
-                  labelStyle={{ color: '#a1a1aa', fontWeight: 700, marginBottom: 4 }}
-                  formatter={(val, name) => [`${val}%`, name]}
-                />
-                {members.map(name => (
-                  <Line
-                    key={name}
-                    type="monotone"
-                    dataKey={name}
-                    stroke={getAvatarHex(name, members)}
-                    strokeWidth={2.5}
-                    dot={{ r: 3, fill: getAvatarHex(name, members), strokeWidth: 0 }}
-                    activeDot={{ r: 5 }}
-                    connectNulls
-                  />
-                ))}
-              </LineChart>
-            </ResponsiveContainer>
-            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3">
+            <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-2">Goal progress this week</p>
+            <HighchartsReact
+              highcharts={Highcharts}
+              options={{
+                chart: {
+                  type: 'spline',
+                  backgroundColor: 'transparent',
+                  height: 200,
+                  style: { fontFamily: 'inherit' },
+                  spacing: [8, 8, 8, 0],
+                },
+                title: { text: null },
+                credits: { enabled: false },
+                legend: { enabled: false },
+                xAxis: {
+                  categories: DAY_LABELS.slice(0, daysElapsed),
+                  labels: { style: { color: '#71717a', fontSize: '10px' } },
+                  lineColor: '#27272a',
+                  tickColor: '#27272a',
+                  gridLineColor: '#27272a',
+                },
+                yAxis: {
+                  min: 0, max: 100,
+                  title: { text: null },
+                  labels: { format: '{value}%', style: { color: '#71717a', fontSize: '10px' } },
+                  gridLineColor: '#27272a',
+                  tickPositions: [0, 25, 50, 75, 100],
+                },
+                tooltip: {
+                  backgroundColor: '#18181b',
+                  borderColor: '#3f3f46',
+                  borderRadius: 12,
+                  style: { color: '#e4e4e7', fontSize: '12px' },
+                  pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}%</b><br/>',
+                },
+                plotOptions: {
+                  spline: {
+                    lineWidth: 2.5,
+                    marker: { enabled: true, radius: 4, lineWidth: 0 },
+                    states: { hover: { lineWidth: 3 } },
+                  },
+                },
+                series: members.map(name => ({
+                  name,
+                  color: getAvatarHex(name, members),
+                  data: chartData.map(d => d[name] ?? 0),
+                })),
+              }}
+            />
+            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
               {members.map(name => (
                 <div key={name} className="flex items-center gap-1.5">
                   <div className="w-3 h-0.5 rounded-full" style={{ backgroundColor: getAvatarHex(name, members) }} />
