@@ -390,7 +390,7 @@ export default function Home() {
         <p className="text-xs text-zinc-500 font-medium mt-0.5">{formatWeekLabel(weekId)}</p>
       </div>
 
-      {/* Members list */}
+      {/* Members grid */}
       {members.length === 0 ? (
         <div className="text-center py-16 space-y-3">
           <div className="text-5xl">👥</div>
@@ -398,94 +398,66 @@ export default function Home() {
           <p className="text-sm text-zinc-500">Add your crew below</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
           {members.map(name => {
             const e = getEntry(name)
             const color = getAvatarColor(name)
             const streak = getStreak(name)
-            const goalCount = e?.goalItems?.length || 0
-
-            // Pull the first gradient color for the left accent & bg tint
-            const accentFrom = color.split(' ')[0].replace('from-', '')
-
-            const statusRing =
-              e?.status === 'completed' ? 'ring-2 ring-emerald-400 ring-offset-2 ring-offset-zinc-950' :
-              e?.status === 'failed' ? 'ring-2 ring-red-500 ring-offset-2 ring-offset-zinc-950' :
-              e ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-zinc-950' : ''
 
             const statusEmoji =
               e?.status === 'completed' ? '✅' :
               e?.status === 'failed' ? '❌' :
-              e ? '🔄' : '💤'
+              e ? '🔥' : '💤'
 
             const statusLabel =
               e?.status === 'completed' ? 'Done!' :
               e?.status === 'failed' ? 'Failed' :
-              e ? 'In progress' : 'No goals yet'
+              e ? 'Active' : 'No goals'
 
             const statusColor =
-              e?.status === 'completed' ? 'text-emerald-400' :
-              e?.status === 'failed' ? 'text-red-400' :
-              e ? 'text-amber-400' : 'text-zinc-600'
+              e?.status === 'completed' ? 'text-emerald-300' :
+              e?.status === 'failed' ? 'text-red-300' :
+              e ? 'text-amber-300' : 'text-zinc-500'
 
             return (
               <button
                 key={name}
                 onClick={() => openMember(name)}
-                className="w-full text-left rounded-2xl border border-zinc-800/80 bg-zinc-900 overflow-hidden transition-all hover:border-zinc-700 active:scale-[0.99] group"
+                className="text-left rounded-3xl overflow-hidden transition-all active:scale-[0.97] hover:scale-[1.02]"
               >
-                <div className="flex items-stretch">
-                  {/* Left gradient accent */}
-                  <div className={`w-1.5 shrink-0 bg-gradient-to-b ${color}`} />
-
-                  <div className="flex-1 px-4 py-4 flex items-center gap-4 min-w-0">
-                    {/* Avatar with status ring */}
-                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${color} flex items-center justify-center text-white font-black text-xl shrink-0 ${statusRing}`}>
-                      {name[0].toUpperCase()}
-                    </div>
-
-                    {/* Main content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <p className="font-black text-white text-base leading-tight">{name}</p>
-                        {streak >= 2 && (
-                          <span className="text-xs font-black text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded-lg shrink-0">
-                            🔥{streak}
-                          </span>
-                        )}
-                      </div>
-                      <p className={`text-xs font-semibold mb-1.5 ${statusColor}`}>
-                        {statusEmoji} {statusLabel}
-                      </p>
-                      {e?.goalItems?.length ? (
-                        <div className="flex flex-wrap gap-1">
-                          {e.goalItems.slice(0, 3).map((g, i) => (
-                            <span key={i} className="text-[10px] bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-lg">
-                              {g.type === 'habit' ? '✓' : g.type === 'count' ? '×' : '#'} {g.text}
-                            </span>
-                          ))}
-                          {e.goalItems.length > 3 && (
-                            <span className="text-[10px] text-zinc-600 px-1">+{e.goalItems.length - 3} more</span>
-                          )}
-                        </div>
-                      ) : e?.goals ? (
-                        <p className="text-zinc-500 text-xs line-clamp-1">{e.goals}</p>
-                      ) : (
-                        <p className="text-zinc-700 text-xs italic">Tap to add goals →</p>
-                      )}
-                    </div>
-
-                    {/* Arrow */}
-                    <span className="text-zinc-700 group-hover:text-zinc-400 transition-colors shrink-0 text-lg">›</span>
+                {/* Gradient top */}
+                <div className={`bg-gradient-to-br ${color} p-4 pb-5 relative`}>
+                  {/* Streak badge */}
+                  {streak >= 2 && (
+                    <span className="absolute top-3 right-3 text-[11px] font-black text-white bg-black/25 px-2 py-0.5 rounded-full">
+                      🔥{streak}
+                    </span>
+                  )}
+                  {/* Big circular avatar */}
+                  <div className="w-14 h-14 rounded-full bg-white/25 backdrop-blur flex items-center justify-center text-white font-black text-2xl mb-2">
+                    {name[0].toUpperCase()}
                   </div>
+                  <p className="font-black text-white text-base leading-tight drop-shadow">{name}</p>
+                </div>
+
+                {/* Dark bottom */}
+                <div className="bg-zinc-900 px-3.5 pt-3 pb-3.5 space-y-1.5">
+                  <p className={`text-xs font-bold ${statusColor}`}>
+                    {statusEmoji} {statusLabel}
+                  </p>
+                  {e?.goals ? (
+                    <p className="text-zinc-500 text-[11px] line-clamp-2 leading-relaxed">{e.goals}</p>
+                  ) : (
+                    <p className="text-zinc-700 text-[11px] italic">Tap to set goals</p>
+                  )}
                 </div>
               </button>
             )
           })}
 
-          {/* Add member row */}
+          {/* Add member card */}
           {addingMember ? (
-            <div className="rounded-2xl border border-zinc-700 bg-zinc-900 p-4 space-y-2">
+            <div className="rounded-3xl border border-zinc-700 bg-zinc-900 p-4 space-y-2 flex flex-col justify-center min-h-[148px]">
               <input
                 autoFocus
                 type="text"
@@ -496,15 +468,15 @@ export default function Home() {
                   if (e.key === 'Enter') addMember()
                   if (e.key === 'Escape') { setAddingMember(false); setNewMemberName('') }
                 }}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors"
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors"
               />
-              <div className="flex gap-2">
+              <div className="flex gap-1.5">
                 <button onClick={addMember}
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-2 text-sm font-bold transition-colors">
-                  Add member
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-2 text-xs font-bold transition-colors">
+                  Add
                 </button>
                 <button onClick={() => { setAddingMember(false); setNewMemberName('') }}
-                  className="px-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded-xl py-2 text-sm transition-colors">
+                  className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded-xl py-2 text-xs transition-colors">
                   Cancel
                 </button>
               </div>
@@ -512,9 +484,12 @@ export default function Home() {
           ) : (
             <button
               onClick={() => setAddingMember(true)}
-              className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl border border-dashed border-zinc-800 text-zinc-600 hover:text-zinc-400 hover:border-zinc-600 transition-all text-sm font-semibold"
+              className="rounded-3xl border-2 border-dashed border-zinc-800 hover:border-zinc-600 flex flex-col items-center justify-center gap-2 text-zinc-600 hover:text-zinc-400 transition-all min-h-[148px]"
             >
-              <Plus size={15} /> Add member
+              <div className="w-14 h-14 rounded-full border-2 border-dashed border-zinc-700 flex items-center justify-center">
+                <Plus size={20} />
+              </div>
+              <span className="text-xs font-semibold">Add member</span>
             </button>
           )}
         </div>
