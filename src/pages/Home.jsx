@@ -813,36 +813,7 @@ export default function Home() {
 
           {/* Goals this week */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between px-1">
-              <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide">This week's goals</p>
-              <button
-                onClick={() => setAddingMember(true)}
-                className="flex items-center gap-1 text-zinc-500 hover:text-emerald-400 transition-colors"
-              >
-                <Plus size={14} />
-                <span className="text-[11px] font-bold">Add member</span>
-              </button>
-            </div>
-            {addingMember && (
-              <div className="rounded-2xl border border-zinc-700 bg-zinc-900 px-4 py-4 space-y-3">
-                <input
-                  autoFocus
-                  type="text"
-                  placeholder="Their name..."
-                  value={newMemberName}
-                  onChange={e => setNewMemberName(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') addMember()
-                    if (e.key === 'Escape') { setAddingMember(false); setNewMemberName('') }
-                  }}
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors"
-                />
-                <div className="flex gap-2">
-                  <button onClick={addMember} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-2.5 text-sm font-bold transition-colors">Add</button>
-                  <button onClick={() => { setAddingMember(false); setNewMemberName('') }} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded-xl py-2.5 text-sm transition-colors">Cancel</button>
-                </div>
-              </div>
-            )}
+            <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide px-1">This week's goals</p>
             {members.map(name => {
               const e = getEntry(name)
               const color = getAvatarColor(name, members)
