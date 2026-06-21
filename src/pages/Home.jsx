@@ -552,6 +552,7 @@ export default function Home() {
                   <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-2">Goal progress this week</p>
                   <HighchartsReact
                     key={entry?.goalItems?.map(g => g.text).join(',')}
+                    immutable={true}
                     highcharts={Highcharts}
                     options={{
                       chart: {
@@ -752,6 +753,7 @@ export default function Home() {
             <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-2">Goal progress this week</p>
             <HighchartsReact
               key={members.join(',')}
+              immutable={true}
               highcharts={Highcharts}
               options={{
                 chart: {
