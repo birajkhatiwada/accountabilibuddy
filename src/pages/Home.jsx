@@ -39,6 +39,7 @@ export default function Home() {
   const [newMemberName, setNewMemberName] = useState('')
   const [editingGoals, setEditingGoals] = useState(false)
   const [bannerDismissed, setBannerDismissed] = useState(false)
+  const [memberLogs, setMemberLogs] = useState({}) // entryId -> { dayKey -> logData }
 
   useEffect(() => {
     const unsub = onSnapshot(MEMBERS_DOC, snap => {
@@ -60,6 +61,19 @@ export default function Home() {
       setAllEntries(snap.docs.map(d => ({ id: d.id, ...d.data() })))
     })
   }, [])
+
+  // Load daily logs for all current-week entries
+  useEffect(() => {
+    if (!entries.length) return
+    const unsubs = entries.map(entry =>
+      onSnapshot(collection(db, 'entries', entry.id, 'dailyLogs'), snap => {
+        const logs = {}
+        snap.docs.forEach(d => { logs[d.id] = d.data() })
+        setMemberLogs(prev => ({ ...prev, [entry.id]: logs }))
+      })
+    )
+    return () => unsubs.forEach(u => u())
+  }, [entries.map(e => e.id).join(',')])
 
   const getEntry = (name) =>
     entries.find(e => (e.nameLower || e.name?.toLowerCase()) === name.toLowerCase())
@@ -211,6 +225,39 @@ export default function Home() {
     if (relevant.length === 0) return null
     return relevant.filter(s => s === 'completed').length / relevant.length
   }
+
+  // 7 days of the current week (Mon–Sun) as Date objects
+  const getWeekDays = () => {
+    const d = new Date(weekId)
+    return Array.from({ length: 7 }, (_, i) => {
+      const day = new Date(d)
+      day.setDate(d.getDate() + i)
+      return day
+    })
+  }
+  const weekDays = getWeekDays()
+
+  // Compute goal progress from daily logs
+  const getGoalProgress = (entryId, goal) => {
+    const logs = memberLogs[entryId] || {}
+    if (goal.type === 'habit') {
+      const done = Object.values(logs).filter(d => d.habits?.[goal.text]).length
+      return { done, total: 7, pct: done / 7 }
+    } else if (goal.type === 'count') {
+      const done = Object.values(logs).reduce((s, d) => s + (Number(d.counts?.[goal.text]) || 0), 0)
+      const total = Number(goal.target) || null
+      return { done, total, pct: total ? Math.min(1, done / total) : null }
+    } else {
+      const done = Object.values(logs).reduce((s, d) => s + (Number(d.totals?.[goal.text]) || 0), 0)
+      const total = Number(goal.target) || null
+      return { done, total, pct: total ? Math.min(1, done / total) : null }
+    }
+  }
+
+  const dayHasActivity = (log) =>
+    log && (log.note || Object.values(log.habits || {}).some(Boolean) ||
+      Object.values(log.counts || {}).some(v => v > 0) ||
+      Object.values(log.totals || {}).some(v => v > 0))
 
   // SVG line chart path from trend data
   const buildTrendPath = () => {
@@ -506,42 +553,41 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Group trend line chart */}
+          {/* Weekly activity heatmap */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
-            <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-3">Group completion trend</p>
-            <svg viewBox={`0 0 ${trendPath.W || 280} ${trendPath.H || 70}`} className="w-full" preserveAspectRatio="none">
-              {/* Grid lines */}
-              {[0, 0.25, 0.5, 0.75, 1].map(v => {
-                const y = 8 + (1 - v) * 54
-                return <line key={v} x1="16" y1={y} x2="264" y2={y} stroke="#27272a" strokeWidth="1" />
-              })}
-              {/* Area fill */}
-              {trendPath.area && (
-                <path d={trendPath.area} fill="url(#trendFill)" opacity="0.3" />
-              )}
-              {/* Line */}
-              {trendPath.line && (
-                <path d={trendPath.line} fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              )}
-              {/* Dots */}
-              {trendPath.points?.map((p, i) => (
-                <circle key={i} cx={p.x} cy={p.y} r="3" fill="#34d399" />
-              ))}
-              <defs>
-                <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#34d399" />
-                  <stop offset="100%" stopColor="#34d399" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-            </svg>
-            {/* X axis labels */}
-            <div className="flex mt-1">
-              {weekHistory.map((_, i) => (
-                <div key={i} className={`flex-1 text-center text-[9px] font-bold ${i === weekHistory.length - 1 ? 'text-zinc-400' : 'text-zinc-700'}`}>
-                  {i === weekHistory.length - 1 ? 'now' : `w${i + 1}`}
-                </div>
+            <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-3">This week's activity</p>
+            <div className="flex gap-1 mb-2 pl-[76px]">
+              {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => (
+                <div key={d} className="flex-1 text-center text-[9px] font-bold text-zinc-600">{d}</div>
               ))}
             </div>
+            {members.map(name => {
+              const e = getEntry(name)
+              const color = getAvatarColor(name)
+              const logs = e ? (memberLogs[e.id] || {}) : {}
+              const today = new Date(); today.setHours(0,0,0,0)
+              return (
+                <div key={name} className="flex items-center gap-2 mb-2">
+                  <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${color} flex items-center justify-center text-white font-black text-[9px] shrink-0`}>
+                    {name[0].toUpperCase()}
+                  </div>
+                  <p className="text-zinc-400 text-[10px] font-semibold w-[52px] shrink-0 truncate">{name}</p>
+                  <div className="flex flex-1 gap-1">
+                    {weekDays.map(day => {
+                      const key = day.toISOString().split('T')[0]
+                      const isPast = day <= today
+                      const active = dayHasActivity(logs[key])
+                      return (
+                        <div key={key} className={`flex-1 rounded aspect-square ${
+                          active ? `bg-gradient-to-br ${color}` :
+                          isPast ? 'bg-zinc-800' : 'bg-zinc-900 border border-zinc-800'
+                        }`} />
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
           </div>
 
           {/* Individual completion bars */}
@@ -602,20 +648,41 @@ export default function Home() {
                     </span>
                   </div>
                   {e.goalItems?.length > 0 ? (
-                    <div className="space-y-1 pl-7">
-                      {e.goalItems.map((g, i) => (
-                        <div key={i} className="flex items-center gap-2">
-                          <span className={`text-[9px] font-black w-3.5 h-3.5 rounded flex items-center justify-center shrink-0 ${
-                            g.type === 'habit' ? 'bg-violet-500/20 text-violet-400' :
-                            g.type === 'count' ? 'bg-blue-500/20 text-blue-400' :
-                            'bg-emerald-500/20 text-emerald-400'
-                          }`}>
-                            {g.type === 'habit' ? '✓' : g.type === 'count' ? '×' : '#'}
-                          </span>
-                          <span className="text-zinc-400 text-xs flex-1">{g.text}</span>
-                          {g.target && <span className="text-zinc-600 text-[10px]">{g.target} {g.unit}</span>}
-                        </div>
-                      ))}
+                    <div className="space-y-2 pl-7">
+                      {e.goalItems.map((g, i) => {
+                        const prog = getGoalProgress(e.id, g)
+                        const label = g.type === 'habit'
+                          ? `${prog.done}/7 days`
+                          : prog.total
+                            ? `${prog.done}/${prog.total}${g.unit ? ' ' + g.unit : ''}`
+                            : `${prog.done}${g.unit ? ' ' + g.unit : ''}`
+                        return (
+                          <div key={i}>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className={`text-[9px] font-black w-3.5 h-3.5 rounded flex items-center justify-center shrink-0 ${
+                                g.type === 'habit' ? 'bg-violet-500/20 text-violet-400' :
+                                g.type === 'count' ? 'bg-blue-500/20 text-blue-400' :
+                                'bg-emerald-500/20 text-emerald-400'
+                              }`}>
+                                {g.type === 'habit' ? '✓' : g.type === 'count' ? '×' : '#'}
+                              </span>
+                              <span className="text-zinc-300 text-xs flex-1">{g.text}</span>
+                              <span className="text-zinc-500 text-[10px] font-semibold">{label}</span>
+                            </div>
+                            {prog.pct !== null && (
+                              <div className="bg-zinc-800 rounded-full h-1 overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all ${
+                                    prog.pct >= 1 ? 'bg-emerald-400' :
+                                    prog.pct >= 0.5 ? 'bg-amber-400' : 'bg-zinc-500'
+                                  }`}
+                                  style={{ width: `${Math.round(prog.pct * 100)}%` }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
                     </div>
                   ) : (
                     <p className="text-zinc-600 text-xs pl-7">{e.goals}</p>
