@@ -398,23 +398,6 @@ export default function Home() {
                 </span>
               </button>
 
-              {/* Emoji picker */}
-              {pickingAvatar && (
-                <div className="absolute left-0 top-24 z-20 bg-zinc-900 border border-zinc-700 rounded-2xl p-3 shadow-2xl w-64">
-                  <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wide mb-2">Pick an avatar</p>
-                  <div className="grid grid-cols-8 gap-1">
-                    {AVATAR_EMOJIS.map(emoji => (
-                      <button
-                        key={emoji}
-                        onClick={() => saveAvatar(selectedMember, emoji)}
-                        className={`text-xl rounded-lg p-1 hover:bg-zinc-700 transition-colors ${avatars[selectedMember] === emoji ? 'bg-zinc-700 ring-1 ring-emerald-500' : ''}`}
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
               <div>
                 <h2 className="text-3xl font-black text-white leading-none mb-1">{selectedMember}</h2>
                 {streak >= 2
@@ -595,7 +578,29 @@ export default function Home() {
             )}
           </>
         )}
-      </div>
+      {/* Emoji avatar picker — fixed overlay so it's never clipped */}
+      {pickingAvatar && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center pb-8 px-4" onClick={() => setPickingAvatar(false)}>
+          <div className="bg-zinc-900 border border-zinc-700 rounded-3xl p-4 shadow-2xl w-full max-w-sm" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-bold text-zinc-200">Pick your avatar</p>
+              <button onClick={() => setPickingAvatar(false)} className="text-zinc-500 hover:text-zinc-300"><X size={16} /></button>
+            </div>
+            <div className="grid grid-cols-8 gap-1.5">
+              {AVATAR_EMOJIS.map(emoji => (
+                <button
+                  key={emoji}
+                  onClick={() => saveAvatar(selectedMember, emoji)}
+                  className={`text-2xl rounded-xl p-1.5 hover:bg-zinc-700 transition-colors active:scale-90 ${avatars[selectedMember] === emoji ? 'bg-zinc-700 ring-2 ring-emerald-500' : ''}`}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
     )
   }
 
