@@ -308,22 +308,30 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
                   const val = localCounts[text] ?? weeklyCountValue(text)
                   return (
                     <div key={text} className="space-y-1.5">
-                      <p className="text-xs text-zinc-500">{text}</p>
+                      <p className="text-xs text-zinc-500">{text} — how many today?</p>
                       <div className="flex items-center gap-3">
                         <button onClick={() => adjustCount(text, -1)}
                           className="w-10 h-10 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 flex items-center justify-center transition-colors">
                           <Minus size={16} />
                         </button>
-                        <div className="flex-1 text-center">
-                          <span className="text-2xl font-black text-white">{val}</span>
-                          {target && <span className="text-zinc-500 text-sm">/{target} {unit || 'times'}</span>}
+                        <div className="flex-1 flex items-center justify-center gap-2">
+                          <input type="number" min="0" value={val}
+                            onChange={e => {
+                              const newVal = Math.max(Number(e.target.value) || 0, 0)
+                              setLocalCounts(p => ({ ...p, [text]: newVal }))
+                              if (entryId) setDoc(doc(db, 'entries', entryId, 'dailyLogs', '__count__'), {
+                                counts: { ...(logs['__count__']?.counts || {}), [text]: newVal }
+                              })
+                            }}
+                            className="w-20 bg-zinc-800 border border-zinc-700 rounded-xl px-2 py-2 text-center text-xl font-black text-white focus:outline-none focus:border-emerald-500 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          />
+                          {target && <span className="text-sm text-zinc-500">/{target} {unit || 'times'}</span>}
                         </div>
                         <button onClick={() => adjustCount(text, 1)}
                           className="w-10 h-10 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white flex items-center justify-center transition-colors">
                           <Plus size={16} />
                         </button>
                       </div>
-                      <p className="text-[10px] text-zinc-600 text-center">tap + each time you do it</p>
                     </div>
                   )
                 }
