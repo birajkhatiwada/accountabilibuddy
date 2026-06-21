@@ -705,25 +705,32 @@ export default function Home() {
                 <button
                   key={name}
                   onClick={() => openMember(name)}
-                  className="w-full text-left bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden hover:border-zinc-700 transition-colors flex"
+                  className="w-full text-left bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden hover:border-zinc-700 transition-colors"
                 >
-                  {/* Left: profile */}
-                  <div className={`bg-gradient-to-b ${color} w-24 shrink-0 flex flex-col items-center justify-center gap-1.5 py-5`}>
-                    <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center">
+                  {/* Top: profile */}
+                  <div className="flex items-center gap-3 px-4 py-3">
+                    <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${color} flex items-center justify-center shrink-0`}>
                       {avatars[name]
-                        ? <span className="text-3xl">{avatars[name]}</span>
-                        : <span className="text-white font-black text-2xl">{name[0].toUpperCase()}</span>
+                        ? <span className="text-2xl">{avatars[name]}</span>
+                        : <span className="text-white font-black text-lg">{name[0].toUpperCase()}</span>
                       }
                     </div>
-                    <p className="text-white font-bold text-[11px] text-center leading-tight px-1 truncate w-full">{name}</p>
-                    {streak >= 2 && <p className="text-white/70 text-[10px]">🔥{streak}</p>}
-                    <span className="text-base mt-0.5">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-bold text-sm leading-tight">{name}</p>
+                      <p className="text-zinc-500 text-[11px]">
+                        {streak >= 2 ? `🔥 ${streak}-week streak` : 'This week'}
+                      </p>
+                    </div>
+                    <span className="text-lg">
                       {e.status === 'completed' ? '✅' : e.status === 'failed' ? '❌' : '🔥'}
                     </span>
                   </div>
 
-                  {/* Right: goals */}
-                  <div className="flex-1 px-3 py-3 flex flex-col justify-center gap-2 min-w-0">
+                  {/* Divider */}
+                  <div className="h-px bg-zinc-800 mx-4" />
+
+                  {/* Bottom: goals */}
+                  <div className="px-4 py-3 flex flex-col gap-2">
                     {e.goalItems?.length > 0 ? (
                       e.goalItems.map((g, i) => {
                         const prog = getGoalProgress(e.id, g)
