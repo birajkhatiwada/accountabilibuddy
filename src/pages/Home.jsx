@@ -530,15 +530,20 @@ export default function Home() {
               const elapsed = weekDays.filter(d => d <= today)
               const categories = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].slice(0, elapsed.length)
 
-              const getGoalDailyBinary = (goal) => {
+              const getGoalDailyPct = (goal) => {
                 const logs = memberLogs[entry.id] || {}
-                return elapsed.map(day => {
-                  const k = day.toISOString().split('T')[0]
-                  const log = logs[k]
-                  if (!log) return 0
-                  if (goal.type === 'habit') return log.habits?.[goal.text] ? 1 : 0
-                  if (goal.type === 'count') return (Number(log.counts?.[goal.text]) || 0) > 0 ? 1 : 0
-                  return (Number(log.totals?.[goal.text]) || 0) > 0 ? 1 : 0
+                return elapsed.map((_, dayIdx) => {
+                  const daysUpTo = weekDays.slice(0, dayIdx + 1)
+                  if (goal.type === 'habit') {
+                    const checked = daysUpTo.filter(d => logs[d.toISOString().split('T')[0]]?.habits?.[goal.text]).length
+                    return Math.round(checked / 7 * 100)
+                  } else if (goal.type === 'count') {
+                    const done = daysUpTo.reduce((s, d) => s + (Number(logs[d.toISOString().split('T')[0]]?.counts?.[goal.text]) || 0), 0)
+                    return Math.round(Math.min(1, done / (Number(goal.target) || 1)) * 100)
+                  } else {
+                    const done = daysUpTo.reduce((s, d) => s + (Number(logs[d.toISOString().split('T')[0]]?.totals?.[goal.text]) || 0), 0)
+                    return Math.round(Math.min(1, done / (Number(goal.target) || 1)) * 100)
+                  }
                 })
               }
 
@@ -549,7 +554,7 @@ export default function Home() {
                     highcharts={Highcharts}
                     options={{
                       chart: {
-                        type: 'area',
+                        type: 'areaspline',
                         backgroundColor: 'transparent',
                         height: 180,
                         spacing: [8, 8, 8, 0],
@@ -566,14 +571,11 @@ export default function Home() {
                         gridLineColor: 'transparent',
                       },
                       yAxis: {
-                        min: 0, max: 1,
+                        min: 0, max: 100,
                         title: { text: null },
-                        tickPositions: [0, 1],
-                        labels: {
-                          formatter() { return this.value === 1 ? 'Done' : 'Not done' },
-                          style: { color: '#71717a', fontSize: '10px' },
-                        },
+                        labels: { format: '{value}%', style: { color: '#71717a', fontSize: '10px' } },
                         gridLineColor: '#27272a',
+                        tickPositions: [0, 25, 50, 75, 100],
                       },
                       tooltip: {
                         shared: true,
@@ -581,22 +583,20 @@ export default function Home() {
                         borderColor: '#3f3f46',
                         borderRadius: 12,
                         style: { color: '#e4e4e7', fontSize: '11px' },
-                        pointFormatter() {
-                          return `<span style="color:${this.color}">●</span> ${this.series.name}: <b>${this.y === 1 ? 'Done ✓' : 'Not done'}</b><br/>`
-                        },
+                        pointFormat: '<span style="color:{series.color}">●</span> {series.name}: <b>{point.y}%</b><br/>',
                       },
                       plotOptions: {
-                        area: {
-                          step: 'left',
-                          fillOpacity: 0.2,
+                        areaspline: {
+                          fillOpacity: 0.15,
                           lineWidth: 2,
-                          marker: { enabled: false },
+                          marker: { enabled: true, radius: 3, lineWidth: 0 },
+                          states: { hover: { lineWidth: 2.5 } },
                         },
                       },
                       series: entry.goalItems.map((g, i) => ({
                         name: g.text,
                         color: GOAL_COLORS[i % GOAL_COLORS.length],
-                        data: getGoalDailyBinary(g),
+                        data: getGoalDailyPct(g),
                       })),
                     }}
                   />
