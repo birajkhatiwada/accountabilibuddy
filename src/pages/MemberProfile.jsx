@@ -201,9 +201,11 @@ export default function MemberProfile() {
     <div
       className="flex flex-col space-y-4 min-h-screen -mx-4 px-4 -mt-3 pt-3"
       style={entry?.status === 'completed' ? {
-        backgroundImage: `radial-gradient(ellipse 120% 50% at 50% 0%, #10b98122 0%, transparent 60%),
-          radial-gradient(circle, #fbbf2412 1.5px, transparent 1.5px)`,
-        backgroundSize: 'auto, 24px 24px',
+        background: `
+          radial-gradient(ellipse 80% 40% at 20% 60%, #f59e0b18 0%, transparent 60%),
+          radial-gradient(ellipse 60% 50% at 80% 80%, #10b98118 0%, transparent 60%),
+          radial-gradient(ellipse 100% 45% at 50% 0%, #10b98128 0%, transparent 55%)
+        `,
       } : {}}
     >
 
