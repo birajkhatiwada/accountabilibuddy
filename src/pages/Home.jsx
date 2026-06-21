@@ -523,66 +523,87 @@ export default function Home() {
               </div>
             )}
 
-            {/* 8-week history chart */}
-            {(() => {
-              const memberHistory = weekHistory.map(wId => {
-                const e = allEntries.find(e =>
-                  (e.nameLower || e.name?.toLowerCase()) === selectedMember.toLowerCase() && e.weekId === wId
-                )
-                const color = !e ? '#3f3f46' : e.status === 'completed' ? '#34d399' : e.status === 'failed' ? '#f87171' : '#fbbf24'
-                return { y: e ? 1 : 0.3, color, status: e?.status ?? 'none' }
-              })
+            {/* Per-goal area chart */}
+            {entry?.goalItems?.length > 0 && (() => {
+              const GOAL_COLORS = ['#8b5cf6','#3b82f6','#10b981','#f97316','#ec4899','#14b8a6']
+              const today = new Date(); today.setHours(23,59,59,0)
+              const elapsed = weekDays.filter(d => d <= today)
+              const categories = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].slice(0, elapsed.length)
+
+              const getGoalDailyPct = (goal) =>
+                elapsed.map((_, dayIdx) => {
+                  const logs = memberLogs[entry.id] || {}
+                  const daysUpTo = weekDays.slice(0, dayIdx + 1)
+                  if (goal.type === 'habit') {
+                    const checked = daysUpTo.filter(d => logs[d.toISOString().split('T')[0]]?.habits?.[goal.text]).length
+                    return Math.round(checked / 7 * 100)
+                  } else if (goal.type === 'count') {
+                    const done = daysUpTo.reduce((s, d) => s + (Number(logs[d.toISOString().split('T')[0]]?.counts?.[goal.text]) || 0), 0)
+                    return Math.round(Math.min(1, done / (Number(goal.target) || 1)) * 100)
+                  } else {
+                    const done = daysUpTo.reduce((s, d) => s + (Number(logs[d.toISOString().split('T')[0]]?.totals?.[goal.text]) || 0), 0)
+                    return Math.round(Math.min(1, done / (Number(goal.target) || 1)) * 100)
+                  }
+                })
+
               return (
                 <div className="bg-zinc-800/40 rounded-2xl p-4">
-                  <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-2">8-week track record</p>
+                  <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-2">Goal progress this week</p>
                   <HighchartsReact
                     highcharts={Highcharts}
                     options={{
                       chart: {
-                        type: 'column',
+                        type: 'areaspline',
                         backgroundColor: 'transparent',
-                        height: 120,
-                        spacing: [4, 0, 4, 0],
+                        height: 180,
+                        spacing: [8, 8, 8, 0],
                         style: { fontFamily: 'inherit' },
                       },
                       title: { text: null },
                       credits: { enabled: false },
                       legend: { enabled: false },
                       xAxis: {
-                        categories: weekHistory.map((wId, i) => i === weekHistory.length - 1 ? 'Now' : `W${i + 1}`),
-                        labels: { style: { color: '#71717a', fontSize: '9px' } },
-                        lineColor: 'transparent',
+                        categories,
+                        labels: { style: { color: '#71717a', fontSize: '10px' } },
+                        lineColor: '#27272a',
                         tickColor: 'transparent',
+                        gridLineColor: 'transparent',
                       },
-                      yAxis: { visible: false, max: 1.2 },
+                      yAxis: {
+                        min: 0, max: 100,
+                        title: { text: null },
+                        labels: { format: '{value}%', style: { color: '#71717a', fontSize: '10px' } },
+                        gridLineColor: '#27272a',
+                        tickPositions: [0, 25, 50, 75, 100],
+                      },
                       tooltip: {
+                        shared: true,
                         backgroundColor: '#18181b',
                         borderColor: '#3f3f46',
-                        borderRadius: 10,
+                        borderRadius: 12,
                         style: { color: '#e4e4e7', fontSize: '11px' },
-                        formatter() {
-                          const s = memberHistory[this.point.index].status
-                          const label = s === 'completed' ? '✅ Completed' : s === 'failed' ? '❌ Failed' : s === 'active' ? '🔥 In progress' : '— No entry'
-                          return `<b>${this.x}</b><br/>${label}`
-                        },
+                        pointFormat: '<span style="color:{series.color}">●</span> {series.name}: <b>{point.y}%</b><br/>',
                       },
                       plotOptions: {
-                        column: {
-                          borderRadius: 6,
-                          pointPadding: 0.1,
-                          groupPadding: 0.05,
-                          colorByPoint: true,
+                        areaspline: {
+                          fillOpacity: 0.15,
+                          lineWidth: 2,
+                          marker: { enabled: true, radius: 3, lineWidth: 0 },
+                          states: { hover: { lineWidth: 2.5 } },
                         },
                       },
-                      colors: memberHistory.map(p => p.color),
-                      series: [{ data: memberHistory.map(p => p.y) }],
+                      series: entry.goalItems.map((g, i) => ({
+                        name: g.text,
+                        color: GOAL_COLORS[i % GOAL_COLORS.length],
+                        data: getGoalDailyPct(g),
+                      })),
                     }}
                   />
-                  <div className="flex gap-4 mt-1">
-                    {[['#34d399','Done'],['#fbbf24','Active'],['#f87171','Failed'],['#3f3f46','None']].map(([c, l]) => (
-                      <div key={l} className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-sm" style={{ background: c }} />
-                        <span className="text-[9px] text-zinc-600">{l}</span>
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
+                    {entry.goalItems.map((g, i) => (
+                      <div key={i} className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-sm" style={{ background: GOAL_COLORS[i % GOAL_COLORS.length] }} />
+                        <span className="text-[10px] text-zinc-400">{g.text}</span>
                       </div>
                     ))}
                   </div>
