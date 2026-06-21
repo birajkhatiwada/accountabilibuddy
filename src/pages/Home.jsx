@@ -813,11 +813,39 @@ export default function Home() {
 
           {/* Goals this week */}
           <div className="space-y-2">
-            <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide px-1">This week's goals</p>
+            <div className="flex items-center justify-between px-1">
+              <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide">This week's goals</p>
+              <button
+                onClick={() => setAddingMember(true)}
+                className="flex items-center gap-1 text-zinc-500 hover:text-emerald-400 transition-colors"
+              >
+                <Plus size={14} />
+                <span className="text-[11px] font-bold">Add member</span>
+              </button>
+            </div>
+            {addingMember && (
+              <div className="rounded-2xl border border-zinc-700 bg-zinc-900 px-4 py-4 space-y-3">
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder="Their name..."
+                  value={newMemberName}
+                  onChange={e => setNewMemberName(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') addMember()
+                    if (e.key === 'Escape') { setAddingMember(false); setNewMemberName('') }
+                  }}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors"
+                />
+                <div className="flex gap-2">
+                  <button onClick={addMember} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-2.5 text-sm font-bold transition-colors">Add</button>
+                  <button onClick={() => { setAddingMember(false); setNewMemberName('') }} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded-xl py-2.5 text-sm transition-colors">Cancel</button>
+                </div>
+              </div>
+            )}
             {members.map(name => {
               const e = getEntry(name)
               const color = getAvatarColor(name, members)
-              if (!e?.goalItems?.length && !e?.goals) return null
               const streak = getStreak(name)
               return (
                 <button
@@ -840,7 +868,7 @@ export default function Home() {
                       </p>
                     </div>
                     <span className="text-lg">
-                      {e.status === 'completed' ? '✅' : e.status === 'failed' ? '❌' : '🔥'}
+                      {e?.status === 'completed' ? '✅' : e?.status === 'failed' ? '❌' : e ? '🔥' : '💤'}
                     </span>
                   </div>
 
@@ -849,9 +877,9 @@ export default function Home() {
 
                   {/* Bottom: goals */}
                   <div className="px-4 py-3 flex flex-col gap-2">
-                    {e.goalItems?.length > 0 ? (
+                    {e?.goalItems?.length > 0 ? (
                       e.goalItems.map((g, i) => {
-                        const prog = getGoalProgress(e.id, g)
+                        const prog = getGoalProgress(e?.id, g)
                         const label = g.type === 'habit'
                           ? `${prog.done}/7 days`
                           : prog.total
@@ -885,43 +913,13 @@ export default function Home() {
                         )
                       })
                     ) : (
-                      <p className="text-zinc-600 text-xs">{e.goals}</p>
+                      <p className="text-zinc-600 text-xs italic">No goals set yet — tap to add</p>
                     )}
                   </div>
                 </button>
               )
             })}
           </div>
-
-          {/* Add member */}
-          {addingMember ? (
-            <div className="rounded-2xl border border-zinc-700 bg-zinc-900 px-4 py-4 space-y-3">
-              <input
-                autoFocus
-                type="text"
-                placeholder="Their name..."
-                value={newMemberName}
-                onChange={e => setNewMemberName(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter') addMember()
-                  if (e.key === 'Escape') { setAddingMember(false); setNewMemberName('') }
-                }}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors"
-              />
-              <div className="flex gap-2">
-                <button onClick={addMember} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-2.5 text-sm font-bold transition-colors">Add</button>
-                <button onClick={() => { setAddingMember(false); setNewMemberName('') }} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded-xl py-2.5 text-sm transition-colors">Cancel</button>
-              </div>
-            </div>
-          ) : (
-            <button
-              onClick={() => setAddingMember(true)}
-              className="w-full rounded-2xl border-2 border-dashed border-zinc-800 hover:border-zinc-600 py-4 flex items-center justify-center gap-3 text-zinc-600 hover:text-zinc-400 transition-all"
-            >
-              <Plus size={16} />
-              <span className="text-sm font-semibold">Add a member</span>
-            </button>
-          )}
         </div>
       )}
     </div>
