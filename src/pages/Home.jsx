@@ -553,6 +553,33 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Group trend line chart */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
+            <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-3">Group completion trend</p>
+            <svg viewBox={`0 0 280 70`} className="w-full" preserveAspectRatio="none">
+              {[0, 0.25, 0.5, 0.75, 1].map(v => {
+                const y = 8 + (1 - v) * 54
+                return <line key={v} x1="16" y1={y} x2="264" y2={y} stroke="#27272a" strokeWidth="1" />
+              })}
+              {trendPath.area && <path d={trendPath.area} fill="url(#trendFill)" opacity="0.3" />}
+              {trendPath.line && <path d={trendPath.line} fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />}
+              {trendPath.points?.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r="3" fill="#34d399" />)}
+              <defs>
+                <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#34d399" />
+                  <stop offset="100%" stopColor="#34d399" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+            </svg>
+            <div className="flex mt-1">
+              {weekHistory.map((_, i) => (
+                <div key={i} className={`flex-1 text-center text-[9px] font-bold ${i === weekHistory.length - 1 ? 'text-zinc-400' : 'text-zinc-700'}`}>
+                  {i === weekHistory.length - 1 ? 'now' : `w${i + 1}`}
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* Weekly activity heatmap */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
             <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-3">This week's activity</p>
