@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { collection, doc, onSnapshot, setDoc, updateDoc, increment } from 'firebase/firestore'
-import { db } from '../firebase'
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { db, storage } from '../firebase'
 import { getCurrentWeekId } from '../utils'
-import { Send, Plus, Minus } from 'lucide-react'
+import { Send, Plus, Minus, Camera, X } from 'lucide-react'
 
 function getWeekDays(weekId) {
   const base = new Date(weekId + 'T00:00:00')
@@ -13,7 +14,6 @@ function getWeekDays(weekId) {
   })
 }
 
-// Fallback for old plain-text goals
 function parseGoalsText(goalsText) {
   return (goalsText || '').split('\n')
     .map(l => l.replace(/^[-•*]\s*/, '').trim())
@@ -26,8 +26,7 @@ function dateKey(date) {
 }
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-
-// ── small sub-components ──────────────────────────────────────────────────────
+const REACTIONS = ['🔥', '💪', '👏', '❤️']
 
 function Checkmark({ checked }) {
   return (
@@ -43,21 +42,20 @@ function Checkmark({ checked }) {
   )
 }
 
-// ── main component ────────────────────────────────────────────────────────────
-
 export default function WeekCalendar({ entryId, goalItems, goals }) {
   const weekId = getCurrentWeekId()
   const days = getWeekDays(weekId)
   const todayKey = dateKey(new Date())
 
   const [selectedDay, setSelectedDay] = useState(todayKey)
-  const [logs, setLogs] = useState({})     // { 'YYYY-MM-DD': { habit, count, total, notes } }
+  const [logs, setLogs] = useState({})
   const [noteInput, setNoteInput] = useState('')
   const [saving, setSaving] = useState(false)
-  // Local optimistic state so UI updates instantly without waiting for Firestore
+  const [uploading, setUploading] = useState(false)
   const [localTotals, setLocalTotals] = useState({})
   const [localCounts, setLocalCounts] = useState({})
   const saveTimers = useRef({})
+  const fileInputRef = useRef(null)
 
   const resolvedGoals = goalItems?.length ? goalItems : parseGoalsText(goals)
 
@@ -85,7 +83,6 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
 
   // ── per-goal helpers ──────────────────────────────────────────────────────
 
-  // habit: simple toggle, no race condition possible
   const toggleHabit = (dayKey, goalText) => {
     const current = getDayLog(dayKey)
     const habits = { ...(current.habits || {}) }
@@ -93,7 +90,6 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
     patchDay(dayKey, { habits })
   }
 
-  // count: stored per-day (same as total), optimistic local state
   const adjustCount = (dayKey, goalText, delta) => {
     if (!entryId) return
     const localKey = `${dayKey}__count__${goalText}`
@@ -128,7 +124,6 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
     }, 400)
   }
 
-  // total: optimistic local state + debounced save to Firestore
   const adjustTotal = (dayKey, goalText, delta) => {
     const firestoreVal = logs[dayKey]?.totals?.[goalText] || 0
     const localKey = `${dayKey}__${goalText}`
@@ -137,7 +132,6 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
 
     setLocalTotals(p => ({ ...p, [localKey]: newVal }))
 
-    // Debounce the Firestore write by 400ms
     clearTimeout(saveTimers.current[localKey])
     saveTimers.current[localKey] = setTimeout(async () => {
       const current = getDayLog(dayKey)
@@ -174,15 +168,43 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
     setSaving(false)
   }
 
-  // ── activity detection for dots ───────────────────────────────────────────
+  const addReaction = async (dayKey, emoji) => {
+    if (!entryId) return
+    const current = getDayLog(dayKey)
+    const reactions = { ...(current.reactions || {}) }
+    reactions[emoji] = (reactions[emoji] || 0) + 1
+    await patchDay(dayKey, { reactions })
+  }
+
+  const uploadPhoto = async (dayKey, file) => {
+    if (!entryId || !file) return
+    setUploading(true)
+    try {
+      const path = `photos/${entryId}/${dayKey}/${Date.now()}_${file.name}`
+      const snap = await uploadBytes(storageRef(storage, path), file)
+      const url = await getDownloadURL(snap.ref)
+      const current = getDayLog(dayKey)
+      await setDoc(doc(db, 'entries', entryId, 'dailyLogs', dayKey), {
+        ...current,
+        photos: [...(current.photos || []), url],
+      })
+    } catch (e) {
+      console.error('Upload failed:', e)
+    }
+    setUploading(false)
+  }
+
+  // ── activity detection ────────────────────────────────────────────────────
 
   const dayHasActivity = (key) => {
     const log = logs[key]
     if (!log) return false
     return (
       (log.notes?.length > 0) ||
+      (log.photos?.length > 0) ||
       Object.values(log.habits || {}).some(Boolean) ||
-      Object.values(log.totals || {}).some(v => v > 0)
+      Object.values(log.totals || {}).some(v => v > 0) ||
+      Object.values(log.counts || {}).some(v => v > 0)
     )
   }
 
@@ -313,6 +335,7 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
             {dateKey(selectedDate) === todayKey && <span className="ml-2 text-xs text-emerald-400 font-semibold">Today</span>}
           </p>
 
+          {/* Goal inputs */}
           {resolvedGoals.length > 0 && (
             <div className="space-y-4">
               {resolvedGoals.map(({ text, type, target, unit }) => {
@@ -389,8 +412,32 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
             </div>
           )}
 
-          {resolvedGoals.length > 0 && <div className="border-t border-zinc-800" />}
+          <div className="border-t border-zinc-800" />
 
+          {/* Reactions */}
+          <div className="space-y-1.5">
+            <p className="text-xs text-zinc-600 uppercase tracking-wider">Cheer</p>
+            <div className="flex gap-2">
+              {REACTIONS.map(emoji => {
+                const count = selectedLog.reactions?.[emoji] || 0
+                return (
+                  <button key={emoji} onClick={() => addReaction(selectedDay, emoji)}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border transition-all active:scale-95 ${
+                      count > 0
+                        ? 'bg-zinc-800 border-zinc-600 text-white'
+                        : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300'
+                    }`}>
+                    <span className="text-base leading-none">{emoji}</span>
+                    {count > 0 && <span className="text-xs font-bold text-zinc-300">{count}</span>}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="border-t border-zinc-800" />
+
+          {/* Notes */}
           {selectedLog.notes?.length > 0 && (
             <div className="space-y-1.5">
               <p className="text-xs text-zinc-600 uppercase tracking-wider">Notes</p>
@@ -415,6 +462,26 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
               <Send size={15} />
             </button>
           </div>
+
+          {/* Photo uploads */}
+          {selectedLog.photos?.length > 0 && (
+            <div className="grid grid-cols-3 gap-2">
+              {selectedLog.photos.map((url, i) => (
+                <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+                  <img src={url} alt="" className="w-full aspect-square object-cover rounded-xl border border-zinc-800 hover:border-zinc-600 transition-colors" />
+                </a>
+              ))}
+            </div>
+          )}
+
+          <input type="file" accept="image/*" ref={fileInputRef} className="hidden"
+            onChange={e => { if (e.target.files[0]) uploadPhoto(selectedDay, e.target.files[0]); e.target.value = '' }}
+          />
+          <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:border-zinc-500 transition-colors text-sm disabled:opacity-40">
+            <Camera size={14} />
+            {uploading ? 'Uploading...' : 'Add photo proof'}
+          </button>
         </div>
       )}
     </div>

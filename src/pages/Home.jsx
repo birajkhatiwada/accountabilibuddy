@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, addDoc, setDoc, Timestamp } from 'firebase/firestore'
 import { db } from '../firebase'
 import { getCurrentWeekId, formatWeekLabel, formatTimestamp } from '../utils'
-import { CheckCircle, XCircle, Send, AlertTriangle, ArrowLeft, Plus, Check, Pencil } from 'lucide-react'
+import { CheckCircle, XCircle, Send, AlertTriangle, ArrowLeft, Plus, Check, Pencil, X } from 'lucide-react'
 import WeekCalendar from '../components/WeekCalendar'
 import GoalBuilder from '../components/GoalBuilder'
 
@@ -35,16 +35,18 @@ export default function Home() {
   const weekId = getCurrentWeekId()
   const [members, setMembers] = useState([])
   const [entries, setEntries] = useState([])
+  const [allEntries, setAllEntries] = useState([])
   const [activeTab, setActiveTab] = useState(ALL)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [goalsInput, setGoalsInput] = useState([])  // array of goal objects from GoalBuilder
+  const [goalsInput, setGoalsInput] = useState([])
   const [proofInput, setProofInput] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [confirmFail, setConfirmFail] = useState(false)
   const [addingMember, setAddingMember] = useState(false)
   const [newMemberName, setNewMemberName] = useState('')
   const [editingGoals, setEditingGoals] = useState(false)
+  const [bannerDismissed, setBannerDismissed] = useState(false)
 
   useEffect(() => {
     const unsub = onSnapshot(MEMBERS_DOC, (snap) => {
@@ -62,8 +64,28 @@ export default function Home() {
     return unsub
   }, [weekId])
 
+  // Load all entries for streak calculation
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'entries'), (snap) => {
+      setAllEntries(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    })
+    return unsub
+  }, [])
+
   const getEntry = (name) =>
     entries.find(e => (e.nameLower || e.name.toLowerCase()) === name.toLowerCase())
+
+  const getStreak = (name) => {
+    const past = allEntries
+      .filter(e => (e.nameLower || e.name?.toLowerCase()) === name.toLowerCase() && e.weekId < weekId)
+      .sort((a, b) => b.weekId.localeCompare(a.weekId))
+    let streak = 0
+    for (const e of past) {
+      if (e.status === 'completed') streak++
+      else break
+    }
+    return streak
+  }
 
   const switchTab = (tab) => {
     setActiveTab(tab)
@@ -77,7 +99,6 @@ export default function Home() {
     const validGoals = goalsInput.filter(g => g.text.trim())
     if (!validGoals.length) return
     setSubmitting(true)
-    // Build a plain text summary for display on cards
     const goalsSummary = validGoals.map(g =>
       g.type === 'habit' ? `${g.text} (every day)` :
       g.target ? `${g.text} (${g.target} ${g.unit})` : g.text
@@ -149,6 +170,11 @@ export default function Home() {
     setConfirmFail(false)
   }
 
+  // Monday banner: show if today is Monday and some members haven't submitted
+  const todayIsMonday = new Date().getDay() === 1
+  const missingGoals = members.filter(m => !getEntry(m))
+  const showBanner = todayIsMonday && missingGoals.length > 0 && !bannerDismissed
+
   if (loading) return (
     <div className="flex items-center justify-center mt-24">
       <div className="w-6 h-6 border-2 border-zinc-600 border-t-emerald-400 rounded-full animate-spin" />
@@ -174,6 +200,23 @@ export default function Home() {
 
   return (
     <div className="flex flex-col">
+
+      {/* Monday new-week banner */}
+      {showBanner && (
+        <div className="mb-3 bg-amber-950/40 border border-amber-800/50 rounded-2xl px-4 py-3 flex items-start gap-3">
+          <span className="text-xl shrink-0">📅</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-amber-300 font-bold text-sm">New week — lock in your goals!</p>
+            <p className="text-amber-400/70 text-xs mt-0.5">
+              {missingGoals.join(', ')} {missingGoals.length === 1 ? 'hasn\'t' : 'haven\'t'} submitted yet.
+            </p>
+          </div>
+          <button onClick={() => setBannerDismissed(true)} className="text-amber-600 hover:text-amber-400 transition-colors shrink-0 mt-0.5">
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       {/* Week label */}
       <p className="text-xs text-zinc-500 mb-3 font-medium">{formatWeekLabel(weekId)}</p>
 
@@ -193,6 +236,7 @@ export default function Home() {
         {members.map(name => {
           const e = getEntry(name)
           const isActive = activeTab === name
+          const streak = getStreak(name)
           return (
             <button
               key={name}
@@ -209,6 +253,11 @@ export default function Home() {
                 e.status === 'failed' ? 'bg-red-400' : 'bg-amber-400'
               }`} />
               {name}
+              {streak >= 2 && (
+                <span className={`text-[10px] font-black ${isActive ? 'text-amber-500' : 'text-amber-400'}`}>
+                  🔥{streak}
+                </span>
+              )}
             </button>
           )
         })}
@@ -245,6 +294,7 @@ export default function Home() {
           {members.map(name => {
             const e = getEntry(name)
             const color = getAvatarColor(name)
+            const streak = getStreak(name)
             const cardBorder =
               e?.status === 'failed' ? 'border-red-800/40 bg-gradient-to-b from-red-950/20 to-zinc-900' :
               e?.status === 'completed' ? 'border-emerald-800/40 bg-gradient-to-b from-emerald-950/20 to-zinc-900' :
@@ -256,7 +306,6 @@ export default function Home() {
                 onClick={() => switchTab(name)}
                 className={`rounded-2xl border p-3.5 text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${cardBorder}`}
               >
-                {/* Avatar + status */}
                 <div className="flex items-center justify-between mb-2.5">
                   <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center text-white font-black text-sm`}>
                     {name[0].toUpperCase()}
@@ -264,10 +313,11 @@ export default function Home() {
                   <StatusPill entry={e} />
                 </div>
 
-                {/* Name */}
-                <p className="font-bold text-white text-sm mb-1">{name}</p>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <p className="font-bold text-white text-sm">{name}</p>
+                  {streak >= 2 && <span className="text-[10px] font-black text-amber-400">🔥{streak}</span>}
+                </div>
 
-                {/* Goals preview */}
                 {e ? (
                   <>
                     <p className="text-zinc-500 text-xs line-clamp-2 leading-relaxed">{e.goals}</p>
@@ -289,7 +339,6 @@ export default function Home() {
       {/* MEMBER VIEW */}
       {activeTab !== ALL && (
         <div className="space-y-3 mt-1">
-          {/* Back hint */}
           <button
             onClick={() => switchTab(ALL)}
             className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300 transition-colors mb-1"
@@ -299,7 +348,6 @@ export default function Home() {
 
           {!entry ? (
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
-              {/* Avatar header */}
               <div className="flex items-center gap-3">
                 <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${getAvatarColor(activeTab)} flex items-center justify-center text-white font-black text-lg`}>
                   {activeTab[0].toUpperCase()}
@@ -330,8 +378,13 @@ export default function Home() {
                   <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${getAvatarColor(entry.name)} flex items-center justify-center text-white font-black text-lg shrink-0`}>
                     {entry.name[0].toUpperCase()}
                   </div>
-                  <div className="flex-1">
-                    <p className="font-bold text-white text-lg leading-tight">{entry.name}</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="font-bold text-white text-lg leading-tight">{entry.name}</p>
+                      {getStreak(entry.name) >= 2 && (
+                        <span className="text-sm font-black text-amber-400">🔥{getStreak(entry.name)}</span>
+                      )}
+                    </div>
                     <StatusPill entry={entry} />
                   </div>
                   <button
@@ -339,7 +392,7 @@ export default function Home() {
                       if (!editingGoals && entry.goalItems?.length) setGoalsInput(entry.goalItems)
                       setEditingGoals(v => !v)
                     }}
-                    className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-xl transition-colors ${
+                    className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-xl transition-colors shrink-0 ${
                       editingGoals
                         ? 'bg-zinc-700 text-zinc-300'
                         : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200'
@@ -362,10 +415,10 @@ export default function Home() {
                     </button>
                   </div>
                 ) : (
-                <div className="bg-zinc-800/50 rounded-xl p-3">
-                  <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1.5">Goals this week</p>
-                  <p className="text-zinc-200 text-sm whitespace-pre-wrap leading-relaxed">{entry.goals}</p>
-                </div>
+                  <div className="bg-zinc-800/50 rounded-xl p-3">
+                    <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1.5">Goals this week</p>
+                    <p className="text-zinc-200 text-sm whitespace-pre-wrap leading-relaxed">{entry.goals}</p>
+                  </div>
                 )}
               </div>
 
