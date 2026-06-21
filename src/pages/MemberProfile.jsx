@@ -268,14 +268,6 @@ export default function MemberProfile() {
               )}
             </div>
           </div>
-          {entry && !editingGoals && (
-            <button
-              onClick={() => { if (entry.goalItems?.length) setGoalsInput(entry.goalItems); setEditingGoals(true) }}
-              className="bg-black/20 hover:bg-black/30 text-white/80 hover:text-white rounded-xl px-3 py-2 text-xs font-bold flex items-center gap-1.5 transition-colors shrink-0"
-            >
-              <Pencil size={11} /> Edit
-            </button>
-          )}
         </div>
       </div>
 
@@ -348,7 +340,15 @@ export default function MemberProfile() {
 
           {!editingGoals && entry.goalItems?.length > 0 && (
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
-              <p className="text-xs text-zinc-500 uppercase tracking-wider mb-3 font-semibold">Goals this week</p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Goals this week</p>
+                <button
+                  onClick={() => { setGoalsInput(entry.goalItems); setEditingGoals(true) }}
+                  className="flex items-center gap-1 text-zinc-500 hover:text-zinc-200 transition-colors text-xs"
+                >
+                  <Pencil size={11} /> Edit
+                </button>
+              </div>
               <div className="space-y-2">
                 {entry.goalItems.map((g, i) => (
                   <div key={i} className="flex items-center gap-3 bg-zinc-800/60 rounded-xl px-3 py-2.5">
