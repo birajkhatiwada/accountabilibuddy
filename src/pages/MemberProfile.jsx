@@ -26,6 +26,10 @@ const AVATAR_COLORS = [
   'from-pink-500 to-rose-600',     'from-indigo-500 to-blue-600',
   'from-teal-500 to-emerald-600',  'from-fuchsia-500 to-pink-600',
 ]
+const AVATAR_HEX = [
+  '#8b5cf6', '#3b82f6', '#10b981', '#f97316',
+  '#ec4899', '#6366f1', '#14b8a6', '#d946ef',
+]
 
 const GOAL_COLORS = ['#8b5cf6','#3b82f6','#10b981','#f97316','#ec4899','#14b8a6']
 
@@ -90,7 +94,9 @@ export default function MemberProfile() {
     setTimeout(() => confetti({ particleCount: 60, spread: 60, origin: { y: 0.3 }, colors, angle: 120 }), 400)
   }, [entry?.status])
 
-  const color = AVATAR_COLORS[members.indexOf(name) % AVATAR_COLORS.length] || AVATAR_COLORS[0]
+  const colorIdx = members.indexOf(name) % AVATAR_COLORS.length
+  const color = AVATAR_COLORS[colorIdx < 0 ? 0 : colorIdx] || AVATAR_COLORS[0]
+  const colorHex = AVATAR_HEX[colorIdx < 0 ? 0 : colorIdx] || AVATAR_HEX[0]
   const streak = (() => {
     const past = allEntries
       .filter(e => (e.nameLower || e.name?.toLowerCase()) === name.toLowerCase() && e.weekId < weekId)
@@ -192,7 +198,13 @@ export default function MemberProfile() {
   )
 
   return (
-    <div className="flex flex-col space-y-4">
+    <div
+      className="flex flex-col space-y-4 min-h-screen -mx-4 px-4 -mt-3 pt-3"
+      style={{
+        backgroundImage: `radial-gradient(circle, ${colorHex}18 1.5px, transparent 1.5px)`,
+        backgroundSize: '22px 22px',
+      }}
+    >
 
       {/* Back + delete */}
       <div className="flex items-center justify-between">
