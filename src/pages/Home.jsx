@@ -398,7 +398,7 @@ export default function Home() {
           <p className="text-sm text-zinc-500">Add your crew below</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-3">
           {members.map(name => {
             const e = getEntry(name)
             const color = getAvatarColor(name)
@@ -410,86 +410,88 @@ export default function Home() {
               e ? '🔥' : '💤'
 
             const statusLabel =
-              e?.status === 'completed' ? 'Done!' :
-              e?.status === 'failed' ? 'Failed' :
-              e ? 'Active' : 'No goals'
+              e?.status === 'completed' ? 'Week done!' :
+              e?.status === 'failed' ? 'Failed this week' :
+              e ? 'In progress' : 'No goals yet'
 
             const statusColor =
-              e?.status === 'completed' ? 'text-emerald-300' :
-              e?.status === 'failed' ? 'text-red-300' :
-              e ? 'text-amber-300' : 'text-zinc-500'
+              e?.status === 'completed' ? 'text-emerald-400' :
+              e?.status === 'failed' ? 'text-red-400' :
+              e ? 'text-amber-400' : 'text-zinc-500'
 
             return (
               <button
                 key={name}
                 onClick={() => openMember(name)}
-                className="text-left rounded-3xl overflow-hidden transition-all active:scale-[0.97] hover:scale-[1.02]"
+                className="w-full text-left rounded-2xl overflow-hidden transition-all active:scale-[0.98] hover:brightness-110 flex h-28"
               >
-                {/* Gradient top */}
-                <div className={`bg-gradient-to-br ${color} p-4 pb-5 relative`}>
-                  {/* Streak badge */}
-                  {streak >= 2 && (
-                    <span className="absolute top-3 right-3 text-[11px] font-black text-white bg-black/25 px-2 py-0.5 rounded-full">
-                      🔥{streak}
-                    </span>
-                  )}
-                  {/* Big circular avatar */}
-                  <div className="w-14 h-14 rounded-full bg-white/25 backdrop-blur flex items-center justify-center text-white font-black text-2xl mb-2">
+                {/* Gradient left panel */}
+                <div className={`bg-gradient-to-br ${color} w-28 shrink-0 flex flex-col items-center justify-center relative overflow-hidden`}>
+                  <div className="absolute -bottom-4 -right-4 w-16 h-16 rounded-full bg-white/10" />
+                  <div className="w-14 h-14 rounded-full bg-white/25 flex items-center justify-center text-white font-black text-2xl relative z-10">
                     {name[0].toUpperCase()}
                   </div>
-                  <p className="font-black text-white text-base leading-tight drop-shadow">{name}</p>
                 </div>
 
-                {/* Dark bottom */}
-                <div className="bg-zinc-900 px-3.5 pt-3 pb-3.5 space-y-1.5">
-                  <p className={`text-xs font-bold ${statusColor}`}>
-                    {statusEmoji} {statusLabel}
-                  </p>
+                {/* Right content */}
+                <div className="flex-1 bg-zinc-900 px-4 py-3.5 flex flex-col justify-between min-w-0">
+                  <div>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <p className="font-black text-white text-base leading-tight">{name}</p>
+                      {streak >= 2 && (
+                        <span className="text-[11px] font-black text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded-lg shrink-0">🔥{streak}</span>
+                      )}
+                    </div>
+                    <p className={`text-xs font-semibold ${statusColor}`}>{statusEmoji} {statusLabel}</p>
+                  </div>
                   {e?.goals ? (
                     <p className="text-zinc-500 text-[11px] line-clamp-2 leading-relaxed">{e.goals}</p>
                   ) : (
-                    <p className="text-zinc-700 text-[11px] italic">Tap to set goals</p>
+                    <p className="text-zinc-600 text-xs italic">Tap to lock in goals</p>
                   )}
                 </div>
               </button>
             )
           })}
 
-          {/* Add member card */}
+          {/* Add member */}
           {addingMember ? (
-            <div className="rounded-3xl border border-zinc-700 bg-zinc-900 p-4 space-y-2 flex flex-col justify-center min-h-[148px]">
-              <input
-                autoFocus
-                type="text"
-                placeholder="Their name..."
-                value={newMemberName}
-                onChange={e => setNewMemberName(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter') addMember()
-                  if (e.key === 'Escape') { setAddingMember(false); setNewMemberName('') }
-                }}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors"
-              />
-              <div className="flex gap-1.5">
-                <button onClick={addMember}
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-2 text-xs font-bold transition-colors">
-                  Add
-                </button>
-                <button onClick={() => { setAddingMember(false); setNewMemberName('') }}
-                  className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded-xl py-2 text-xs transition-colors">
-                  Cancel
-                </button>
+            <div className="rounded-2xl border border-zinc-700 bg-zinc-900 px-4 py-3.5 flex items-center gap-3 h-28">
+              <div className="w-28 shrink-0 flex flex-col items-center justify-center gap-1 text-zinc-600">
+                <div className="w-14 h-14 rounded-full border-2 border-dashed border-zinc-700 flex items-center justify-center">
+                  <Plus size={18} />
+                </div>
+              </div>
+              <div className="flex-1 space-y-2">
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder="Their name..."
+                  value={newMemberName}
+                  onChange={e => setNewMemberName(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') addMember()
+                    if (e.key === 'Escape') { setAddingMember(false); setNewMemberName('') }
+                  }}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors"
+                />
+                <div className="flex gap-1.5">
+                  <button onClick={addMember} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-1.5 text-xs font-bold transition-colors">Add</button>
+                  <button onClick={() => { setAddingMember(false); setNewMemberName('') }} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded-xl py-1.5 text-xs transition-colors">Cancel</button>
+                </div>
               </div>
             </div>
           ) : (
             <button
               onClick={() => setAddingMember(true)}
-              className="rounded-3xl border-2 border-dashed border-zinc-800 hover:border-zinc-600 flex flex-col items-center justify-center gap-2 text-zinc-600 hover:text-zinc-400 transition-all min-h-[148px]"
+              className="w-full rounded-2xl border border-dashed border-zinc-800 hover:border-zinc-600 flex items-center gap-4 px-4 h-28 text-zinc-600 hover:text-zinc-400 transition-all"
             >
-              <div className="w-14 h-14 rounded-full border-2 border-dashed border-zinc-700 flex items-center justify-center">
-                <Plus size={20} />
+              <div className="w-28 shrink-0 flex items-center justify-center">
+                <div className="w-14 h-14 rounded-full border-2 border-dashed border-zinc-700 flex items-center justify-center">
+                  <Plus size={20} />
+                </div>
               </div>
-              <span className="text-xs font-semibold">Add member</span>
+              <span className="text-sm font-semibold">Add a member</span>
             </button>
           )}
         </div>
