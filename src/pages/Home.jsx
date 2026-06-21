@@ -428,7 +428,7 @@ export default function Home() {
           <p className="text-sm text-zinc-500">Add your crew below</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-3">
           {members.map(name => {
             const e = getEntry(name)
             const color = getAvatarColor(name)
@@ -448,29 +448,32 @@ export default function Home() {
               <button
                 key={name}
                 onClick={() => openMember(name)}
-                className="text-left rounded-2xl overflow-hidden transition-all active:scale-[0.95] hover:scale-[1.03] flex flex-col items-center"
+                className="w-full text-left rounded-2xl overflow-hidden transition-all active:scale-[0.98] flex"
               >
-                {/* Avatar bubble */}
-                <div className={`w-full bg-gradient-to-br ${color} flex flex-col items-center pt-7 pb-5 relative overflow-hidden`}>
-                  <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/10" />
-                  <div className="absolute -bottom-4 -left-4 w-16 h-16 rounded-full bg-black/10" />
-                  <div className={`w-20 h-20 rounded-full bg-white/25 flex items-center justify-center text-white font-black text-3xl ring-3 ring-offset-2 ring-offset-transparent ${ringColor} mb-3 relative z-10`}>
+                {/* Gradient left panel */}
+                <div className={`bg-gradient-to-br ${color} w-32 shrink-0 flex flex-col items-center justify-center py-5 relative overflow-hidden`}>
+                  <div className="absolute -top-4 -right-4 w-16 h-16 rounded-full bg-white/10" />
+                  <div className={`w-16 h-16 rounded-full bg-white/25 flex items-center justify-center text-white font-black text-2xl ring-2 ring-white/40 relative z-10`}>
                     {name[0].toUpperCase()}
                   </div>
-                  <p className="text-white font-black text-base text-center leading-tight px-2 w-full truncate relative z-10">{name}</p>
                   {streak >= 2 && (
-                    <span className="text-xs font-black text-white/80 mt-1 relative z-10">🔥 {streak} streak</span>
+                    <span className="text-[10px] font-black text-white/80 mt-1.5 relative z-10">🔥{streak}</span>
                   )}
                 </div>
 
-                {/* Status */}
-                <div className="w-full bg-zinc-900 py-2.5 flex items-center justify-center gap-1.5">
-                  <span className="text-base">{statusEmoji}</span>
-                  <span className={`text-xs font-bold ${
+                {/* Right content */}
+                <div className="flex-1 bg-zinc-900 px-4 py-4 flex flex-col justify-center gap-1 min-w-0">
+                  <p className="text-white font-black text-lg leading-tight">{name}</p>
+                  <p className={`text-sm font-semibold ${
                     e?.status === 'completed' ? 'text-emerald-400' :
                     e?.status === 'failed' ? 'text-red-400' :
                     e ? 'text-amber-400' : 'text-zinc-600'
-                  }`}>{e?.status === 'completed' ? 'Done!' : e?.status === 'failed' ? 'Failed' : e ? 'Active' : 'No goals'}</span>
+                  }`}>{statusEmoji} {e?.status === 'completed' ? 'Week done!' : e?.status === 'failed' ? 'Failed' : e ? 'In progress' : 'No goals yet'}</p>
+                  {e?.goalItems?.length > 0 && (
+                    <p className="text-zinc-500 text-xs mt-0.5 line-clamp-1">
+                      {e.goalItems.map(g => g.text).join(' · ')}
+                    </p>
+                  )}
                 </div>
               </button>
             )
@@ -478,7 +481,7 @@ export default function Home() {
 
           {/* Add member */}
           {addingMember ? (
-            <div className="col-span-2 rounded-2xl border border-zinc-700 bg-zinc-900 px-4 py-4 space-y-3">
+            <div className="rounded-2xl border border-zinc-700 bg-zinc-900 px-4 py-4 space-y-3">
               <input
                 autoFocus
                 type="text"
@@ -499,12 +502,10 @@ export default function Home() {
           ) : (
             <button
               onClick={() => setAddingMember(true)}
-              className="rounded-2xl border-2 border-dashed border-zinc-800 hover:border-zinc-600 flex flex-col items-center justify-center gap-1 text-zinc-600 hover:text-zinc-400 transition-all py-5"
+              className="w-full rounded-2xl border-2 border-dashed border-zinc-800 hover:border-zinc-600 py-5 flex items-center justify-center gap-3 text-zinc-600 hover:text-zinc-400 transition-all"
             >
-              <div className="w-14 h-14 rounded-full border-2 border-dashed border-zinc-700 flex items-center justify-center mb-1">
-                <Plus size={20} />
-              </div>
-              <span className="text-[11px] font-semibold">Add</span>
+              <Plus size={16} />
+              <span className="text-sm font-semibold">Add a member</span>
             </button>
           )}
         </div>
