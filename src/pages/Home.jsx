@@ -169,6 +169,34 @@ export default function Home() {
   const missingGoals = members.filter(m => !getEntry(m))
   const showBanner = todayIsMonday && missingGoals.length > 0 && !bannerDismissed
 
+  // Build last 8 week IDs (oldest → newest)
+  const getLastWeekIds = (n) => {
+    const ids = []
+    const today = new Date()
+    const day = today.getDay()
+    const monday = new Date(today)
+    monday.setDate(today.getDate() - (day === 0 ? 6 : day - 1))
+    for (let i = n - 1; i >= 0; i--) {
+      const d = new Date(monday)
+      d.setDate(monday.getDate() - i * 7)
+      ids.push(d.toISOString().split('T')[0])
+    }
+    return ids
+  }
+  const weekHistory = getLastWeekIds(8)
+
+  const getMemberWeekStatus = (name, wId) => {
+    const e = allEntries.find(e =>
+      (e.nameLower || e.name?.toLowerCase()) === name.toLowerCase() && e.weekId === wId
+    )
+    if (!e) return 'none'
+    return e.status // 'active' | 'completed' | 'failed'
+  }
+
+  const potTotal = allEntries.filter(e => e.status === 'failed').length * PENALTY
+  const doneThisWeek = entries.filter(e => e.status === 'completed').length
+  const activeThisWeek = entries.filter(e => e.status === 'active').length
+
   if (loading) return (
     <div className="flex items-center justify-center mt-24">
       <div className="w-6 h-6 border-2 border-zinc-600 border-t-emerald-400 rounded-full animate-spin" />
@@ -428,67 +456,148 @@ export default function Home() {
           <p className="text-sm text-zinc-500">Add your crew below</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {members.map(name => {
-            const e = getEntry(name)
-            const color = getAvatarColor(name)
-            const streak = getStreak(name)
+        <div className="space-y-4">
 
-            const ringColor =
-              e?.status === 'completed' ? 'ring-emerald-400' :
-              e?.status === 'failed' ? 'ring-red-500' :
-              e ? 'ring-amber-400' : 'ring-zinc-700'
+          {/* Summary stats */}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="bg-zinc-900 rounded-2xl p-3 text-center border border-zinc-800">
+              <p className="text-2xl font-black text-emerald-400">{doneThisWeek}</p>
+              <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wide mt-0.5">Done</p>
+            </div>
+            <div className="bg-zinc-900 rounded-2xl p-3 text-center border border-zinc-800">
+              <p className="text-2xl font-black text-amber-400">{activeThisWeek}</p>
+              <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wide mt-0.5">Active</p>
+            </div>
+            <div className="bg-zinc-900 rounded-2xl p-3 text-center border border-zinc-800">
+              <p className="text-2xl font-black text-red-400">${potTotal}</p>
+              <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wide mt-0.5">The Pot</p>
+            </div>
+          </div>
 
-            const statusEmoji =
-              e?.status === 'completed' ? '✅' :
-              e?.status === 'failed' ? '❌' :
-              e ? '🔥' : '💤'
+          {/* Progress graph */}
+          <div className="bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800">
 
-            return (
-              <button
-                key={name}
-                onClick={() => openMember(name)}
-                className="w-full text-left rounded-2xl bg-zinc-900 border border-zinc-800 overflow-hidden transition-all active:scale-[0.99] hover:border-zinc-700 flex"
-              >
-                {/* Left: name */}
-                <div className={`bg-gradient-to-b ${color} w-20 shrink-0 flex flex-col items-center justify-center gap-1 py-4 px-2`}>
-                  <div className="w-9 h-9 rounded-full bg-white/25 flex items-center justify-center text-white font-black text-base">
-                    {name[0].toUpperCase()}
+            {/* Week header */}
+            <div className="flex items-center px-3 pt-3 pb-1">
+              <div className="w-[88px] shrink-0" />
+              <div className="flex flex-1 gap-1">
+                {weekHistory.map((wId, i) => (
+                  <div key={wId} className={`flex-1 text-center text-[9px] font-bold ${i === weekHistory.length - 1 ? 'text-zinc-300' : 'text-zinc-700'}`}>
+                    {i === weekHistory.length - 1 ? 'now' : `w${i + 1}`}
                   </div>
-                  <p className="text-white font-bold text-xs text-center leading-tight break-words w-full px-1">{name}</p>
-                  {streak >= 2 && <p className="text-white/70 text-[10px] font-bold">🔥{streak}</p>}
-                </div>
+                ))}
+              </div>
+            </div>
 
-                {/* Right: goals */}
-                <div className="flex-1 px-3 py-3 flex flex-col justify-center gap-1.5 min-w-0">
-                  {e?.goalItems?.length > 0 ? (
-                    e.goalItems.map((g, i) => (
-                      <div key={i} className="flex items-center gap-2">
-                        <span className={`text-[10px] font-black w-4 h-4 rounded flex items-center justify-center shrink-0 ${
-                          g.type === 'habit' ? 'bg-violet-500/20 text-violet-400' :
-                          g.type === 'count' ? 'bg-blue-500/20 text-blue-400' :
-                          'bg-emerald-500/20 text-emerald-400'
-                        }`}>
-                          {g.type === 'habit' ? '✓' : g.type === 'count' ? '×' : '#'}
-                        </span>
-                        <span className="text-zinc-200 text-sm flex-1 truncate">{g.text}</span>
-                        {g.target && <span className="text-zinc-600 text-xs shrink-0">{g.target} {g.unit}</span>}
+            {/* Member rows */}
+            <div className="divide-y divide-zinc-800/60">
+              {members.map(name => {
+                const e = getEntry(name)
+                const color = getAvatarColor(name)
+                const streak = getStreak(name)
+
+                return (
+                  <button
+                    key={name}
+                    onClick={() => openMember(name)}
+                    className="w-full flex items-center gap-2 px-3 py-3 hover:bg-zinc-800/40 transition-colors text-left"
+                  >
+                    {/* Avatar + name */}
+                    <div className="flex items-center gap-2 w-[88px] shrink-0 min-w-0">
+                      <div className={`w-7 h-7 rounded-full bg-gradient-to-br ${color} flex items-center justify-center text-white font-black text-xs shrink-0`}>
+                        {name[0].toUpperCase()}
                       </div>
-                    ))
-                  ) : e ? (
-                    <p className="text-zinc-500 text-sm">{e.goals}</p>
-                  ) : (
-                    <p className="text-zinc-600 text-sm italic">Tap to add goals</p>
-                  )}
-                </div>
+                      <div className="min-w-0">
+                        <p className="text-zinc-200 text-xs font-bold truncate leading-tight">{name}</p>
+                        {streak >= 2
+                          ? <p className="text-zinc-600 text-[9px] leading-tight">🔥 {streak}wk</p>
+                          : e?.goalItems?.[0]
+                            ? <p className="text-zinc-600 text-[9px] leading-tight truncate">{e.goalItems[0].text}</p>
+                            : null
+                        }
+                      </div>
+                    </div>
 
-                {/* Status dot */}
-                <div className="flex items-center pr-3">
-                  <span className="text-base">{statusEmoji}</span>
+                    {/* Week squares */}
+                    <div className="flex flex-1 gap-1">
+                      {weekHistory.map((wId, i) => {
+                        const status = getMemberWeekStatus(name, wId)
+                        const isCurrent = i === weekHistory.length - 1
+                        return (
+                          <div
+                            key={wId}
+                            className={`flex-1 rounded aspect-square ${
+                              status === 'completed' ? 'bg-emerald-500' :
+                              status === 'failed' ? 'bg-red-500' :
+                              status === 'active' ? 'bg-amber-400' :
+                              isCurrent ? 'bg-zinc-700' :
+                              'bg-zinc-800'
+                            } ${isCurrent ? 'ring-1 ring-zinc-500' : ''}`}
+                          />
+                        )
+                      })}
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Legend */}
+            <div className="flex gap-4 justify-center px-3 py-2.5 border-t border-zinc-800/60">
+              {[['bg-emerald-500','Done'],['bg-amber-400','Active'],['bg-red-500','Failed'],['bg-zinc-800','–']].map(([cls, label]) => (
+                <div key={label} className="flex items-center gap-1.5">
+                  <div className={`w-2.5 h-2.5 rounded-sm ${cls}`} />
+                  <span className="text-[10px] text-zinc-600">{label}</span>
                 </div>
-              </button>
-            )
-          })}
+              ))}
+            </div>
+          </div>
+
+          {/* Goals this week */}
+          <div className="space-y-2">
+            <p className="text-[11px] text-zinc-600 font-bold uppercase tracking-wide px-1">This week's goals</p>
+            {members.map(name => {
+              const e = getEntry(name)
+              const color = getAvatarColor(name)
+              if (!e?.goalItems?.length && !e?.goals) return null
+              return (
+                <button
+                  key={name}
+                  onClick={() => openMember(name)}
+                  className="w-full text-left bg-zinc-900 border border-zinc-800 rounded-2xl px-3 py-3 hover:border-zinc-700 transition-colors"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${color} flex items-center justify-center text-white font-black text-[9px] shrink-0`}>
+                      {name[0].toUpperCase()}
+                    </div>
+                    <p className="text-zinc-300 text-xs font-bold">{name}</p>
+                    <span className="ml-auto text-sm">
+                      {e.status === 'completed' ? '✅' : e.status === 'failed' ? '❌' : '🔥'}
+                    </span>
+                  </div>
+                  {e.goalItems?.length > 0 ? (
+                    <div className="space-y-1 pl-7">
+                      {e.goalItems.map((g, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <span className={`text-[9px] font-black w-3.5 h-3.5 rounded flex items-center justify-center shrink-0 ${
+                            g.type === 'habit' ? 'bg-violet-500/20 text-violet-400' :
+                            g.type === 'count' ? 'bg-blue-500/20 text-blue-400' :
+                            'bg-emerald-500/20 text-emerald-400'
+                          }`}>
+                            {g.type === 'habit' ? '✓' : g.type === 'count' ? '×' : '#'}
+                          </span>
+                          <span className="text-zinc-400 text-xs flex-1">{g.text}</span>
+                          {g.target && <span className="text-zinc-600 text-[10px]">{g.target} {g.unit}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-zinc-600 text-xs pl-7">{e.goals}</p>
+                  )}
+                </button>
+              )
+            })}
+          </div>
 
           {/* Add member */}
           {addingMember ? (
@@ -513,7 +622,7 @@ export default function Home() {
           ) : (
             <button
               onClick={() => setAddingMember(true)}
-              className="w-full rounded-2xl border-2 border-dashed border-zinc-800 hover:border-zinc-600 py-5 flex items-center justify-center gap-3 text-zinc-600 hover:text-zinc-400 transition-all"
+              className="w-full rounded-2xl border-2 border-dashed border-zinc-800 hover:border-zinc-600 py-4 flex items-center justify-center gap-3 text-zinc-600 hover:text-zinc-400 transition-all"
             >
               <Plus size={16} />
               <span className="text-sm font-semibold">Add a member</span>
