@@ -211,12 +211,11 @@ export default function Home() {
   const doneThisWeek = entries.filter(e => e.status === 'completed').length
   const activeThisWeek = entries.filter(e => e.status === 'active').length
 
-  // Group completion rate per week (for trend line)
+  // Group participation rate per week (entries submitted / members)
   const weekTrend = weekHistory.map(wId => {
-    const weekEntries = allEntries.filter(e => e.weekId === wId)
-    if (weekEntries.length === 0) return null
-    const done = weekEntries.filter(e => e.status === 'completed').length
-    return done / weekEntries.length
+    if (!members.length) return 0
+    const count = allEntries.filter(e => e.weekId === wId).length
+    return count / members.length
   })
 
   // Completion rate per member over last 8 weeks
@@ -263,16 +262,13 @@ export default function Home() {
   const buildTrendPath = () => {
     const W = 280, H = 70, PX = 16, PY = 8
     const cw = W - PX * 2, ch = H - PY * 2
-    const points = weekTrend.map((rate, i) => {
-      const x = PX + (i / (weekHistory.length - 1)) * cw
-      const y = rate === null ? null : PY + (1 - rate) * ch
-      return { x, y }
-    })
-    const valid = points.filter(p => p.y !== null)
-    if (valid.length < 2) return { line: '', area: '', points: valid }
-    const d = valid.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
-    const area = `${d} L${valid[valid.length - 1].x.toFixed(1)},${H - PY} L${valid[0].x.toFixed(1)},${H - PY} Z`
-    return { line: d, area, points: valid, W, H }
+    const points = weekTrend.map((rate, i) => ({
+      x: PX + (i / (weekHistory.length - 1)) * cw,
+      y: PY + (1 - rate) * ch,
+    }))
+    const d = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+    const area = `${d} L${points[points.length - 1].x.toFixed(1)},${H - PY} L${points[0].x.toFixed(1)},${H - PY} Z`
+    return { line: d, area, points, W, H }
   }
   const trendPath = buildTrendPath()
 
@@ -555,7 +551,7 @@ export default function Home() {
 
           {/* Group trend line chart */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
-            <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-3">Group completion trend</p>
+            <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-3">Participation rate · 8 weeks</p>
             <svg viewBox={`0 0 280 70`} className="w-full" preserveAspectRatio="none">
               {[0, 0.25, 0.5, 0.75, 1].map(v => {
                 const y = 8 + (1 - v) * 54
