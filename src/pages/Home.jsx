@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, addDoc, setDoc, Timestamp } from 'firebase/firestore'
 import { db } from '../firebase'
 import { getCurrentWeekId, formatWeekLabel, formatTimestamp } from '../utils'
-import { CheckCircle, XCircle, Send, AlertTriangle, ArrowLeft, Plus, Check, Pencil, X, UserPlus } from 'lucide-react'
+import { CheckCircle, XCircle, Send, AlertTriangle, ArrowLeft, Plus, Check, Pencil, X, UserPlus, Trash2 } from 'lucide-react'
 import WeekCalendar from '../components/WeekCalendar'
 import GoalBuilder from '../components/GoalBuilder'
 
@@ -47,6 +47,7 @@ export default function Home() {
   const [newMemberName, setNewMemberName] = useState('')
   const [editingGoals, setEditingGoals] = useState(false)
   const [bannerDismissed, setBannerDismissed] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [memberLogs, setMemberLogs] = useState({}) // entryId -> { dayKey -> logData }
 
   useEffect(() => {
@@ -110,6 +111,12 @@ export default function Home() {
     setSelectedMember(null)
     setConfirmFail(false)
     setEditingGoals(false)
+    setConfirmDelete(false)
+  }
+
+  const deleteMember = async (name) => {
+    await setDoc(MEMBERS_DOC, { names: members.filter(m => m !== name) }, { merge: true })
+    closeMember()
   }
 
   const submitGoals = async (name) => {
@@ -317,11 +324,31 @@ export default function Home() {
 
     return (
       <div className="flex flex-col space-y-4">
-        {/* Back */}
-        <button onClick={closeMember}
-          className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-200 transition-colors self-start">
-          <ArrowLeft size={15} /> All members
-        </button>
+        {/* Back + delete */}
+        <div className="flex items-center justify-between">
+          <button onClick={closeMember}
+            className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-200 transition-colors">
+            <ArrowLeft size={15} /> All members
+          </button>
+          {confirmDelete ? (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-zinc-500">Remove {selectedMember}?</span>
+              <button onClick={() => deleteMember(selectedMember)}
+                className="text-xs font-bold text-red-400 hover:text-red-300 transition-colors px-2 py-1 bg-red-950/40 rounded-lg">
+                Remove
+              </button>
+              <button onClick={() => setConfirmDelete(false)}
+                className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors px-2 py-1">
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => setConfirmDelete(true)}
+              className="p-1.5 text-zinc-700 hover:text-red-400 transition-colors rounded-lg hover:bg-red-950/30">
+              <Trash2 size={15} />
+            </button>
+          )}
+        </div>
 
         {/* Hero — full bleed, taller, more immersive */}
         <div className={`-mx-4 bg-gradient-to-br ${color} relative overflow-hidden px-6 pt-8 pb-6`}>
