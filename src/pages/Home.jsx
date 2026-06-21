@@ -551,7 +551,7 @@ export default function Home() {
                 <div className="bg-zinc-800/40 rounded-2xl p-4">
                   <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-2">Goal progress this week</p>
                   <HighchartsReact
-                    key={members.join(',')}
+                    key={entry?.goalItems?.map(g => g.text).join(',')}
                     highcharts={Highcharts}
                     options={{
                       chart: {
@@ -751,7 +751,7 @@ export default function Home() {
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
             <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-2">Goal progress this week</p>
             <HighchartsReact
-              key={entry?.goalItems?.map(g => g.text).join(',')}
+              key={members.join(',')}
               highcharts={Highcharts}
               options={{
                 chart: {
