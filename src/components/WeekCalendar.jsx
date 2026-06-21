@@ -33,8 +33,11 @@ const NUM_RANGE = Array.from({ length: 201 }, (_, i) => i)
 
 function NumPicker({ value, onChange, unit }) {
   return (
-    <div className="flex items-center gap-4">
-      <div className="relative w-24 overflow-hidden rounded-2xl bg-zinc-800 border border-zinc-700">
+    <div className="flex items-center gap-3">
+      <div
+        className="relative flex-1 overflow-hidden rounded-2xl bg-zinc-800 border border-zinc-700"
+        style={{ touchAction: 'none' }}
+      >
         {/* selection highlight */}
         <div className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 h-10 bg-zinc-700/60 border-y border-zinc-600 z-10" />
         {/* fade top */}
@@ -61,7 +64,7 @@ function NumPicker({ value, onChange, unit }) {
           </Picker.Column>
         </Picker>
       </div>
-      {unit && <span className="text-sm text-zinc-400">{unit}</span>}
+      {unit && <span className="text-sm text-zinc-400 shrink-0">{unit}</span>}
     </div>
   )
 }
