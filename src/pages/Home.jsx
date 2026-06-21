@@ -20,8 +20,16 @@ const AVATAR_COLORS = [
   'from-fuchsia-500 to-pink-600',
 ]
 
+const AVATAR_HEX = [
+  '#8b5cf6', '#3b82f6', '#10b981', '#f97316',
+  '#ec4899', '#6366f1', '#14b8a6', '#d946ef',
+]
+
 const getAvatarColor = (name) =>
   AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length]
+
+const getAvatarHex = (name) =>
+  AVATAR_HEX[name.charCodeAt(0) % AVATAR_HEX.length]
 
 export default function Home() {
   const weekId = getCurrentWeekId()
@@ -211,13 +219,6 @@ export default function Home() {
   const doneThisWeek = entries.filter(e => e.status === 'completed').length
   const activeThisWeek = entries.filter(e => e.status === 'active').length
 
-  // Group participation rate per week (entries submitted / members)
-  const weekTrend = weekHistory.map(wId => {
-    if (!members.length) return 0
-    const count = allEntries.filter(e => e.weekId === wId).length
-    return count / members.length
-  })
-
   // Completion rate per member over last 8 weeks
   const getMemberRate = (name) => {
     const relevant = weekHistory.map(wId => getMemberWeekStatus(name, wId)).filter(s => s !== 'none' && s !== 'active')
@@ -258,19 +259,40 @@ export default function Home() {
       Object.values(log.counts || {}).some(v => v > 0) ||
       Object.values(log.totals || {}).some(v => v > 0))
 
-  // SVG line chart path from trend data
-  const buildTrendPath = () => {
-    const W = 280, H = 70, PX = 16, PY = 8
-    const cw = W - PX * 2, ch = H - PY * 2
-    const points = weekTrend.map((rate, i) => ({
-      x: PX + (i / (weekHistory.length - 1)) * cw,
-      y: PY + (1 - rate) * ch,
-    }))
-    const d = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
-    const area = `${d} L${points[points.length - 1].x.toFixed(1)},${H - PY} L${points[0].x.toFixed(1)},${H - PY} Z`
-    return { line: d, area, points, W, H }
+  // Per-member cumulative goal progress per day this week (for multi-line chart)
+  const W = 280, H = 80, PX = 16, PY = 10
+  const cw = W - PX * 2, ch = H - PY * 2
+  const dayX = (i) => PX + (i / 6) * cw
+  const rateY = (r) => PY + (1 - r) * ch
+
+  const getMemberDailyProgress = (name) => {
+    const e = getEntry(name)
+    if (!e?.goalItems?.length) return []
+    const logs = memberLogs[e.id] || {}
+    const goals = e.goalItems
+    const today = new Date(); today.setHours(23, 59, 59, 0)
+    return weekDays
+      .filter(day => day <= today)
+      .map((_, dayIdx) => {
+        const daysUpTo = weekDays.slice(0, dayIdx + 1)
+        const progPerGoal = goals.map(g => {
+          if (g.type === 'habit') {
+            const checked = daysUpTo.filter(d => logs[d.toISOString().split('T')[0]]?.habits?.[g.text]).length
+            return checked / 7
+          } else if (g.type === 'count') {
+            const done = daysUpTo.reduce((s, d) => s + (Number(logs[d.toISOString().split('T')[0]]?.counts?.[g.text]) || 0), 0)
+            return Math.min(1, done / (Number(g.target) || 1))
+          } else {
+            const done = daysUpTo.reduce((s, d) => s + (Number(logs[d.toISOString().split('T')[0]]?.totals?.[g.text]) || 0), 0)
+            return Math.min(1, done / (Number(g.target) || 1))
+          }
+        })
+        return progPerGoal.reduce((s, v) => s + v, 0) / progPerGoal.length
+      })
   }
-  const trendPath = buildTrendPath()
+
+  const buildMemberPath = (pts) =>
+    pts.map((r, i) => `${i === 0 ? 'M' : 'L'}${dayX(i).toFixed(1)},${rateY(r).toFixed(1)}`).join(' ')
 
   if (loading) return (
     <div className="flex items-center justify-center mt-24">
@@ -549,28 +571,44 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Group trend line chart */}
+          {/* Per-member goal progress line chart */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
-            <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-3">Participation rate · 8 weeks</p>
-            <svg viewBox={`0 0 280 70`} className="w-full" preserveAspectRatio="none">
-              {[0, 0.25, 0.5, 0.75, 1].map(v => {
-                const y = 8 + (1 - v) * 54
-                return <line key={v} x1="16" y1={y} x2="264" y2={y} stroke="#27272a" strokeWidth="1" />
+            <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-1">Goal progress this week</p>
+            <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
+              {/* Grid lines */}
+              {[0, 0.25, 0.5, 0.75, 1].map(v => (
+                <line key={v} x1={PX} y1={rateY(v).toFixed(1)} x2={W - PX} y2={rateY(v).toFixed(1)} stroke="#27272a" strokeWidth="1" />
+              ))}
+              {/* Y labels */}
+              {[0, 0.5, 1].map(v => (
+                <text key={v} x={PX - 2} y={rateY(v) + 3} textAnchor="end" fontSize="7" fill="#52525b">{Math.round(v * 100)}%</text>
+              ))}
+              {/* One line per member */}
+              {members.map(name => {
+                const pts = getMemberDailyProgress(name)
+                if (!pts.length) return null
+                const path = buildMemberPath(pts)
+                const hex = getAvatarHex(name)
+                return (
+                  <g key={name}>
+                    <path d={path} fill="none" stroke={hex} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.9" />
+                    <circle cx={dayX(pts.length - 1)} cy={rateY(pts[pts.length - 1])} r="3" fill={hex} />
+                  </g>
+                )
               })}
-              {trendPath.area && <path d={trendPath.area} fill="url(#trendFill)" opacity="0.3" />}
-              {trendPath.line && <path d={trendPath.line} fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />}
-              {trendPath.points?.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r="3" fill="#34d399" />)}
-              <defs>
-                <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#34d399" />
-                  <stop offset="100%" stopColor="#34d399" stopOpacity="0" />
-                </linearGradient>
-              </defs>
             </svg>
-            <div className="flex mt-1">
-              {weekHistory.map((_, i) => (
-                <div key={i} className={`flex-1 text-center text-[9px] font-bold ${i === weekHistory.length - 1 ? 'text-zinc-400' : 'text-zinc-700'}`}>
-                  {i === weekHistory.length - 1 ? 'now' : `w${i + 1}`}
+            {/* X axis */}
+            <div className="flex mt-0.5 pl-4">
+              {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((d, i) => (
+                <div key={d} className="flex-1 text-center text-[9px] font-bold text-zinc-700">{d}</div>
+              ))}
+            </div>
+            {/* Legend */}
+            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
+              {members.filter(name => getEntry(name)?.goalItems?.length).map(name => (
+                <div key={name} className="flex items-center gap-1">
+                  <div className="w-3 h-0.5 rounded-full" style={{ backgroundColor: getAvatarHex(name) }} />
+                  <span className="text-[10px] text-zinc-500">{name}</span>
                 </div>
               ))}
             </div>
