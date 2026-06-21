@@ -3,7 +3,8 @@ import { collection, doc, onSnapshot, setDoc, updateDoc, increment } from 'fireb
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { db, storage } from '../firebase'
 import { getCurrentWeekId } from '../utils'
-import { Send, Camera, ChevronUp, ChevronDown } from 'lucide-react'
+import { Send, Camera } from 'lucide-react'
+import Picker from 'react-mobile-picker'
 
 function getWeekDays(weekId) {
   const base = new Date(weekId + 'T00:00:00')
@@ -28,44 +29,39 @@ function dateKey(date) {
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const REACTIONS = ['🔥', '💪', '👏', '❤️']
 
-function ScrollDrum({ value, onChange, unit }) {
-  const touchStartY = useRef(null)
-  const lastDelta = useRef(0)
+const NUM_RANGE = Array.from({ length: 201 }, (_, i) => i)
 
-  const onWheel = (e) => {
-    e.preventDefault()
-    const newVal = Math.max(value + (e.deltaY < 0 ? 1 : -1), 0)
-    onChange(newVal)
-  }
-
-  const onTouchStart = (e) => { touchStartY.current = e.touches[0].clientY }
-  const onTouchMove = (e) => {
-    if (touchStartY.current === null) return
-    const diff = touchStartY.current - e.touches[0].clientY
-    const steps = Math.floor(Math.abs(diff) / 18)
-    if (steps > lastDelta.current) {
-      onChange(Math.max(value + (diff > 0 ? 1 : -1), 0))
-      lastDelta.current = steps
-    }
-  }
-  const onTouchEnd = () => { touchStartY.current = null; lastDelta.current = 0 }
-
+function NumPicker({ value, onChange, unit }) {
   return (
-    <div className="flex items-center gap-3">
-      <div
-        className="relative flex flex-col items-center select-none cursor-ns-resize touch-none"
-        onWheel={onWheel}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-      >
-        <ChevronUp size={14} className="text-zinc-600 mb-0.5" />
-        <div className="w-20 h-12 bg-zinc-800 border border-zinc-700 rounded-xl flex items-center justify-center">
-          <span className="text-2xl font-black text-white">{value}</span>
-        </div>
-        <ChevronDown size={14} className="text-zinc-600 mt-0.5" />
+    <div className="flex items-center gap-4">
+      <div className="relative w-24 overflow-hidden rounded-2xl bg-zinc-800 border border-zinc-700">
+        {/* selection highlight */}
+        <div className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 h-10 bg-zinc-700/60 border-y border-zinc-600 z-10" />
+        {/* fade top */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-zinc-800 to-transparent z-20" />
+        {/* fade bottom */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-zinc-800 to-transparent z-20" />
+        <Picker
+          value={{ n: value }}
+          onChange={(v) => onChange(v.n)}
+          height={120}
+          itemHeight={40}
+          wheelMode="natural"
+        >
+          <Picker.Column name="n">
+            {NUM_RANGE.map(n => (
+              <Picker.Item key={n} value={n}>
+                {({ selected }) => (
+                  <span className={`text-xl font-black transition-all ${selected ? 'text-white scale-110' : 'text-zinc-600'}`}>
+                    {n}
+                  </span>
+                )}
+              </Picker.Item>
+            ))}
+          </Picker.Column>
+        </Picker>
       </div>
-      {unit && <span className="text-sm text-zinc-500">{unit}</span>}
+      {unit && <span className="text-sm text-zinc-400">{unit}</span>}
     </div>
   )
 }
@@ -399,7 +395,7 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
                   return (
                     <div key={text} className="space-y-1.5">
                       <p className="text-xs text-zinc-500">{text} — how many today?</p>
-                      <ScrollDrum value={val} unit={unit} onChange={v => {
+                      <NumPicker value={val} unit={unit} onChange={v => {
                         setLocalCounts(p => ({ ...p, [localKey]: v }))
                         clearTimeout(saveTimers.current[localKey])
                         saveTimers.current[localKey] = setTimeout(async () => {
@@ -418,7 +414,7 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
                   return (
                     <div key={text} className="space-y-1.5">
                       <p className="text-xs text-zinc-500">{text} — how much today?</p>
-                      <ScrollDrum value={val} unit={unit} onChange={v => {
+                      <NumPicker value={val} unit={unit} onChange={v => {
                         setLocalTotals(p => ({ ...p, [localKey]: v }))
                         clearTimeout(saveTimers.current[localKey])
                         saveTimers.current[localKey] = setTimeout(async () => {
