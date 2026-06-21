@@ -1,5 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom'
-import { Target, DollarSign, Clock, Users } from 'lucide-react'
+import { Target, DollarSign, Clock, Users, Rss } from 'lucide-react'
 
 export default function Layout() {
   const linkClass = ({ isActive }) =>
@@ -55,6 +55,16 @@ export default function Layout() {
                 <DollarSign size={18} />
               </div>
               The Pot
+            </>
+          )}
+        </NavLink>
+        <NavLink to="/feed" className={linkClass}>
+          {({ isActive }) => (
+            <>
+              <div className={`p-1.5 rounded-xl transition-all ${isActive ? 'bg-zinc-800' : ''}`}>
+                <Rss size={18} />
+              </div>
+              Feed
             </>
           )}
         </NavLink>

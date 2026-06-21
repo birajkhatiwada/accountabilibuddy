@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, addDoc, setDoc, Timestamp } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, addDoc, setDoc, Timestamp, getDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { getCurrentWeekId, formatWeekLabel, formatTimestamp } from '../utils'
 import { CheckCircle, XCircle, Send, AlertTriangle, ArrowLeft, Pencil, X, Trash2 } from 'lucide-react'
@@ -254,6 +254,45 @@ export default function MemberProfile() {
         </div>
       )}
 
+      {/* End-of-week summary card */}
+      {entry?.status === 'completed' && (() => {
+        const daysLogged = Object.values(memberLogs).filter(log =>
+          Object.values(log?.habits || {}).some(Boolean) ||
+          Object.values(log?.counts || {}).some(v => v > 0) ||
+          Object.values(log?.totals || {}).some(v => v > 0)
+        ).length
+        const goalCount = entry.goalItems?.length || 0
+        return (
+          <div className={`-mx-4 bg-gradient-to-br ${color} px-6 py-5`}>
+            <div className="flex items-center gap-4">
+              <div className="text-5xl">
+                {avatars[name] || name[0].toUpperCase()}
+              </div>
+              <div className="flex-1">
+                <p className="text-white font-black text-lg leading-none">{name}</p>
+                <p className="text-white/70 text-sm mt-0.5">crushed it this week ✅</p>
+              </div>
+              {streak >= 2 && (
+                <div className="bg-white/20 rounded-2xl px-3 py-2 text-center">
+                  <p className="text-2xl font-black text-white">{streak}</p>
+                  <p className="text-[10px] text-white/70 font-bold">streak</p>
+                </div>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-2 mt-4">
+              <div className="bg-black/20 rounded-xl px-3 py-2">
+                <p className="text-white/60 text-[10px] uppercase tracking-wide">Goals set</p>
+                <p className="text-white font-black text-xl">{goalCount}</p>
+              </div>
+              <div className="bg-black/20 rounded-xl px-3 py-2">
+                <p className="text-white/60 text-[10px] uppercase tracking-wide">Days logged</p>
+                <p className="text-white font-black text-xl">{daysLogged}/7</p>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
       {/* No goals yet */}
       {!entry && (
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
@@ -335,15 +374,41 @@ export default function MemberProfile() {
           {entry.updates?.length > 0 && (
             <div className="space-y-2">
               <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold px-1">Progress log</p>
-              {entry.updates.map((u, i) => (
-                <div key={i} className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 flex gap-3">
-                  <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
-                  <div>
-                    <p className="text-sm text-zinc-200">{u.text}</p>
-                    <p className="text-xs text-zinc-600 mt-0.5">{formatTimestamp(u.timestamp)}</p>
+              {entry.updates.map((u, i) => {
+                const reactionKey = `proofReactions.${i}`
+                const reactions = u.reactions || {}
+                const toggleReaction = async (emoji) => {
+                  const snap = await getDoc(doc(db, 'entries', entry.id))
+                  const updates = snap.data().updates || []
+                  updates[i] = { ...updates[i], reactions: { ...(updates[i].reactions || {}), [emoji]: ((updates[i].reactions?.[emoji] || 0) + 1) % 99 } }
+                  await updateDoc(doc(db, 'entries', entry.id), { updates })
+                }
+                return (
+                  <div key={i} className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 space-y-2">
+                    <div className="flex gap-3">
+                      <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
+                      <div className="flex-1">
+                        <p className="text-sm text-zinc-200">{u.text}</p>
+                        <p className="text-xs text-zinc-600 mt-0.5">{formatTimestamp(u.timestamp)}</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-1.5 pl-5">
+                      {['🔥','💪','👏','❤️'].map(emoji => {
+                        const count = reactions[emoji] || 0
+                        return (
+                          <button key={emoji} onClick={() => toggleReaction(emoji)}
+                            className={`flex items-center gap-1 px-2 py-1 rounded-lg border text-sm transition-all active:scale-95 ${
+                              count > 0 ? 'bg-zinc-800 border-zinc-600' : 'border-zinc-800 text-zinc-600 hover:border-zinc-600 hover:text-zinc-400'
+                            }`}>
+                            {emoji}
+                            {count > 0 && <span className="text-xs font-bold text-zinc-300">{count}</span>}
+                          </button>
+                        )
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
 

@@ -1,0 +1,334 @@
+import { useState, useEffect } from 'react'
+import { collection, onSnapshot, addDoc, Timestamp, query, orderBy, limit, doc } from 'firebase/firestore'
+import { db } from '../firebase'
+import { getCurrentWeekId } from '../utils'
+import { Megaphone, Send } from 'lucide-react'
+
+const MEMBERS_DOC = doc(db, 'config', 'members')
+
+const AVATAR_COLORS = [
+  'from-violet-500 to-purple-600', 'from-blue-500 to-cyan-600',
+  'from-emerald-500 to-teal-600',  'from-orange-500 to-amber-600',
+  'from-pink-500 to-rose-600',     'from-indigo-500 to-blue-600',
+  'from-teal-500 to-emerald-600',  'from-fuchsia-500 to-pink-600',
+]
+
+const SHOUTOUT_EMOJIS = ['🔥', '💪', '👏', '🏆', '⭐', '🚀']
+
+function Avatar({ name, emoji, members }) {
+  const color = AVATAR_COLORS[members.indexOf(name) % AVATAR_COLORS.length] || AVATAR_COLORS[0]
+  return (
+    <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${color} flex items-center justify-center shrink-0 text-sm`}>
+      {emoji ? emoji : <span className="text-white font-black text-xs">{name[0]?.toUpperCase()}</span>}
+    </div>
+  )
+}
+
+function timeAgo(ts) {
+  if (!ts) return ''
+  const date = ts.toDate ? ts.toDate() : new Date(ts)
+  const diff = (Date.now() - date.getTime()) / 1000
+  if (diff < 60) return 'just now'
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
+  return `${Math.floor(diff / 86400)}d ago`
+}
+
+export default function Feed() {
+  const weekId = getCurrentWeekId()
+  const [members, setMembers] = useState([])
+  const [avatars, setAvatars] = useState({})
+  const [entries, setEntries] = useState([])
+  const [shoutouts, setShoutouts] = useState([])
+  const [showShoutoutForm, setShowShoutoutForm] = useState(false)
+  const [shoutoutFrom, setShoutoutFrom] = useState('')
+  const [shoutoutTo, setShoutoutTo] = useState('')
+  const [shoutoutMsg, setShoutoutMsg] = useState('')
+  const [shoutoutEmoji, setShoutoutEmoji] = useState('🔥')
+  const [posting, setPosting] = useState(false)
+
+  useEffect(() => {
+    return onSnapshot(MEMBERS_DOC, snap => {
+      if (snap.exists()) {
+        setMembers(snap.data().names || [])
+        setAvatars(snap.data().avatars || {})
+      }
+    })
+  }, [])
+
+  useEffect(() => {
+    return onSnapshot(collection(db, 'entries'), snap => {
+      setEntries(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    })
+  }, [])
+
+  useEffect(() => {
+    const q = query(collection(db, 'shoutouts'), orderBy('timestamp', 'desc'), limit(50))
+    return onSnapshot(q, snap => {
+      setShoutouts(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    })
+  }, [])
+
+  const postShoutout = async () => {
+    if (!shoutoutFrom || !shoutoutTo || !shoutoutMsg.trim()) return
+    setPosting(true)
+    await addDoc(collection(db, 'shoutouts'), {
+      from: shoutoutFrom,
+      to: shoutoutTo,
+      message: shoutoutMsg.trim(),
+      emoji: shoutoutEmoji,
+      timestamp: Timestamp.now(),
+      weekId,
+    })
+    setShoutoutMsg('')
+    setShowShoutoutForm(false)
+    setPosting(false)
+  }
+
+  // Build unified feed from proof updates + goals set + shoutouts
+  const feedItems = []
+
+  entries.forEach(entry => {
+    // Goals set event
+    if (entry.createdAt) {
+      feedItems.push({
+        id: `goals-${entry.id}`,
+        type: 'goals_set',
+        name: entry.name,
+        weekId: entry.weekId,
+        timestamp: entry.createdAt,
+        goals: entry.goalItems?.map(g => g.text) || [],
+      })
+    }
+    // Week completed/failed
+    if (entry.status === 'completed' || entry.status === 'failed') {
+      // We use createdAt as proxy — not perfect but avoids schema changes
+      // Only show for current week to avoid noise
+      if (entry.weekId === weekId && entry.status !== 'active') {
+        feedItems.push({
+          id: `status-${entry.id}`,
+          type: entry.status,
+          name: entry.name,
+          weekId: entry.weekId,
+          timestamp: entry.createdAt,
+        })
+      }
+    }
+    // Proof updates
+    ;(entry.updates || []).forEach((u, i) => {
+      feedItems.push({
+        id: `proof-${entry.id}-${i}`,
+        type: 'proof',
+        name: entry.name,
+        weekId: entry.weekId,
+        timestamp: u.timestamp,
+        text: u.text,
+      })
+    })
+  })
+
+  shoutouts.forEach(s => {
+    feedItems.push({
+      id: `shoutout-${s.id}`,
+      type: 'shoutout',
+      from: s.from,
+      to: s.to,
+      message: s.message,
+      emoji: s.emoji,
+      timestamp: s.timestamp,
+      weekId: s.weekId,
+    })
+  })
+
+  // Sort newest first
+  feedItems.sort((a, b) => {
+    const ta = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp || 0)
+    const tb = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp || 0)
+    return tb - ta
+  })
+
+  return (
+    <div className="space-y-4">
+      {/* Header + shoutout button */}
+      <div className="flex items-center justify-between px-1">
+        <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide">Activity</p>
+        <button
+          onClick={() => setShowShoutoutForm(v => !v)}
+          className="flex items-center gap-1.5 text-[11px] font-bold text-zinc-500 hover:text-amber-400 transition-colors"
+        >
+          <Megaphone size={13} />
+          Shoutout
+        </button>
+      </div>
+
+      {/* Shoutout form */}
+      {showShoutoutForm && (
+        <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-4 space-y-3">
+          <p className="text-sm font-bold text-zinc-200">Give a shoutout 📣</p>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <p className="text-[10px] text-zinc-500 mb-1 uppercase tracking-wide">From</p>
+              <select
+                value={shoutoutFrom}
+                onChange={e => setShoutoutFrom(e.target.value)}
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-emerald-500"
+              >
+                <option value="">You...</option>
+                {members.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </div>
+            <div>
+              <p className="text-[10px] text-zinc-500 mb-1 uppercase tracking-wide">To</p>
+              <select
+                value={shoutoutTo}
+                onChange={e => setShoutoutTo(e.target.value)}
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-emerald-500"
+              >
+                <option value="">Who...</option>
+                {members.filter(m => m !== shoutoutFrom).map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex gap-1.5">
+            {SHOUTOUT_EMOJIS.map(e => (
+              <button
+                key={e}
+                onClick={() => setShoutoutEmoji(e)}
+                className={`text-xl rounded-xl p-1.5 transition-all ${shoutoutEmoji === e ? 'bg-zinc-700 ring-2 ring-amber-400 scale-110' : 'hover:bg-zinc-800'}`}
+              >
+                {e}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Say something..."
+              value={shoutoutMsg}
+              onChange={e => setShoutoutMsg(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && postShoutout()}
+              className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-amber-500 transition-colors"
+            />
+            <button
+              onClick={postShoutout}
+              disabled={posting || !shoutoutFrom || !shoutoutTo || !shoutoutMsg.trim()}
+              className="bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-white rounded-xl px-3 transition-colors"
+            >
+              <Send size={15} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Feed */}
+      {feedItems.length === 0 && (
+        <div className="text-center py-16 text-zinc-600">
+          <p className="text-4xl mb-3">📭</p>
+          <p className="font-medium text-zinc-400">Nothing yet</p>
+          <p className="text-sm mt-1">Activity will show up here as the week progresses</p>
+        </div>
+      )}
+
+      <div className="space-y-2">
+        {feedItems.map(item => (
+          <FeedItem key={item.id} item={item} members={members} avatars={avatars} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function FeedItem({ item, members, avatars }) {
+  if (item.type === 'shoutout') {
+    return (
+      <div className="bg-amber-950/30 border border-amber-800/40 rounded-2xl px-4 py-3 flex gap-3">
+        <div className="text-xl shrink-0 mt-0.5">{item.emoji}</div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm text-zinc-200">
+            <span className="font-bold text-amber-300">{item.from}</span>
+            <span className="text-zinc-500"> → </span>
+            <span className="font-bold text-white">{item.to}</span>
+          </p>
+          <p className="text-sm text-zinc-300 mt-0.5">"{item.message}"</p>
+          <p className="text-[10px] text-zinc-600 mt-1">{timeAgo(item.timestamp)}</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (item.type === 'proof') {
+    return (
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3 flex gap-3">
+        <Avatar name={item.name} emoji={avatars[item.name]} members={members} />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm text-zinc-200">
+            <span className="font-bold">{item.name}</span>
+            <span className="text-zinc-500"> posted proof</span>
+          </p>
+          <p className="text-sm text-zinc-400 mt-0.5 italic">"{item.text}"</p>
+          <p className="text-[10px] text-zinc-600 mt-1">{timeAgo(item.timestamp)}</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (item.type === 'goals_set') {
+    return (
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3 flex gap-3">
+        <Avatar name={item.name} emoji={avatars[item.name]} members={members} />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm text-zinc-200">
+            <span className="font-bold">{item.name}</span>
+            <span className="text-zinc-500"> locked in their goals</span>
+            {item.weekId !== getCurrentWeekId() && (
+              <span className="text-[10px] text-zinc-600 ml-1">· week of {item.weekId}</span>
+            )}
+          </p>
+          {item.goals.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1.5">
+              {item.goals.map((g, i) => (
+                <span key={i} className="text-[10px] bg-zinc-800 text-zinc-400 rounded-lg px-2 py-0.5">{g}</span>
+              ))}
+            </div>
+          )}
+          <p className="text-[10px] text-zinc-600 mt-1">{timeAgo(item.timestamp)}</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (item.type === 'completed') {
+    return (
+      <div className="bg-emerald-950/30 border border-emerald-800/40 rounded-2xl px-4 py-3 flex gap-3">
+        <Avatar name={item.name} emoji={avatars[item.name]} members={members} />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm text-zinc-200">
+            <span className="font-bold text-emerald-300">{item.name}</span>
+            <span className="text-zinc-500"> crushed the week ✅</span>
+          </p>
+          <p className="text-[10px] text-zinc-600 mt-1">{timeAgo(item.timestamp)}</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (item.type === 'failed') {
+    return (
+      <div className="bg-red-950/20 border border-red-800/30 rounded-2xl px-4 py-3 flex gap-3">
+        <Avatar name={item.name} emoji={avatars[item.name]} members={members} />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm text-zinc-200">
+            <span className="font-bold text-red-400">{item.name}</span>
+            <span className="text-zinc-500"> missed the week ❌ +$15 to the pot</span>
+          </p>
+          <p className="text-[10px] text-zinc-600 mt-1">{timeAgo(item.timestamp)}</p>
+        </div>
+      </div>
+    )
+  }
+
+  return null
+}
