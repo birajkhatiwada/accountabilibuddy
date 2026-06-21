@@ -700,24 +700,32 @@ export default function Home() {
               const e = getEntry(name)
               const color = getAvatarColor(name, members)
               if (!e?.goalItems?.length && !e?.goals) return null
+              const streak = getStreak(name)
               return (
                 <button
                   key={name}
                   onClick={() => openMember(name)}
-                  className="w-full text-left bg-zinc-900 border border-zinc-800 rounded-2xl px-3 py-3 hover:border-zinc-700 transition-colors"
+                  className="w-full text-left bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden hover:border-zinc-700 transition-colors flex"
                 >
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${color} flex items-center justify-center shrink-0 ${avatars[name] ? 'text-sm' : 'text-white font-black text-[9px]'}`}>
-                      {avatars[name] ?? name[0].toUpperCase()}
+                  {/* Left: profile */}
+                  <div className={`bg-gradient-to-b ${color} w-24 shrink-0 flex flex-col items-center justify-center gap-1.5 py-5`}>
+                    <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center">
+                      {avatars[name]
+                        ? <span className="text-3xl">{avatars[name]}</span>
+                        : <span className="text-white font-black text-2xl">{name[0].toUpperCase()}</span>
+                      }
                     </div>
-                    <p className="text-zinc-300 text-xs font-bold">{name}</p>
-                    <span className="ml-auto text-sm">
+                    <p className="text-white font-bold text-[11px] text-center leading-tight px-1 truncate w-full">{name}</p>
+                    {streak >= 2 && <p className="text-white/70 text-[10px]">🔥{streak}</p>}
+                    <span className="text-base mt-0.5">
                       {e.status === 'completed' ? '✅' : e.status === 'failed' ? '❌' : '🔥'}
                     </span>
                   </div>
-                  {e.goalItems?.length > 0 ? (
-                    <div className="space-y-2 pl-7">
-                      {e.goalItems.map((g, i) => {
+
+                  {/* Right: goals */}
+                  <div className="flex-1 px-3 py-3 flex flex-col justify-center gap-2 min-w-0">
+                    {e.goalItems?.length > 0 ? (
+                      e.goalItems.map((g, i) => {
                         const prog = getGoalProgress(e.id, g)
                         const label = g.type === 'habit'
                           ? `${prog.done}/7 days`
@@ -734,8 +742,8 @@ export default function Home() {
                               }`}>
                                 {g.type === 'habit' ? '✓' : g.type === 'count' ? '×' : '#'}
                               </span>
-                              <span className="text-zinc-300 text-xs flex-1">{g.text}</span>
-                              <span className="text-zinc-500 text-[10px] font-semibold">{label}</span>
+                              <span className="text-zinc-300 text-xs flex-1 truncate">{g.text}</span>
+                              <span className="text-zinc-500 text-[10px] font-semibold shrink-0">{label}</span>
                             </div>
                             {prog.pct !== null && (
                               <div className="bg-zinc-800 rounded-full h-1 overflow-hidden">
@@ -750,11 +758,11 @@ export default function Home() {
                             )}
                           </div>
                         )
-                      })}
-                    </div>
-                  ) : (
-                    <p className="text-zinc-600 text-xs pl-7">{e.goals}</p>
-                  )}
+                      })
+                    ) : (
+                      <p className="text-zinc-600 text-xs">{e.goals}</p>
+                    )}
+                  </div>
                 </button>
               )
             })}
