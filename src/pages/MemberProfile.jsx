@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, addDoc, setDoc, Timestamp, getDoc } from 'firebase/firestore'
 import { db } from '../firebase'
@@ -8,6 +8,7 @@ import WeekCalendar from '../components/WeekCalendar'
 import GoalBuilder from '../components/GoalBuilder'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
+import confetti from 'canvas-confetti'
 
 const MEMBERS_DOC = doc(db, 'config', 'members')
 const PENALTY = 15
@@ -78,6 +79,16 @@ export default function MemberProfile() {
       setMemberLogs(logs)
     })
   }, [entry?.id])
+
+  const confettiFired = useRef(false)
+  useEffect(() => {
+    if (entry?.status !== 'completed' || confettiFired.current) return
+    confettiFired.current = true
+    const colors = ['#10b981', '#3b82f6', '#8b5cf6', '#f97316', '#ec4899', '#fbbf24']
+    confetti({ particleCount: 120, spread: 80, origin: { y: 0.4 }, colors })
+    setTimeout(() => confetti({ particleCount: 60, spread: 60, origin: { y: 0.3 }, colors, angle: 60 }), 250)
+    setTimeout(() => confetti({ particleCount: 60, spread: 60, origin: { y: 0.3 }, colors, angle: 120 }), 400)
+  }, [entry?.status])
 
   const color = AVATAR_COLORS[members.indexOf(name) % AVATAR_COLORS.length] || AVATAR_COLORS[0]
   const streak = (() => {
