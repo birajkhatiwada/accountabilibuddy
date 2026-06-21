@@ -54,8 +54,9 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
   const [logs, setLogs] = useState({})     // { 'YYYY-MM-DD': { habit, count, total, notes } }
   const [noteInput, setNoteInput] = useState('')
   const [saving, setSaving] = useState(false)
-  // Local optimistic state for totals so UI updates instantly
+  // Local optimistic state so UI updates instantly without waiting for Firestore
   const [localTotals, setLocalTotals] = useState({})
+  const [localCounts, setLocalCounts] = useState({})
   const saveTimers = useRef({})
 
   const resolvedGoals = goalItems?.length ? goalItems : parseGoalsText(goals)
@@ -94,18 +95,18 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
     patchDay(dayKey, { habits })
   }
 
-  // count: use Firestore atomic increment — no stale read possible
-  const adjustCount = async (goalText, delta) => {
+  // count: optimistic local state + save to Firestore
+  const adjustCount = (goalText, delta) => {
     if (!entryId) return
+    const firestoreVal = logs['__count__']?.counts?.[goalText] || 0
+    const currentVal = localCounts[goalText] ?? firestoreVal
+    const newVal = Math.max(currentVal + delta, 0)
+
+    setLocalCounts(p => ({ ...p, [goalText]: newVal }))
+
     const countDoc = doc(db, 'entries', entryId, 'dailyLogs', '__count__')
-    const current = logs['__count__']
-    if (!current) {
-      // Doc doesn't exist yet — create it
-      await setDoc(countDoc, { counts: { [goalText]: Math.max(delta, 0) } })
-    } else {
-      const newVal = Math.max((current.counts?.[goalText] || 0) + delta, 0)
-      await setDoc(countDoc, { counts: { ...(current.counts || {}), [goalText]: newVal } })
-    }
+    const existingCounts = logs['__count__']?.counts || {}
+    setDoc(countDoc, { counts: { ...existingCounts, [goalText]: newVal } })
   }
 
   // total: optimistic local state + debounced save to Firestore
@@ -303,7 +304,7 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
                 }
 
                 if (type === 'count') {
-                  const val = weeklyCountValue(text)
+                  const val = localCounts[text] ?? weeklyCountValue(text)
                   return (
                     <div key={text} className="space-y-1.5">
                       <p className="text-xs text-zinc-500">{text}</p>
