@@ -822,7 +822,11 @@ export default function Home() {
                 <button
                   key={name}
                   onClick={() => openMember(name)}
-                  className="w-full text-left bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden hover:border-zinc-700 transition-colors"
+                  className={`w-full text-left rounded-2xl overflow-hidden transition-colors ${
+                    !e
+                      ? 'bg-zinc-900/50 border border-dashed border-zinc-700 hover:border-zinc-500'
+                      : 'bg-zinc-900 border border-zinc-800 hover:border-zinc-700'
+                  }`}
                 >
                   {/* Top: profile */}
                   <div className="flex items-center gap-3 px-4 py-3">
@@ -833,9 +837,9 @@ export default function Home() {
                       }
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-white font-bold text-sm leading-tight">{name}</p>
-                      <p className="text-zinc-500 text-[11px]">
-                        {streak >= 2 ? `🔥 ${streak}-week streak` : 'This week'}
+                      <p className={`font-bold text-sm leading-tight ${!e ? 'text-zinc-500' : 'text-white'}`}>{name}</p>
+                      <p className="text-zinc-600 text-[11px]">
+                        {!e ? 'No goals submitted yet' : streak >= 2 ? `🔥 ${streak}-week streak` : 'This week'}
                       </p>
                     </div>
                     <span className="text-lg">
