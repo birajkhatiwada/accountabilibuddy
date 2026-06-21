@@ -4,13 +4,6 @@ import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage
 import { db, storage } from '../firebase'
 import { getCurrentWeekId } from '../utils'
 import { Send, Plus, Minus, Camera, X } from 'lucide-react'
-import confetti from 'canvas-confetti'
-
-const ENCOURAGEMENTS = [
-  'Keep going! 🔥', 'That\'s the way! 💪', 'One step closer! ⭐',
-  'You\'re crushing it! 🚀', 'Legend! 🏆', 'Let\'s go! 💎',
-  'Progress! 🌟', 'On a roll! 🎯', 'Unstoppable! ⚡', 'Yes! 🙌',
-]
 
 function getWeekDays(weekId) {
   const base = new Date(weekId + 'T00:00:00')
@@ -61,24 +54,8 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
   const [uploading, setUploading] = useState(false)
   const [localTotals, setLocalTotals] = useState({})
   const [localCounts, setLocalCounts] = useState({})
-  const [toast, setToast] = useState(null)
   const saveTimers = useRef({})
-  const toastTimer = useRef(null)
   const fileInputRef = useRef(null)
-
-  const celebrate = () => {
-    const msg = ENCOURAGEMENTS[Math.floor(Math.random() * ENCOURAGEMENTS.length)]
-    setToast(msg)
-    clearTimeout(toastTimer.current)
-    toastTimer.current = setTimeout(() => setToast(null), 1800)
-    confetti({
-      particleCount: 30,
-      spread: 50,
-      origin: { y: 0.6 },
-      colors: ['#10b981', '#3b82f6', '#8b5cf6', '#f97316', '#ec4899', '#fbbf24'],
-      scalar: 0.7,
-    })
-  }
 
   const resolvedGoals = goalItems?.length ? goalItems : parseGoalsText(goals)
 
@@ -110,7 +87,6 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
     const current = getDayLog(dayKey)
     const habits = { ...(current.habits || {}) }
     habits[goalText] = !habits[goalText]
-    if (habits[goalText]) celebrate()
     patchDay(dayKey, { habits })
   }
 
@@ -120,7 +96,6 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
     const firestoreVal = logs[dayKey]?.counts?.[goalText] || 0
     const currentVal = localCounts[localKey] ?? firestoreVal
     const newVal = Math.max(currentVal + delta, 0)
-    if (delta > 0) celebrate()
 
     setLocalCounts(p => ({ ...p, [localKey]: newVal }))
 
@@ -154,7 +129,6 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
     const localKey = `${dayKey}__${goalText}`
     const currentLocal = localTotals[localKey] ?? firestoreVal
     const newVal = Math.max(currentLocal + delta, 0)
-    if (delta > 0) celebrate()
 
     setLocalTotals(p => ({ ...p, [localKey]: newVal }))
 
@@ -262,13 +236,7 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
 
   return (
     <div className="space-y-3">
-      {/* Encouragement toast */}
-      {toast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-zinc-900 border border-zinc-700 rounded-2xl px-5 py-2.5 shadow-2xl animate-bounce">
-          <p className="text-sm font-bold text-white whitespace-nowrap">{toast}</p>
-        </div>
-      )}
-      <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold px-1">Daily log</p>
+<p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold px-1">Daily log</p>
 
       {/* Day picker */}
       <div className="grid grid-cols-7 gap-1">
