@@ -448,43 +448,43 @@ export default function Home() {
               <button
                 key={name}
                 onClick={() => openMember(name)}
-                className="w-full text-left rounded-2xl bg-zinc-900 border border-zinc-800 overflow-hidden transition-all active:scale-[0.99] hover:border-zinc-700"
+                className="w-full text-left rounded-2xl bg-zinc-900 border border-zinc-800 overflow-hidden transition-all active:scale-[0.99] hover:border-zinc-700 flex"
               >
-                {/* Header: compact name strip */}
-                <div className={`bg-gradient-to-r ${color} px-3 py-1.5 flex items-center justify-between`}>
-                  <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 rounded-full bg-white/30 flex items-center justify-center text-white font-black text-[10px] shrink-0">
-                      {name[0].toUpperCase()}
-                    </div>
-                    <span className="text-white font-bold text-sm">{name}</span>
-                    {streak >= 2 && <span className="text-white/70 text-[11px] font-bold">🔥{streak}</span>}
+                {/* Left: name */}
+                <div className={`bg-gradient-to-b ${color} w-20 shrink-0 flex flex-col items-center justify-center gap-1 py-4 px-2`}>
+                  <div className="w-9 h-9 rounded-full bg-white/25 flex items-center justify-center text-white font-black text-base">
+                    {name[0].toUpperCase()}
                   </div>
-                  <span className="text-sm">{statusEmoji}</span>
+                  <p className="text-white font-bold text-xs text-center leading-tight break-words w-full px-1">{name}</p>
+                  {streak >= 2 && <p className="text-white/70 text-[10px] font-bold">🔥{streak}</p>}
                 </div>
 
-                {/* Goals — the main focus */}
-                <div className="px-4 py-3">
+                {/* Right: goals */}
+                <div className="flex-1 px-3 py-3 flex flex-col justify-center gap-1.5 min-w-0">
                   {e?.goalItems?.length > 0 ? (
-                    <div className="space-y-2">
-                      {e.goalItems.map((g, i) => (
-                        <div key={i} className="flex items-center gap-2.5">
-                          <span className={`text-xs font-black w-5 h-5 rounded-md flex items-center justify-center shrink-0 ${
-                            g.type === 'habit' ? 'bg-violet-500/20 text-violet-400' :
-                            g.type === 'count' ? 'bg-blue-500/20 text-blue-400' :
-                            'bg-emerald-500/20 text-emerald-400'
-                          }`}>
-                            {g.type === 'habit' ? '✓' : g.type === 'count' ? '×' : '#'}
-                          </span>
-                          <span className="text-zinc-200 text-sm font-medium flex-1">{g.text}</span>
-                          {g.target && <span className="text-zinc-500 text-xs shrink-0">{g.target} {g.unit}</span>}
-                        </div>
-                      ))}
-                    </div>
+                    e.goalItems.map((g, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <span className={`text-[10px] font-black w-4 h-4 rounded flex items-center justify-center shrink-0 ${
+                          g.type === 'habit' ? 'bg-violet-500/20 text-violet-400' :
+                          g.type === 'count' ? 'bg-blue-500/20 text-blue-400' :
+                          'bg-emerald-500/20 text-emerald-400'
+                        }`}>
+                          {g.type === 'habit' ? '✓' : g.type === 'count' ? '×' : '#'}
+                        </span>
+                        <span className="text-zinc-200 text-sm flex-1 truncate">{g.text}</span>
+                        {g.target && <span className="text-zinc-600 text-xs shrink-0">{g.target} {g.unit}</span>}
+                      </div>
+                    ))
                   ) : e ? (
                     <p className="text-zinc-500 text-sm">{e.goals}</p>
                   ) : (
-                    <p className="text-zinc-600 text-sm italic">No goals set yet — tap to add</p>
+                    <p className="text-zinc-600 text-sm italic">Tap to add goals</p>
                   )}
+                </div>
+
+                {/* Status dot */}
+                <div className="flex items-center pr-3">
+                  <span className="text-base">{statusEmoji}</span>
                 </div>
               </button>
             )
