@@ -44,6 +44,7 @@ export default function Home() {
   const [confirmFail, setConfirmFail] = useState(false)
   const [addingMember, setAddingMember] = useState(false)
   const [newMemberName, setNewMemberName] = useState('')
+  const [editingGoals, setEditingGoals] = useState(false)
 
   useEffect(() => {
     const unsub = onSnapshot(MEMBERS_DOC, (snap) => {
@@ -69,6 +70,7 @@ export default function Home() {
     setConfirmFail(false)
     setProofInput('')
     setGoalsInput([])
+    setEditingGoals(false)
   }
 
   const submitGoals = async (name) => {
@@ -92,6 +94,27 @@ export default function Home() {
       createdAt: Timestamp.now(),
     })
     setGoalsInput([])
+    setSubmitting(false)
+  }
+
+  const updateGoals = async (entry) => {
+    const validGoals = goalsInput.filter(g => g.text.trim())
+    if (!validGoals.length) return
+    setSubmitting(true)
+    const goalsSummary = validGoals.map(g =>
+      (g.type === 'count' || g.type === 'total') && g.target ? `${g.text} (${g.target} ${g.unit})` : g.text
+    ).join('\n')
+    await updateDoc(doc(db, 'entries', entry.id), {
+      goals: goalsSummary,
+      goalItems: validGoals.map(g => ({
+        text: g.text.trim(),
+        type: g.type || 'habit',
+        target: (g.type === 'count' || g.type === 'total') && g.target ? Number(g.target) : null,
+        unit: g.unit?.trim() || '',
+      })),
+    })
+    setGoalsInput([])
+    setEditingGoals(false)
     setSubmitting(false)
   }
 
@@ -305,15 +328,35 @@ export default function Home() {
                   <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${getAvatarColor(entry.name)} flex items-center justify-center text-white font-black text-lg shrink-0`}>
                     {entry.name[0].toUpperCase()}
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <p className="font-bold text-white text-lg leading-tight">{entry.name}</p>
                     <StatusPill entry={entry} />
                   </div>
+                  <button
+                    onClick={() => setEditingGoals(v => !v)}
+                    className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors px-2 py-1 rounded-lg hover:bg-zinc-800"
+                  >
+                    {editingGoals ? 'cancel' : 'edit goals'}
+                  </button>
                 </div>
+
+                {editingGoals ? (
+                  <div className="space-y-3">
+                    <GoalBuilder onChange={setGoalsInput} />
+                    <button
+                      onClick={() => updateGoals(entry)}
+                      disabled={submitting || !goalsInput.some(g => g.text.trim())}
+                      className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-40 text-white font-bold rounded-xl py-2.5 transition-all"
+                    >
+                      {submitting ? 'Saving...' : 'Save new goals'}
+                    </button>
+                  </div>
+                ) : (
                 <div className="bg-zinc-800/50 rounded-xl p-3">
                   <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1.5">Goals this week</p>
                   <p className="text-zinc-200 text-sm whitespace-pre-wrap leading-relaxed">{entry.goals}</p>
                 </div>
+                )}
               </div>
 
               {/* Proof updates */}
