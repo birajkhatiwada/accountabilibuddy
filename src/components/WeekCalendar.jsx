@@ -71,10 +71,8 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
     return unsub
   }, [entryId])
 
-  // Reset local totals when switching days
   useEffect(() => {
     setNoteInput('')
-    setLocalTotals({})
   }, [selectedDay])
 
   const getDayLog = (key) => logs[key] || {}
