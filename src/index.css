@@ -17,3 +17,13 @@
     scrollbar-width: none;
   }
 }
+
+@keyframes glow-pop {
+  0%   { box-shadow: 0 0 0px 0px transparent; background-color: transparent; }
+  30%  { box-shadow: 0 0 16px 4px #10b98166; background-color: #10b98122; }
+  100% { box-shadow: 0 0 0px 0px transparent; background-color: transparent; }
+}
+
+.glow-pop {
+  animation: glow-pop 0.7s ease-out forwards;
+}

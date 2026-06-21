@@ -54,8 +54,16 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
   const [uploading, setUploading] = useState(false)
   const [localTotals, setLocalTotals] = useState({})
   const [localCounts, setLocalCounts] = useState({})
+  const [glowing, setGlowing] = useState(null) // goalText of currently glowing row
   const saveTimers = useRef({})
+  const glowTimer = useRef(null)
   const fileInputRef = useRef(null)
+
+  const triggerGlow = (goalText) => {
+    setGlowing(goalText)
+    clearTimeout(glowTimer.current)
+    glowTimer.current = setTimeout(() => setGlowing(null), 700)
+  }
 
   const resolvedGoals = goalItems?.length ? goalItems : parseGoalsText(goals)
 
@@ -87,6 +95,7 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
     const current = getDayLog(dayKey)
     const habits = { ...(current.habits || {}) }
     habits[goalText] = !habits[goalText]
+    if (habits[goalText]) triggerGlow(goalText)
     patchDay(dayKey, { habits })
   }
 
@@ -96,7 +105,7 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
     const firestoreVal = logs[dayKey]?.counts?.[goalText] || 0
     const currentVal = localCounts[localKey] ?? firestoreVal
     const newVal = Math.max(currentVal + delta, 0)
-
+    if (delta > 0) triggerGlow(goalText)
     setLocalCounts(p => ({ ...p, [localKey]: newVal }))
 
     clearTimeout(saveTimers.current[localKey])
@@ -129,7 +138,7 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
     const localKey = `${dayKey}__${goalText}`
     const currentLocal = localTotals[localKey] ?? firestoreVal
     const newVal = Math.max(currentLocal + delta, 0)
-
+    if (delta > 0) triggerGlow(goalText)
     setLocalTotals(p => ({ ...p, [localKey]: newVal }))
 
     clearTimeout(saveTimers.current[localKey])
@@ -343,7 +352,7 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
                   const checked = !!selectedLog.habits?.[text]
                   return (
                     <button key={text} onClick={() => toggleHabit(selectedDay, text)}
-                      className="w-full flex items-center gap-3 text-left group">
+                      className={`w-full flex items-center gap-3 text-left group rounded-xl transition-all ${glowing === text ? 'glow-pop' : ''}`}>
                       <Checkmark checked={checked} />
                       <span className={`text-sm transition-colors ${checked ? 'text-zinc-500 line-through' : 'text-zinc-300 group-hover:text-white'}`}>
                         {text}
@@ -357,7 +366,7 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
                   const localKey = `${selectedDay}__count__${text}`
                   const val = localCounts[localKey] ?? (logs[selectedDay]?.counts?.[text] || 0)
                   return (
-                    <div key={text} className="space-y-1.5">
+                    <div key={text} className={`space-y-1.5 rounded-xl transition-all ${glowing === text ? 'glow-pop' : ''}`}>
                       <p className="text-xs text-zinc-500">{text} — how many today?</p>
                       <div className="flex items-center gap-3">
                         <button onClick={() => adjustCount(selectedDay, text, -1)}
@@ -385,7 +394,7 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
                   const firestoreVal = selectedLog.totals?.[text] || 0
                   const val = localTotals[localKey] ?? firestoreVal
                   return (
-                    <div key={text} className="space-y-1.5">
+                    <div key={text} className={`space-y-1.5 rounded-xl transition-all ${glowing === text ? 'glow-pop' : ''}`}>
                       <p className="text-xs text-zinc-500">{text} — how much today?</p>
                       <div className="flex items-center gap-3">
                         <button onClick={() => adjustTotal(selectedDay, text, -1)}
