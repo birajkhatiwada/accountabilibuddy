@@ -586,7 +586,7 @@ export default function Home() {
               {/* One line per member */}
               {members.map(name => {
                 const pts = getMemberDailyProgress(name)
-                const hex = getAvatarHex(name)
+                const hex = getAvatarHex(name, members)
                 const today = new Date(); today.setHours(23,59,59,0)
                 const daysElapsed = weekDays.filter(d => d <= today).length
                 const displayPts = pts.length ? pts : Array(daysElapsed).fill(0)
@@ -610,7 +610,7 @@ export default function Home() {
             <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
               {members.map(name => (
                 <div key={name} className="flex items-center gap-1">
-                  <div className="w-3 h-0.5 rounded-full" style={{ backgroundColor: getAvatarHex(name) }} />
+                  <div className="w-3 h-0.5 rounded-full" style={{ backgroundColor: getAvatarHex(name, members) }} />
                   <span className="text-[10px] text-zinc-500">{name}</span>
                 </div>
               ))}
@@ -627,7 +627,7 @@ export default function Home() {
             </div>
             {members.map(name => {
               const e = getEntry(name)
-              const color = getAvatarColor(name)
+              const color = getAvatarColor(name, members)
               const logs = e ? (memberLogs[e.id] || {}) : {}
               const today = new Date(); today.setHours(0,0,0,0)
               return (
@@ -660,7 +660,7 @@ export default function Home() {
             <div className="space-y-3">
               {members.map(name => {
                 const rate = getMemberRate(name)
-                const color = getAvatarColor(name)
+                const color = getAvatarColor(name, members)
                 const pct = rate === null ? null : Math.round(rate * 100)
                 return (
                   <button
@@ -694,7 +694,7 @@ export default function Home() {
             <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide px-1">This week's goals</p>
             {members.map(name => {
               const e = getEntry(name)
-              const color = getAvatarColor(name)
+              const color = getAvatarColor(name, members)
               if (!e?.goalItems?.length && !e?.goals) return null
               return (
                 <button
