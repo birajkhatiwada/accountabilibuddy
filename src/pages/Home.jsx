@@ -523,6 +523,73 @@ export default function Home() {
               </div>
             )}
 
+            {/* 8-week history chart */}
+            {(() => {
+              const memberHistory = weekHistory.map(wId => {
+                const e = allEntries.find(e =>
+                  (e.nameLower || e.name?.toLowerCase()) === selectedMember.toLowerCase() && e.weekId === wId
+                )
+                const color = !e ? '#3f3f46' : e.status === 'completed' ? '#34d399' : e.status === 'failed' ? '#f87171' : '#fbbf24'
+                return { y: e ? 1 : 0.3, color, status: e?.status ?? 'none' }
+              })
+              return (
+                <div className="bg-zinc-800/40 rounded-2xl p-4">
+                  <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-2">8-week track record</p>
+                  <HighchartsReact
+                    highcharts={Highcharts}
+                    options={{
+                      chart: {
+                        type: 'column',
+                        backgroundColor: 'transparent',
+                        height: 120,
+                        spacing: [4, 0, 4, 0],
+                        style: { fontFamily: 'inherit' },
+                      },
+                      title: { text: null },
+                      credits: { enabled: false },
+                      legend: { enabled: false },
+                      xAxis: {
+                        categories: weekHistory.map((wId, i) => i === weekHistory.length - 1 ? 'Now' : `W${i + 1}`),
+                        labels: { style: { color: '#71717a', fontSize: '9px' } },
+                        lineColor: 'transparent',
+                        tickColor: 'transparent',
+                      },
+                      yAxis: { visible: false, max: 1.2 },
+                      tooltip: {
+                        backgroundColor: '#18181b',
+                        borderColor: '#3f3f46',
+                        borderRadius: 10,
+                        style: { color: '#e4e4e7', fontSize: '11px' },
+                        formatter() {
+                          const s = memberHistory[this.point.index].status
+                          const label = s === 'completed' ? '✅ Completed' : s === 'failed' ? '❌ Failed' : s === 'active' ? '🔥 In progress' : '— No entry'
+                          return `<b>${this.x}</b><br/>${label}`
+                        },
+                      },
+                      plotOptions: {
+                        column: {
+                          borderRadius: 6,
+                          pointPadding: 0.1,
+                          groupPadding: 0.05,
+                          colorByPoint: true,
+                        },
+                      },
+                      colors: memberHistory.map(p => p.color),
+                      series: [{ data: memberHistory.map(p => p.y) }],
+                    }}
+                  />
+                  <div className="flex gap-4 mt-1">
+                    {[['#34d399','Done'],['#fbbf24','Active'],['#f87171','Failed'],['#3f3f46','None']].map(([c, l]) => (
+                      <div key={l} className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded-sm" style={{ background: c }} />
+                        <span className="text-[9px] text-zinc-600">{l}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            })()}
+
             {/* Week calendar */}
             <WeekCalendar entryId={entry.id} goalItems={entry.goalItems} goals={entry.goals} />
 
