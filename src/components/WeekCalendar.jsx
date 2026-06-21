@@ -3,7 +3,7 @@ import { collection, doc, onSnapshot, setDoc, updateDoc, increment } from 'fireb
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { db, storage } from '../firebase'
 import { getCurrentWeekId } from '../utils'
-import { Send, Plus, Minus, Camera, X } from 'lucide-react'
+import { Send, Camera, ChevronUp, ChevronDown } from 'lucide-react'
 
 function getWeekDays(weekId) {
   const base = new Date(weekId + 'T00:00:00')
@@ -27,6 +27,48 @@ function dateKey(date) {
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const REACTIONS = ['🔥', '💪', '👏', '❤️']
+
+function ScrollDrum({ value, onChange, unit }) {
+  const touchStartY = useRef(null)
+  const lastDelta = useRef(0)
+
+  const onWheel = (e) => {
+    e.preventDefault()
+    const newVal = Math.max(value + (e.deltaY < 0 ? 1 : -1), 0)
+    onChange(newVal)
+  }
+
+  const onTouchStart = (e) => { touchStartY.current = e.touches[0].clientY }
+  const onTouchMove = (e) => {
+    if (touchStartY.current === null) return
+    const diff = touchStartY.current - e.touches[0].clientY
+    const steps = Math.floor(Math.abs(diff) / 18)
+    if (steps > lastDelta.current) {
+      onChange(Math.max(value + (diff > 0 ? 1 : -1), 0))
+      lastDelta.current = steps
+    }
+  }
+  const onTouchEnd = () => { touchStartY.current = null; lastDelta.current = 0 }
+
+  return (
+    <div className="flex items-center gap-3">
+      <div
+        className="relative flex flex-col items-center select-none cursor-ns-resize touch-none"
+        onWheel={onWheel}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
+        <ChevronUp size={14} className="text-zinc-600 mb-0.5" />
+        <div className="w-20 h-12 bg-zinc-800 border border-zinc-700 rounded-xl flex items-center justify-center">
+          <span className="text-2xl font-black text-white">{value}</span>
+        </div>
+        <ChevronDown size={14} className="text-zinc-600 mt-0.5" />
+      </div>
+      {unit && <span className="text-sm text-zinc-500">{unit}</span>}
+    </div>
+  )
+}
 
 function Checkmark({ checked }) {
   return (
@@ -54,16 +96,8 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
   const [uploading, setUploading] = useState(false)
   const [localTotals, setLocalTotals] = useState({})
   const [localCounts, setLocalCounts] = useState({})
-  const [glowing, setGlowing] = useState(null) // goalText of currently glowing row
   const saveTimers = useRef({})
-  const glowTimer = useRef(null)
   const fileInputRef = useRef(null)
-
-  const triggerGlow = (goalText) => {
-    setGlowing(goalText)
-    clearTimeout(glowTimer.current)
-    glowTimer.current = setTimeout(() => setGlowing(null), 700)
-  }
 
   const resolvedGoals = goalItems?.length ? goalItems : parseGoalsText(goals)
 
@@ -95,7 +129,6 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
     const current = getDayLog(dayKey)
     const habits = { ...(current.habits || {}) }
     habits[goalText] = !habits[goalText]
-    if (habits[goalText]) triggerGlow(goalText)
     patchDay(dayKey, { habits })
   }
 
@@ -105,7 +138,6 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
     const firestoreVal = logs[dayKey]?.counts?.[goalText] || 0
     const currentVal = localCounts[localKey] ?? firestoreVal
     const newVal = Math.max(currentVal + delta, 0)
-    if (delta > 0) triggerGlow(goalText)
     setLocalCounts(p => ({ ...p, [localKey]: newVal }))
 
     clearTimeout(saveTimers.current[localKey])
@@ -138,7 +170,6 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
     const localKey = `${dayKey}__${goalText}`
     const currentLocal = localTotals[localKey] ?? firestoreVal
     const newVal = Math.max(currentLocal + delta, 0)
-    if (delta > 0) triggerGlow(goalText)
     setLocalTotals(p => ({ ...p, [localKey]: newVal }))
 
     clearTimeout(saveTimers.current[localKey])
@@ -352,7 +383,7 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
                   const checked = !!selectedLog.habits?.[text]
                   return (
                     <button key={text} onClick={() => toggleHabit(selectedDay, text)}
-                      className={`w-full flex items-center gap-3 text-left group rounded-xl transition-all ${glowing === text ? 'glow-pop' : ''}`}>
+                      className="w-full flex items-center gap-3 text-left group rounded-xl">
                       <Checkmark checked={checked} />
                       <span className={`text-sm transition-colors ${checked ? 'text-zinc-500 line-through' : 'text-zinc-300 group-hover:text-white'}`}>
                         {text}
@@ -366,25 +397,16 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
                   const localKey = `${selectedDay}__count__${text}`
                   const val = localCounts[localKey] ?? (logs[selectedDay]?.counts?.[text] || 0)
                   return (
-                    <div key={text} className={`space-y-1.5 rounded-xl transition-all ${glowing === text ? 'glow-pop' : ''}`}>
+                    <div key={text} className="space-y-1.5">
                       <p className="text-xs text-zinc-500">{text} — how many today?</p>
-                      <div className="flex items-center gap-3">
-                        <button onClick={() => adjustCount(selectedDay, text, -1)}
-                          className="w-10 h-10 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 flex items-center justify-center transition-colors">
-                          <Minus size={16} />
-                        </button>
-                        <div className="flex-1 flex items-center justify-center gap-2">
-                          <input type="number" min="0" value={val}
-                            onChange={e => setCountFromInput(selectedDay, text, e.target.value)}
-                            className="w-20 bg-zinc-800 border border-zinc-700 rounded-xl px-2 py-2 text-center text-xl font-black text-white focus:outline-none focus:border-emerald-500 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                          />
-                          {unit && <span className="text-sm text-zinc-500">{unit}</span>}
-                        </div>
-                        <button onClick={() => adjustCount(selectedDay, text, 1)}
-                          className="w-10 h-10 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white flex items-center justify-center transition-colors">
-                          <Plus size={16} />
-                        </button>
-                      </div>
+                      <ScrollDrum value={val} unit={unit} onChange={v => {
+                        setLocalCounts(p => ({ ...p, [localKey]: v }))
+                        clearTimeout(saveTimers.current[localKey])
+                        saveTimers.current[localKey] = setTimeout(async () => {
+                          const current = getDayLog(selectedDay)
+                          await setDoc(doc(db, 'entries', entryId, 'dailyLogs', selectedDay), { ...current, counts: { ...(current.counts || {}), [text]: v } })
+                        }, 300)
+                      }} />
                     </div>
                   )
                 }
@@ -394,25 +416,16 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
                   const firestoreVal = selectedLog.totals?.[text] || 0
                   const val = localTotals[localKey] ?? firestoreVal
                   return (
-                    <div key={text} className={`space-y-1.5 rounded-xl transition-all ${glowing === text ? 'glow-pop' : ''}`}>
+                    <div key={text} className="space-y-1.5">
                       <p className="text-xs text-zinc-500">{text} — how much today?</p>
-                      <div className="flex items-center gap-3">
-                        <button onClick={() => adjustTotal(selectedDay, text, -1)}
-                          className="w-10 h-10 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 flex items-center justify-center transition-colors">
-                          <Minus size={16} />
-                        </button>
-                        <div className="flex-1 flex items-center justify-center gap-2">
-                          <input type="number" min="0" value={val}
-                            onChange={e => setTotalFromInput(selectedDay, text, e.target.value)}
-                            className="w-20 bg-zinc-800 border border-zinc-700 rounded-xl px-2 py-2 text-center text-xl font-black text-white focus:outline-none focus:border-emerald-500 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                          />
-                          <span className="text-sm text-zinc-500">{unit}</span>
-                        </div>
-                        <button onClick={() => adjustTotal(selectedDay, text, 1)}
-                          className="w-10 h-10 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white flex items-center justify-center transition-colors">
-                          <Plus size={16} />
-                        </button>
-                      </div>
+                      <ScrollDrum value={val} unit={unit} onChange={v => {
+                        setLocalTotals(p => ({ ...p, [localKey]: v }))
+                        clearTimeout(saveTimers.current[localKey])
+                        saveTimers.current[localKey] = setTimeout(async () => {
+                          const current = getDayLog(selectedDay)
+                          await setDoc(doc(db, 'entries', entryId, 'dailyLogs', selectedDay), { ...current, totals: { ...(current.totals || {}), [text]: v } })
+                        }, 300)
+                      }} />
                     </div>
                   )
                 }
