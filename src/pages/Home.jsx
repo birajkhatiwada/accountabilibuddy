@@ -5,6 +5,7 @@ import { getCurrentWeekId, formatWeekLabel, formatTimestamp } from '../utils'
 import { CheckCircle, XCircle, Send, AlertTriangle, ArrowLeft, Plus, Check, Pencil, X, UserPlus, Trash2 } from 'lucide-react'
 import WeekCalendar from '../components/WeekCalendar'
 import GoalBuilder from '../components/GoalBuilder'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 const MEMBERS_DOC = doc(db, 'config', 'members')
 const PENALTY = 15
@@ -267,11 +268,6 @@ export default function Home() {
       Object.values(log.totals || {}).some(v => v > 0))
 
   // Per-member cumulative goal progress per day this week (for multi-line chart)
-  const W = 280, H = 80, PX = 16, PY = 10
-  const cw = W - PX * 2, ch = H - PY * 2
-  const dayX = (i) => PX + (i / 6) * cw
-  const rateY = (r) => PY + (1 - r) * ch
-
   const getMemberDailyProgress = (name) => {
     const e = getEntry(name)
     if (!e?.goalItems?.length) return []
@@ -298,8 +294,20 @@ export default function Home() {
       })
   }
 
-  const buildMemberPath = (pts) =>
-    pts.map((r, i) => `${i === 0 ? 'M' : 'L'}${dayX(i).toFixed(1)},${rateY(r).toFixed(1)}`).join(' ')
+  // Build recharts-compatible data array: [{day:'Mon', Name1: 0.4, Name2: 0.7}, ...]
+  const DAY_LABELS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+  const today = new Date(); today.setHours(23,59,59,0)
+  const daysElapsed = weekDays.filter(d => d <= today).length
+
+  const chartData = DAY_LABELS.slice(0, daysElapsed).map((label, dayIdx) => {
+    const point = { day: label }
+    members.forEach(name => {
+      const pts = getMemberDailyProgress(name)
+      const val = pts[dayIdx] ?? 0
+      point[name] = Math.round(val * 100)
+    })
+    return point
+  })
 
   if (loading) return (
     <div className="flex items-center justify-center mt-24">
@@ -598,47 +606,38 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Per-member goal progress line chart */}
+          {/* Per-member goal progress line chart (Recharts) */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
-            <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-1">Goal progress this week</p>
-            <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
-              {/* Grid lines */}
-              {[0, 0.25, 0.5, 0.75, 1].map(v => (
-                <line key={v} x1={PX} y1={rateY(v).toFixed(1)} x2={W - PX} y2={rateY(v).toFixed(1)} stroke="#27272a" strokeWidth="1" />
-              ))}
-              {/* Y labels */}
-              {[0, 0.5, 1].map(v => (
-                <text key={v} x={PX - 2} y={rateY(v) + 3} textAnchor="end" fontSize="7" fill="#52525b">{Math.round(v * 100)}%</text>
-              ))}
-              {/* One line per member */}
-              {members.map(name => {
-                const pts = getMemberDailyProgress(name)
-                const hex = getAvatarHex(name, members)
-                const today = new Date(); today.setHours(23,59,59,0)
-                const daysElapsed = weekDays.filter(d => d <= today).length
-                const displayPts = pts.length ? pts : Array(daysElapsed).fill(0)
-                if (!displayPts.length) return null
-                const path = buildMemberPath(displayPts)
-                return (
-                  <g key={name}>
-                    <path d={path} fill="none" stroke={hex} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.9" />
-                    <circle cx={dayX(displayPts.length - 1)} cy={rateY(displayPts[displayPts.length - 1])} r="3" fill={hex} />
-                  </g>
-                )
-              })}
-            </svg>
-            {/* X axis */}
-            <div className="flex mt-0.5 pl-4">
-              {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((d, i) => (
-                <div key={d} className="flex-1 text-center text-[9px] font-bold text-zinc-700">{d}</div>
-              ))}
-            </div>
-            {/* Legend */}
-            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
+            <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-4">Goal progress this week</p>
+            <ResponsiveContainer width="100%" height={180}>
+              <LineChart data={chartData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                <XAxis dataKey="day" tick={{ fill: '#52525b', fontSize: 10 }} axisLine={false} tickLine={false} />
+                <YAxis domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fill: '#52525b', fontSize: 10 }} axisLine={false} tickLine={false} ticks={[0, 25, 50, 75, 100]} />
+                <Tooltip
+                  contentStyle={{ background: '#18181b', border: '1px solid #3f3f46', borderRadius: 12, fontSize: 12 }}
+                  labelStyle={{ color: '#a1a1aa', fontWeight: 700, marginBottom: 4 }}
+                  formatter={(val, name) => [`${val}%`, name]}
+                />
+                {members.map(name => (
+                  <Line
+                    key={name}
+                    type="monotone"
+                    dataKey={name}
+                    stroke={getAvatarHex(name, members)}
+                    strokeWidth={2.5}
+                    dot={{ r: 3, fill: getAvatarHex(name, members), strokeWidth: 0 }}
+                    activeDot={{ r: 5 }}
+                    connectNulls
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3">
               {members.map(name => (
-                <div key={name} className="flex items-center gap-1">
+                <div key={name} className="flex items-center gap-1.5">
                   <div className="w-3 h-0.5 rounded-full" style={{ backgroundColor: getAvatarHex(name, members) }} />
-                  <span className="text-[10px] text-zinc-500">{name}</span>
+                  <span className="text-[11px] text-zinc-400 font-medium">{name}</span>
                 </div>
               ))}
             </div>
