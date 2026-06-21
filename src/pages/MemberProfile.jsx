@@ -218,7 +218,13 @@ export default function MemberProfile() {
               }
             </div>
           </div>
-          {entry && !editingGoals && (
+          {entry?.status === 'completed' && (
+            <div className="bg-black/20 rounded-xl px-3 py-2 text-center">
+              <p className="text-white font-black text-lg leading-none">✅</p>
+              <p className="text-[10px] text-white/70 font-bold mt-0.5">Week done!</p>
+            </div>
+          )}
+          {entry && entry.status !== 'completed' && !editingGoals && (
             <button
               onClick={() => { if (entry.goalItems?.length) setGoalsInput(entry.goalItems); setEditingGoals(true) }}
               className="bg-black/20 hover:bg-black/30 text-white/80 hover:text-white rounded-xl px-3 py-2 text-xs font-bold flex items-center gap-1.5 transition-colors"
@@ -230,64 +236,36 @@ export default function MemberProfile() {
       </div>
 
       {/* Stats row */}
-      {entry && (
-        <div className="grid grid-cols-3 gap-2">
-          <div className={`rounded-2xl p-3 text-center ${
-            entry.status === 'completed' ? 'bg-emerald-950/60 border border-emerald-800/50' :
-            entry.status === 'failed' ? 'bg-red-950/60 border border-red-800/50' :
-            'bg-zinc-900 border border-zinc-800'
-          }`}>
-            <p className="text-xl mb-0.5">{entry.status === 'completed' ? '✅' : entry.status === 'failed' ? '❌' : '🔄'}</p>
-            <p className={`text-[10px] font-bold uppercase tracking-wide ${
-              entry.status === 'completed' ? 'text-emerald-400' :
-              entry.status === 'failed' ? 'text-red-400' : 'text-amber-400'
-            }`}>{entry.status === 'completed' ? 'Done!' : entry.status === 'failed' ? 'Failed' : 'Active'}</p>
-          </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3 text-center">
-            <p className="text-xl font-black text-white mb-0.5">{entry.goalItems?.length || 0}</p>
-            <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">Goals</p>
-          </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3 text-center">
-            <p className="text-xl font-black text-white mb-0.5">{entry.updates?.length || 0}</p>
-            <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">Updates</p>
-          </div>
-        </div>
-      )}
-
-      {/* End-of-week summary card */}
-      {entry?.status === 'completed' && (() => {
+      {entry && (() => {
         const daysLogged = Object.values(memberLogs).filter(log =>
           Object.values(log?.habits || {}).some(Boolean) ||
           Object.values(log?.counts || {}).some(v => v > 0) ||
           Object.values(log?.totals || {}).some(v => v > 0)
         ).length
-        const goalCount = entry.goalItems?.length || 0
         return (
-          <div className={`-mx-4 bg-gradient-to-br ${color} px-6 py-5`}>
-            <div className="flex items-center gap-4">
-              <div className="text-5xl">
-                {avatars[name] || name[0].toUpperCase()}
-              </div>
-              <div className="flex-1">
-                <p className="text-white font-black text-lg leading-none">{name}</p>
-                <p className="text-white/70 text-sm mt-0.5">crushed it this week ✅</p>
-              </div>
-              {streak >= 2 && (
-                <div className="bg-white/20 rounded-2xl px-3 py-2 text-center">
-                  <p className="text-2xl font-black text-white">{streak}</p>
-                  <p className="text-[10px] text-white/70 font-bold">streak</p>
-                </div>
-              )}
+          <div className="grid grid-cols-4 gap-2">
+            <div className={`rounded-2xl p-3 text-center ${
+              entry.status === 'completed' ? 'bg-emerald-950/60 border border-emerald-800/50' :
+              entry.status === 'failed' ? 'bg-red-950/60 border border-red-800/50' :
+              'bg-zinc-900 border border-zinc-800'
+            }`}>
+              <p className="text-xl mb-0.5">{entry.status === 'completed' ? '✅' : entry.status === 'failed' ? '❌' : '🔄'}</p>
+              <p className={`text-[10px] font-bold uppercase tracking-wide ${
+                entry.status === 'completed' ? 'text-emerald-400' :
+                entry.status === 'failed' ? 'text-red-400' : 'text-amber-400'
+              }`}>{entry.status === 'completed' ? 'Done!' : entry.status === 'failed' ? 'Failed' : 'Active'}</p>
             </div>
-            <div className="grid grid-cols-2 gap-2 mt-4">
-              <div className="bg-black/20 rounded-xl px-3 py-2">
-                <p className="text-white/60 text-[10px] uppercase tracking-wide">Goals set</p>
-                <p className="text-white font-black text-xl">{goalCount}</p>
-              </div>
-              <div className="bg-black/20 rounded-xl px-3 py-2">
-                <p className="text-white/60 text-[10px] uppercase tracking-wide">Days logged</p>
-                <p className="text-white font-black text-xl">{daysLogged}/7</p>
-              </div>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3 text-center">
+              <p className="text-xl font-black text-white mb-0.5">{entry.goalItems?.length || 0}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">Goals</p>
+            </div>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3 text-center">
+              <p className="text-xl font-black text-white mb-0.5">{daysLogged}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">Days</p>
+            </div>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3 text-center">
+              <p className="text-xl font-black text-white mb-0.5">{entry.updates?.length || 0}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">Proofs</p>
             </div>
           </div>
         )
