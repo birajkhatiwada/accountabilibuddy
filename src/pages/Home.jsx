@@ -79,7 +79,8 @@ export default function Home() {
     setSubmitting(true)
     // Build a plain text summary for display on cards
     const goalsSummary = validGoals.map(g =>
-      g.hasTarget && g.target ? `${g.text} (${g.target} ${g.unit})` : g.text
+      g.type === 'habit' ? `${g.text} (every day)` :
+      g.target ? `${g.text} (${g.target} ${g.unit})` : g.text
     ).join('\n')
     await addDoc(collection(db, 'entries'), {
       weekId, name, nameLower: name.toLowerCase(),
@@ -102,7 +103,8 @@ export default function Home() {
     if (!validGoals.length) return
     setSubmitting(true)
     const goalsSummary = validGoals.map(g =>
-      (g.type === 'count' || g.type === 'total') && g.target ? `${g.text} (${g.target} ${g.unit})` : g.text
+      g.type === 'habit' ? `${g.text} (every day)` :
+      g.target ? `${g.text} (${g.target} ${g.unit})` : g.text
     ).join('\n')
     await updateDoc(doc(db, 'entries', entry.id), {
       goals: goalsSummary,
