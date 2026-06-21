@@ -25,11 +25,11 @@ const AVATAR_HEX = [
   '#ec4899', '#6366f1', '#14b8a6', '#d946ef',
 ]
 
-const getAvatarColor = (name) =>
-  AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length]
+const getAvatarColor = (name, members) =>
+  AVATAR_COLORS[members.indexOf(name) % AVATAR_COLORS.length]
 
-const getAvatarHex = (name) =>
-  AVATAR_HEX[name.charCodeAt(0) % AVATAR_HEX.length]
+const getAvatarHex = (name, members) =>
+  AVATAR_HEX[members.indexOf(name) % AVATAR_HEX.length]
 
 export default function Home() {
   const weekId = getCurrentWeekId()
@@ -311,7 +311,7 @@ export default function Home() {
   if (selectedMember) {
     const entry = getEntry(selectedMember)
     const streak = getStreak(selectedMember)
-    const color = getAvatarColor(selectedMember)
+    const color = getAvatarColor(selectedMember, members)
     const goalCount = entry?.goalItems?.length || 0
     const updateCount = entry?.updates?.length || 0
 
