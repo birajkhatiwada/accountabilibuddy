@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { collection, query, where, onSnapshot, doc, setDoc } from 'firebase/firestore'
 import { db } from '../firebase'
-import { getCurrentWeekId } from '../utils'
+import { getCurrentWeekId, formatWeekLabel } from '../utils'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 
