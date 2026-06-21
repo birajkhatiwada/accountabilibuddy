@@ -1,7 +1,13 @@
 import { useState } from 'react'
-import { Plus, Trash2, Hash } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 
-const EMPTY_GOAL = () => ({ text: '', hasTarget: false, target: '', unit: '' })
+const TYPES = [
+  { value: 'habit',  label: '✓ Daily habit',    desc: 'Check off each day you do it' },
+  { value: 'count',  label: '× Weekly count',   desc: 'Do it X times this week' },
+  { value: 'total',  label: '# Running total',  desc: 'Log how much each session' },
+]
+
+const EMPTY_GOAL = () => ({ text: '', type: 'habit', target: '', unit: '' })
 
 export default function GoalBuilder({ onChange }) {
   const [goals, setGoals] = useState([EMPTY_GOAL()])
@@ -19,66 +25,69 @@ export default function GoalBuilder({ onChange }) {
   }
 
   const remove = (i) => {
-    const next = goals.filter((_, idx) => idx !== i)
-    setGoals(next.length ? next : [EMPTY_GOAL()])
-    onChange(next.length ? next : [EMPTY_GOAL()])
+    const next = goals.length > 1 ? goals.filter((_, idx) => idx !== i) : [EMPTY_GOAL()]
+    setGoals(next)
+    onChange(next)
   }
 
   return (
     <div className="space-y-2">
       {goals.map((goal, i) => (
-        <div key={i} className="bg-zinc-800/60 border border-zinc-700/60 rounded-2xl p-3 space-y-2">
-          {/* Goal text row */}
+        <div key={i} className="bg-zinc-800/60 border border-zinc-700/60 rounded-2xl p-3 space-y-3">
+          {/* Goal name */}
           <div className="flex gap-2 items-center">
-            <span className="text-zinc-600 text-sm font-bold w-4 shrink-0 text-center">{i + 1}</span>
+            <span className="text-zinc-600 text-xs font-bold w-4 text-center shrink-0">{i + 1}</span>
             <input
               type="text"
-              placeholder="e.g. Read pages, Go to gym, No takeout"
+              placeholder="Goal name (e.g. Go to gym, Read pages)"
               value={goal.text}
               onChange={e => update(i, { text: e.target.value })}
               className="flex-1 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors"
             />
-            <button
-              onClick={() => remove(i)}
-              className="text-zinc-700 hover:text-red-400 transition-colors p-1 shrink-0"
-            >
+            <button onClick={() => remove(i)} className="text-zinc-700 hover:text-red-400 transition-colors p-1 shrink-0">
               <Trash2 size={14} />
             </button>
           </div>
 
-          {/* Target toggle */}
-          <div className="pl-6 space-y-2">
-            <button
-              type="button"
-              onClick={() => update(i, { hasTarget: !goal.hasTarget })}
-              className={`flex items-center gap-1.5 text-xs font-semibold transition-colors ${
-                goal.hasTarget ? 'text-emerald-400' : 'text-zinc-600 hover:text-zinc-400'
-              }`}
-            >
-              <Hash size={11} />
-              {goal.hasTarget ? 'Has a target' : 'Add a target number'}
-            </button>
-
-            {goal.hasTarget && (
-              <div className="flex gap-2 items-center">
-                <input
-                  type="number"
-                  min="1"
-                  placeholder="0"
-                  value={goal.target}
-                  onChange={e => update(i, { target: e.target.value })}
-                  className="w-20 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-1.5 text-sm text-zinc-200 text-center focus:outline-none focus:border-emerald-500 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                />
-                <input
-                  type="text"
-                  placeholder="unit (pages, km, mins…)"
-                  value={goal.unit}
-                  onChange={e => update(i, { unit: e.target.value })}
-                  className="flex-1 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-1.5 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors"
-                />
-              </div>
-            )}
+          {/* Type selector */}
+          <div className="pl-6 grid grid-cols-3 gap-1.5">
+            {TYPES.map(t => (
+              <button
+                key={t.value}
+                type="button"
+                onClick={() => update(i, { type: t.value })}
+                className={`flex flex-col items-start px-2.5 py-2 rounded-xl border text-left transition-all ${
+                  goal.type === t.value
+                    ? 'border-emerald-600 bg-emerald-950/40 text-emerald-300'
+                    : 'border-zinc-700 text-zinc-500 hover:border-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                <span className="text-[11px] font-bold">{t.label}</span>
+                <span className="text-[10px] mt-0.5 leading-tight opacity-70">{t.desc}</span>
+              </button>
+            ))}
           </div>
+
+          {/* Target + unit — only for count and total */}
+          {(goal.type === 'count' || goal.type === 'total') && (
+            <div className="pl-6 flex gap-2 items-center">
+              <input
+                type="number"
+                min="1"
+                placeholder="0"
+                value={goal.target}
+                onChange={e => update(i, { target: e.target.value })}
+                className="w-20 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-1.5 text-sm text-zinc-200 text-center focus:outline-none focus:border-emerald-500 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+              <input
+                type="text"
+                placeholder={goal.type === 'count' ? 'times' : 'unit (pages, km…)'}
+                value={goal.unit}
+                onChange={e => update(i, { unit: e.target.value })}
+                className="flex-1 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-1.5 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors"
+              />
+            </div>
+          )}
         </div>
       ))}
 

@@ -84,8 +84,9 @@ export default function Home() {
       goals: goalsSummary,
       goalItems: validGoals.map(g => ({
         text: g.text.trim(),
-        target: g.hasTarget && g.target ? Number(g.target) : null,
-        unit: g.hasTarget ? g.unit.trim() : '',
+        type: g.type || 'habit',
+        target: (g.type === 'count' || g.type === 'total') && g.target ? Number(g.target) : null,
+        unit: g.unit?.trim() || '',
       })),
       status: 'active', updates: [],
       createdAt: Timestamp.now(),
