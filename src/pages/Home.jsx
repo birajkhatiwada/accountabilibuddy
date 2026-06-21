@@ -450,16 +450,16 @@ export default function Home() {
                 onClick={() => openMember(name)}
                 className="w-full text-left rounded-2xl bg-zinc-900 border border-zinc-800 overflow-hidden transition-all active:scale-[0.99] hover:border-zinc-700"
               >
-                {/* Header: avatar + name + status */}
-                <div className={`bg-gradient-to-r ${color} px-4 py-3 flex items-center justify-between`}>
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-white/25 flex items-center justify-center text-white font-black text-sm shrink-0">
+                {/* Header: compact name strip */}
+                <div className={`bg-gradient-to-r ${color} px-3 py-1.5 flex items-center justify-between`}>
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full bg-white/30 flex items-center justify-center text-white font-black text-[10px] shrink-0">
                       {name[0].toUpperCase()}
                     </div>
-                    <span className="text-white font-black text-base">{name}</span>
-                    {streak >= 2 && <span className="text-white/80 text-xs font-bold">🔥{streak}</span>}
+                    <span className="text-white font-bold text-sm">{name}</span>
+                    {streak >= 2 && <span className="text-white/70 text-[11px] font-bold">🔥{streak}</span>}
                   </div>
-                  <span className="text-lg">{statusEmoji}</span>
+                  <span className="text-sm">{statusEmoji}</span>
                 </div>
 
                 {/* Goals — the main focus */}
