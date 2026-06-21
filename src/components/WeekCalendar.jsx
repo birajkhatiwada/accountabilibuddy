@@ -93,18 +93,39 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
     patchDay(dayKey, { habits })
   }
 
-  // count: optimistic local state + save to Firestore
-  const adjustCount = (goalText, delta) => {
+  // count: stored per-day (same as total), optimistic local state
+  const adjustCount = (dayKey, goalText, delta) => {
     if (!entryId) return
-    const firestoreVal = logs['__count__']?.counts?.[goalText] || 0
-    const currentVal = localCounts[goalText] ?? firestoreVal
+    const localKey = `${dayKey}__count__${goalText}`
+    const firestoreVal = logs[dayKey]?.counts?.[goalText] || 0
+    const currentVal = localCounts[localKey] ?? firestoreVal
     const newVal = Math.max(currentVal + delta, 0)
 
-    setLocalCounts(p => ({ ...p, [goalText]: newVal }))
+    setLocalCounts(p => ({ ...p, [localKey]: newVal }))
 
-    const countDoc = doc(db, 'entries', entryId, 'dailyLogs', '__count__')
-    const existingCounts = logs['__count__']?.counts || {}
-    setDoc(countDoc, { counts: { ...existingCounts, [goalText]: newVal } })
+    clearTimeout(saveTimers.current[localKey])
+    saveTimers.current[localKey] = setTimeout(async () => {
+      const current = getDayLog(dayKey)
+      await setDoc(doc(db, 'entries', entryId, 'dailyLogs', dayKey), {
+        ...current,
+        counts: { ...(current.counts || {}), [goalText]: newVal },
+      })
+    }, 400)
+  }
+
+  const setCountFromInput = (dayKey, goalText, value) => {
+    if (!entryId) return
+    const localKey = `${dayKey}__count__${goalText}`
+    const newVal = Math.max(Number(value) || 0, 0)
+    setLocalCounts(p => ({ ...p, [localKey]: newVal }))
+    clearTimeout(saveTimers.current[localKey])
+    saveTimers.current[localKey] = setTimeout(async () => {
+      const current = getDayLog(dayKey)
+      await setDoc(doc(db, 'entries', entryId, 'dailyLogs', dayKey), {
+        ...current,
+        counts: { ...(current.counts || {}), [goalText]: newVal },
+      })
+    }, 400)
   }
 
   // total: optimistic local state + debounced save to Firestore
@@ -171,7 +192,12 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
     Object.values(logs).filter(l => l.habits?.[goalText]).length
 
   const weeklyCountValue = (goalText) =>
-    (logs['__count__']?.counts?.[goalText]) || 0
+    days.reduce((sum, day) => {
+      const key = dateKey(day)
+      const localKey = `${key}__count__${goalText}`
+      const val = localCounts[localKey] ?? (Number(logs[key]?.counts?.[goalText]) || 0)
+      return sum + val
+    }, 0)
 
   const weeklyTotalValue = (goalText) =>
     days.reduce((sum, day) => {
@@ -235,7 +261,7 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
               )
             }
             if (type === 'count') {
-              const val = localCounts[text] ?? weeklyCountValue(text)
+              const val = weeklyCountValue(text)
               const tgt = Number(target) || 0
               const pct = tgt ? Math.min((val / tgt) * 100, 100) : 0
               return (
@@ -305,29 +331,24 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
                 }
 
                 if (type === 'count') {
-                  const val = localCounts[text] ?? weeklyCountValue(text)
+                  const localKey = `${selectedDay}__count__${text}`
+                  const val = localCounts[localKey] ?? (logs[selectedDay]?.counts?.[text] || 0)
                   return (
                     <div key={text} className="space-y-1.5">
                       <p className="text-xs text-zinc-500">{text} — how many today?</p>
                       <div className="flex items-center gap-3">
-                        <button onClick={() => adjustCount(text, -1)}
+                        <button onClick={() => adjustCount(selectedDay, text, -1)}
                           className="w-10 h-10 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 flex items-center justify-center transition-colors">
                           <Minus size={16} />
                         </button>
                         <div className="flex-1 flex items-center justify-center gap-2">
                           <input type="number" min="0" value={val}
-                            onChange={e => {
-                              const newVal = Math.max(Number(e.target.value) || 0, 0)
-                              setLocalCounts(p => ({ ...p, [text]: newVal }))
-                              if (entryId) setDoc(doc(db, 'entries', entryId, 'dailyLogs', '__count__'), {
-                                counts: { ...(logs['__count__']?.counts || {}), [text]: newVal }
-                              })
-                            }}
+                            onChange={e => setCountFromInput(selectedDay, text, e.target.value)}
                             className="w-20 bg-zinc-800 border border-zinc-700 rounded-xl px-2 py-2 text-center text-xl font-black text-white focus:outline-none focus:border-emerald-500 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                           />
-                          {target && <span className="text-sm text-zinc-500">/{target} {unit || 'times'}</span>}
+                          {unit && <span className="text-sm text-zinc-500">{unit}</span>}
                         </div>
-                        <button onClick={() => adjustCount(text, 1)}
+                        <button onClick={() => adjustCount(selectedDay, text, 1)}
                           className="w-10 h-10 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white flex items-center justify-center transition-colors">
                           <Plus size={16} />
                         </button>
