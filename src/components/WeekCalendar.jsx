@@ -235,7 +235,7 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
               )
             }
             if (type === 'count') {
-              const val = weeklyCountValue(text)
+              const val = localCounts[text] ?? weeklyCountValue(text)
               const tgt = Number(target) || 0
               const pct = tgt ? Math.min((val / tgt) * 100, 100) : 0
               return (
