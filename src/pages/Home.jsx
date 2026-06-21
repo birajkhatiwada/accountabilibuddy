@@ -643,43 +643,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Weekly activity heatmap */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
-            <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-3">This week's activity</p>
-            <div className="flex gap-1 mb-2 pl-[76px]">
-              {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => (
-                <div key={d} className="flex-1 text-center text-[9px] font-bold text-zinc-600">{d}</div>
-              ))}
-            </div>
-            {members.map(name => {
-              const e = getEntry(name)
-              const color = getAvatarColor(name, members)
-              const logs = e ? (memberLogs[e.id] || {}) : {}
-              const today = new Date(); today.setHours(0,0,0,0)
-              return (
-                <div key={name} className="flex items-center gap-2 mb-2">
-                  <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${color} flex items-center justify-center text-white font-black text-[9px] shrink-0`}>
-                    {name[0].toUpperCase()}
-                  </div>
-                  <p className="text-zinc-400 text-[10px] font-semibold w-[52px] shrink-0 truncate">{name}</p>
-                  <div className="flex flex-1 gap-1">
-                    {weekDays.map(day => {
-                      const key = day.toISOString().split('T')[0]
-                      const isPast = day <= today
-                      const active = dayHasActivity(logs[key])
-                      return (
-                        <div key={key} className={`flex-1 rounded aspect-square ${
-                          active ? `bg-gradient-to-br ${color}` :
-                          isPast ? 'bg-zinc-800' : 'bg-zinc-900 border border-zinc-800'
-                        }`} />
-                      )
-                    })}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-
           {/* Goals this week */}
           <div className="space-y-2">
             <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide px-1">This week's goals</p>
