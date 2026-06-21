@@ -9,8 +9,10 @@ const TYPES = [
 
 const EMPTY_GOAL = () => ({ text: '', type: 'habit', target: '', unit: '' })
 
-export default function GoalBuilder({ onChange }) {
-  const [goals, setGoals] = useState([EMPTY_GOAL()])
+export default function GoalBuilder({ onChange, initialGoals }) {
+  const [goals, setGoals] = useState(() =>
+    initialGoals?.length ? initialGoals.map(g => ({ text: g.text || '', type: g.type || 'habit', target: g.target || '', unit: g.unit || '' })) : [EMPTY_GOAL()]
+  )
 
   const update = (i, patch) => {
     const next = goals.map((g, idx) => idx === i ? { ...g, ...patch } : g)

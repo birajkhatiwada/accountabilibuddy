@@ -333,7 +333,10 @@ export default function Home() {
                     <StatusPill entry={entry} />
                   </div>
                   <button
-                    onClick={() => setEditingGoals(v => !v)}
+                    onClick={() => {
+                      if (!editingGoals && entry.goalItems?.length) setGoalsInput(entry.goalItems)
+                      setEditingGoals(v => !v)
+                    }}
                     className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-xl transition-colors ${
                       editingGoals
                         ? 'bg-zinc-700 text-zinc-300'
@@ -347,7 +350,7 @@ export default function Home() {
 
                 {editingGoals ? (
                   <div className="space-y-3">
-                    <GoalBuilder onChange={setGoalsInput} />
+                    <GoalBuilder initialGoals={entry.goalItems} onChange={setGoalsInput} />
                     <button
                       onClick={() => updateGoals(entry)}
                       disabled={submitting || !goalsInput.some(g => g.text.trim())}
