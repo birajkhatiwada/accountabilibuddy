@@ -681,41 +681,6 @@ export default function Home() {
             })}
           </div>
 
-          {/* Individual completion bars */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
-            <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-3">Completion rate (8 wks)</p>
-            <div className="space-y-3">
-              {members.map(name => {
-                const rate = getMemberRate(name)
-                const color = getAvatarColor(name, members)
-                const pct = rate === null ? null : Math.round(rate * 100)
-                return (
-                  <button
-                    key={name}
-                    onClick={() => openMember(name)}
-                    className="w-full flex items-center gap-3 text-left group"
-                  >
-                    <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${color} flex items-center justify-center text-white font-black text-[10px] shrink-0`}>
-                      {name[0].toUpperCase()}
-                    </div>
-                    <p className="text-zinc-300 text-xs font-semibold w-16 shrink-0 truncate">{name}</p>
-                    <div className="flex-1 bg-zinc-800 rounded-full h-2 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full bg-gradient-to-r ${color} transition-all`}
-                        style={{ width: pct === null ? '0%' : `${pct}%` }}
-                      />
-                    </div>
-                    <span className={`text-xs font-bold w-8 text-right shrink-0 ${
-                      pct === null ? 'text-zinc-700' :
-                      pct >= 75 ? 'text-emerald-400' :
-                      pct >= 40 ? 'text-amber-400' : 'text-red-400'
-                    }`}>{pct === null ? '—' : `${pct}%`}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
           {/* Goals this week */}
           <div className="space-y-2">
             <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide px-1">This week's goals</p>
