@@ -197,6 +197,38 @@ export default function Home() {
   const doneThisWeek = entries.filter(e => e.status === 'completed').length
   const activeThisWeek = entries.filter(e => e.status === 'active').length
 
+  // Group completion rate per week (for trend line)
+  const weekTrend = weekHistory.map(wId => {
+    const weekEntries = allEntries.filter(e => e.weekId === wId)
+    if (weekEntries.length === 0) return null
+    const done = weekEntries.filter(e => e.status === 'completed').length
+    return done / weekEntries.length
+  })
+
+  // Completion rate per member over last 8 weeks
+  const getMemberRate = (name) => {
+    const relevant = weekHistory.map(wId => getMemberWeekStatus(name, wId)).filter(s => s !== 'none' && s !== 'active')
+    if (relevant.length === 0) return null
+    return relevant.filter(s => s === 'completed').length / relevant.length
+  }
+
+  // SVG line chart path from trend data
+  const buildTrendPath = () => {
+    const W = 280, H = 70, PX = 16, PY = 8
+    const cw = W - PX * 2, ch = H - PY * 2
+    const points = weekTrend.map((rate, i) => {
+      const x = PX + (i / (weekHistory.length - 1)) * cw
+      const y = rate === null ? null : PY + (1 - rate) * ch
+      return { x, y }
+    })
+    const valid = points.filter(p => p.y !== null)
+    if (valid.length < 2) return { line: '', area: '', points: valid }
+    const d = valid.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+    const area = `${d} L${valid[valid.length - 1].x.toFixed(1)},${H - PY} L${valid[0].x.toFixed(1)},${H - PY} Z`
+    return { line: d, area, points: valid, W, H }
+  }
+  const trendPath = buildTrendPath()
+
   if (loading) return (
     <div className="flex items-center justify-center mt-24">
       <div className="w-6 h-6 border-2 border-zinc-600 border-t-emerald-400 rounded-full animate-spin" />
@@ -474,88 +506,82 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Progress graph */}
-          <div className="bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800">
-
-            {/* Week header */}
-            <div className="flex items-center px-3 pt-3 pb-1">
-              <div className="w-[88px] shrink-0" />
-              <div className="flex flex-1 gap-1">
-                {weekHistory.map((wId, i) => (
-                  <div key={wId} className={`flex-1 text-center text-[9px] font-bold ${i === weekHistory.length - 1 ? 'text-zinc-300' : 'text-zinc-700'}`}>
-                    {i === weekHistory.length - 1 ? 'now' : `w${i + 1}`}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Member rows */}
-            <div className="divide-y divide-zinc-800/60">
-              {members.map(name => {
-                const e = getEntry(name)
-                const color = getAvatarColor(name)
-                const streak = getStreak(name)
-
-                return (
-                  <button
-                    key={name}
-                    onClick={() => openMember(name)}
-                    className="w-full flex items-center gap-2 px-3 py-3 hover:bg-zinc-800/40 transition-colors text-left"
-                  >
-                    {/* Avatar + name */}
-                    <div className="flex items-center gap-2 w-[88px] shrink-0 min-w-0">
-                      <div className={`w-7 h-7 rounded-full bg-gradient-to-br ${color} flex items-center justify-center text-white font-black text-xs shrink-0`}>
-                        {name[0].toUpperCase()}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-zinc-200 text-xs font-bold truncate leading-tight">{name}</p>
-                        {streak >= 2
-                          ? <p className="text-zinc-600 text-[9px] leading-tight">🔥 {streak}wk</p>
-                          : e?.goalItems?.[0]
-                            ? <p className="text-zinc-600 text-[9px] leading-tight truncate">{e.goalItems[0].text}</p>
-                            : null
-                        }
-                      </div>
-                    </div>
-
-                    {/* Week squares */}
-                    <div className="flex flex-1 gap-1">
-                      {weekHistory.map((wId, i) => {
-                        const status = getMemberWeekStatus(name, wId)
-                        const isCurrent = i === weekHistory.length - 1
-                        return (
-                          <div
-                            key={wId}
-                            className={`flex-1 rounded aspect-square ${
-                              status === 'completed' ? 'bg-emerald-500' :
-                              status === 'failed' ? 'bg-red-500' :
-                              status === 'active' ? 'bg-amber-400' :
-                              isCurrent ? 'bg-zinc-700' :
-                              'bg-zinc-800'
-                            } ${isCurrent ? 'ring-1 ring-zinc-500' : ''}`}
-                          />
-                        )
-                      })}
-                    </div>
-                  </button>
-                )
+          {/* Group trend line chart */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
+            <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-3">Group completion trend</p>
+            <svg viewBox={`0 0 ${trendPath.W || 280} ${trendPath.H || 70}`} className="w-full" preserveAspectRatio="none">
+              {/* Grid lines */}
+              {[0, 0.25, 0.5, 0.75, 1].map(v => {
+                const y = 8 + (1 - v) * 54
+                return <line key={v} x1="16" y1={y} x2="264" y2={y} stroke="#27272a" strokeWidth="1" />
               })}
-            </div>
-
-            {/* Legend */}
-            <div className="flex gap-4 justify-center px-3 py-2.5 border-t border-zinc-800/60">
-              {[['bg-emerald-500','Done'],['bg-amber-400','Active'],['bg-red-500','Failed'],['bg-zinc-800','–']].map(([cls, label]) => (
-                <div key={label} className="flex items-center gap-1.5">
-                  <div className={`w-2.5 h-2.5 rounded-sm ${cls}`} />
-                  <span className="text-[10px] text-zinc-600">{label}</span>
+              {/* Area fill */}
+              {trendPath.area && (
+                <path d={trendPath.area} fill="url(#trendFill)" opacity="0.3" />
+              )}
+              {/* Line */}
+              {trendPath.line && (
+                <path d={trendPath.line} fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              )}
+              {/* Dots */}
+              {trendPath.points?.map((p, i) => (
+                <circle key={i} cx={p.x} cy={p.y} r="3" fill="#34d399" />
+              ))}
+              <defs>
+                <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#34d399" />
+                  <stop offset="100%" stopColor="#34d399" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+            </svg>
+            {/* X axis labels */}
+            <div className="flex mt-1">
+              {weekHistory.map((_, i) => (
+                <div key={i} className={`flex-1 text-center text-[9px] font-bold ${i === weekHistory.length - 1 ? 'text-zinc-400' : 'text-zinc-700'}`}>
+                  {i === weekHistory.length - 1 ? 'now' : `w${i + 1}`}
                 </div>
               ))}
             </div>
           </div>
 
+          {/* Individual completion bars */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
+            <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-3">Completion rate (8 wks)</p>
+            <div className="space-y-3">
+              {members.map(name => {
+                const rate = getMemberRate(name)
+                const color = getAvatarColor(name)
+                const pct = rate === null ? null : Math.round(rate * 100)
+                return (
+                  <button
+                    key={name}
+                    onClick={() => openMember(name)}
+                    className="w-full flex items-center gap-3 text-left group"
+                  >
+                    <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${color} flex items-center justify-center text-white font-black text-[10px] shrink-0`}>
+                      {name[0].toUpperCase()}
+                    </div>
+                    <p className="text-zinc-300 text-xs font-semibold w-16 shrink-0 truncate">{name}</p>
+                    <div className="flex-1 bg-zinc-800 rounded-full h-2 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full bg-gradient-to-r ${color} transition-all`}
+                        style={{ width: pct === null ? '0%' : `${pct}%` }}
+                      />
+                    </div>
+                    <span className={`text-xs font-bold w-8 text-right shrink-0 ${
+                      pct === null ? 'text-zinc-700' :
+                      pct >= 75 ? 'text-emerald-400' :
+                      pct >= 40 ? 'text-amber-400' : 'text-red-400'
+                    }`}>{pct === null ? '—' : `${pct}%`}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
           {/* Goals this week */}
           <div className="space-y-2">
-            <p className="text-[11px] text-zinc-600 font-bold uppercase tracking-wide px-1">This week's goals</p>
+            <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide px-1">This week's goals</p>
             {members.map(name => {
               const e = getEntry(name)
               const color = getAvatarColor(name)
