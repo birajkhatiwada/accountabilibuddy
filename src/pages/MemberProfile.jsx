@@ -97,6 +97,8 @@ export default function MemberProfile() {
   const colorIdx = members.indexOf(name) % AVATAR_COLORS.length
   const color = AVATAR_COLORS[colorIdx < 0 ? 0 : colorIdx] || AVATAR_COLORS[0]
   const colorHex = AVATAR_HEX[colorIdx < 0 ? 0 : colorIdx] || AVATAR_HEX[0]
+  const card = { backgroundColor: `${colorHex}12`, border: `1px solid ${colorHex}30` }
+  const cardInner = { backgroundColor: `${colorHex}10` }
   const streak = (() => {
     const past = allEntries
       .filter(e => (e.nameLower || e.name?.toLowerCase()) === name.toLowerCase() && e.weekId < weekId)
@@ -293,16 +295,15 @@ export default function MemberProfile() {
           <div className="grid grid-cols-4 gap-2">
             <div className={`rounded-2xl p-3 text-center ${
               entry.status === 'completed' ? 'bg-emerald-950/60 border border-emerald-800/50' :
-              entry.status === 'failed' ? 'bg-red-950/60 border border-red-800/50' :
-              'bg-zinc-900 border border-zinc-800'
-            }`}>
+              entry.status === 'failed' ? 'bg-red-950/60 border border-red-800/50' : ''
+            }`} style={entry.status === 'active' ? card : {}}>
               <p className="text-xl mb-0.5">{entry.status === 'completed' ? '✅' : entry.status === 'failed' ? '❌' : '🔄'}</p>
               <p className={`text-[10px] font-bold uppercase tracking-wide ${
                 entry.status === 'completed' ? 'text-emerald-400' :
                 entry.status === 'failed' ? 'text-red-400' : 'text-amber-400'
               }`}>{entry.status === 'completed' ? 'Done!' : entry.status === 'failed' ? 'Failed' : 'Active'}</p>
             </div>
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3 text-center">
+            <div className="rounded-2xl p-3 text-center" style={card}>
               <p className="text-xl font-black text-white mb-0.5">{entry.goalItems?.length || 0}</p>
               <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">Goals</p>
             </div>
@@ -310,7 +311,7 @@ export default function MemberProfile() {
               <p className="text-xl font-black text-white mb-0.5">{daysLogged}</p>
               <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">Days</p>
             </div>
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3 text-center">
+            <div className="rounded-2xl p-3 text-center" style={card}>
               <p className="text-xl font-black text-white mb-0.5">{entry.updates?.length || 0}</p>
               <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">Proofs</p>
             </div>
@@ -320,7 +321,7 @@ export default function MemberProfile() {
 
       {/* No goals yet */}
       {!entry && (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
+        <div className="rounded-2xl p-5 space-y-4" style={card}>
           <p className="text-zinc-400 text-sm font-medium">Lock in your goals for this week 🔒</p>
           <GoalBuilder onChange={setGoalsInput} />
           <button
@@ -336,7 +337,7 @@ export default function MemberProfile() {
       {entry && (
         <>
           {editingGoals && (
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-3">
+            <div className="rounded-2xl p-4 space-y-3" style={card}>
               <div className="flex items-center justify-between">
                 <p className="text-sm font-bold text-zinc-300">Edit goals</p>
                 <button onClick={() => setEditingGoals(false)} className="text-zinc-600 hover:text-zinc-400"><X size={16} /></button>
@@ -350,11 +351,11 @@ export default function MemberProfile() {
           )}
 
           {!editingGoals && entry.goalItems?.length > 0 && (
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
+            <div className="rounded-2xl p-4" style={card}>
               <p className="text-xs text-zinc-500 uppercase tracking-wider mb-3 font-semibold">Goals this week</p>
               <div className="space-y-2">
                 {entry.goalItems.map((g, i) => (
-                  <div key={i} className="flex items-center gap-3 bg-zinc-800/60 rounded-xl px-3 py-2.5">
+                  <div key={i} className="flex items-center gap-3 rounded-xl px-3 py-2.5" style={cardInner}>
                     <span className="text-base shrink-0">{g.type === 'habit' ? '✓' : g.type === 'count' ? '×' : '#'}</span>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-zinc-200 font-medium">{g.text}</p>
@@ -369,7 +370,7 @@ export default function MemberProfile() {
 
           {/* Area chart */}
           {entry.goalItems?.length > 0 && (
-            <div className="bg-zinc-800/40 rounded-2xl p-4">
+            <div className="rounded-2xl p-4" style={card}>
               <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-2">Goal progress this week</p>
               <HighchartsReact
                 key={entry.goalItems.map(g => g.text).join(',')}
@@ -409,7 +410,7 @@ export default function MemberProfile() {
                   await updateDoc(doc(db, 'entries', entry.id), { updates })
                 }
                 return (
-                  <div key={i} className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 space-y-2">
+                  <div key={i} className="rounded-xl px-4 py-3 space-y-2" style={card}>
                     <div className="flex gap-3">
                       <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
                       <div className="flex-1">
