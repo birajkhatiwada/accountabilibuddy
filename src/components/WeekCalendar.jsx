@@ -33,38 +33,41 @@ const NUM_RANGE = Array.from({ length: 201 }, (_, i) => i)
 
 function NumPicker({ value, onChange, unit }) {
   return (
-    <div className="flex items-center gap-3">
-      <div
-        className="relative flex-1 overflow-hidden rounded-2xl bg-zinc-800 border border-zinc-700"
-        style={{ touchAction: 'none' }}
+    <div
+      className="relative w-full overflow-hidden rounded-2xl bg-zinc-800 border border-zinc-700"
+      style={{ touchAction: 'none' }}
+    >
+      {/* selection highlight */}
+      <div className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 h-10 bg-zinc-700/60 border-y border-zinc-600 z-10" />
+      {/* fade top */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-zinc-800 to-transparent z-20" />
+      {/* fade bottom */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-zinc-800 to-transparent z-20" />
+      {/* unit label overlaid at center-right */}
+      {unit && (
+        <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 z-30">
+          <span className="text-sm text-zinc-400 font-medium">{unit}</span>
+        </div>
+      )}
+      <Picker
+        value={{ n: value }}
+        onChange={(v) => onChange(v.n)}
+        height={120}
+        itemHeight={40}
+        wheelMode="natural"
       >
-        {/* selection highlight */}
-        <div className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 h-10 bg-zinc-700/60 border-y border-zinc-600 z-10" />
-        {/* fade top */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-zinc-800 to-transparent z-20" />
-        {/* fade bottom */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-zinc-800 to-transparent z-20" />
-        <Picker
-          value={{ n: value }}
-          onChange={(v) => onChange(v.n)}
-          height={120}
-          itemHeight={40}
-          wheelMode="natural"
-        >
-          <Picker.Column name="n">
-            {NUM_RANGE.map(n => (
-              <Picker.Item key={n} value={n}>
-                {({ selected }) => (
-                  <span className={`text-xl font-black transition-all ${selected ? 'text-white scale-110' : 'text-zinc-600'}`}>
-                    {n}
-                  </span>
-                )}
-              </Picker.Item>
-            ))}
-          </Picker.Column>
-        </Picker>
-      </div>
-      {unit && <span className="text-sm text-zinc-400 shrink-0">{unit}</span>}
+        <Picker.Column name="n">
+          {NUM_RANGE.map(n => (
+            <Picker.Item key={n} value={n}>
+              {({ selected }) => (
+                <span className={`text-xl font-black transition-all ${selected ? 'text-white scale-110' : 'text-zinc-600'}`}>
+                  {n}
+                </span>
+              )}
+            </Picker.Item>
+          ))}
+        </Picker.Column>
+      </Picker>
     </div>
   )
 }
