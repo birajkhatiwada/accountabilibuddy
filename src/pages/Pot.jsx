@@ -37,48 +37,59 @@ function PotVisual({ total, paid, owed }) {
               <path d="M30 54 Q28 160 100 168 Q172 160 170 54 Z" />
             </clipPath>
             {/* Wave shape */}
-            <style>{`
-              @keyframes bubble1 {
-                0%, 100% { transform: translateY(0) scale(1); opacity: 0.7; }
-                50% { transform: translateY(-18px) scale(1.2); opacity: 0.3; }
-              }
-              @keyframes bubble2 {
-                0%, 100% { transform: translateY(0) scale(1); opacity: 0.5; }
-                60% { transform: translateY(-24px) scale(0.9); opacity: 0.2; }
-              }
-              .bubble1 { animation: bubble1 2.2s ease-in-out infinite; }
-              .bubble2 { animation: bubble2 3s ease-in-out infinite 0.8s; }
-              .bubble3 { animation: bubble1 2.7s ease-in-out infinite 1.4s; }
-            `}</style>
           </defs>
 
           {/* Pot body */}
           <path d="M30 54 Q28 160 100 168 Q172 160 170 54 Z" fill="#18181b" />
 
-          {/* Money fill */}
-          {!isEmpty && (
-            <g clipPath="url(#potClip)">
-              {/* Repeating bill pattern */}
-              <pattern id="billPattern" x="0" y="0" width="40" height="24" patternUnits="userSpaceOnUse">
-                <rect width="40" height="24" fill="#15803d" rx="3" />
-                <rect x="2" y="2" width="36" height="20" fill="none" stroke="#166534" strokeWidth="0.8" rx="2" />
-                <text x="20" y="15" textAnchor="middle" fill="#22c55e" fontSize="10" fontWeight="900" fontFamily="system-ui" opacity="0.9">$</text>
-              </pattern>
-
-              {/* Bill fill base */}
-              <rect x="0" y={168 - (114 * fillPct / 100)} width="200" height="200" fill="url(#billPattern)" opacity="0.95" />
-
-              {/* Floating coins */}
-              {fillPct > 10 && <>
-                <circle className="bubble1" cx="72" cy={148 - (114 * fillPct / 100) + 20} r="5" fill="#fbbf24" opacity="0.8" />
-                <text className="bubble1" x="72" y={152 - (114 * fillPct / 100) + 20} textAnchor="middle" fontSize="7" fontWeight="900" fontFamily="system-ui" fill="#78350f" opacity="0.9">$</text>
-                <circle className="bubble2" cx="120" cy={155 - (114 * fillPct / 100) + 20} r="4.5" fill="#fbbf24" opacity="0.7" />
-                <text className="bubble2" x="120" y={159 - (114 * fillPct / 100) + 20} textAnchor="middle" fontSize="6" fontWeight="900" fontFamily="system-ui" fill="#78350f" opacity="0.9">$</text>
-                <circle className="bubble3" cx="94" cy={140 - (114 * fillPct / 100) + 20} r="4" fill="#fbbf24" opacity="0.75" />
-                <text className="bubble3" x="94" y={144 - (114 * fillPct / 100) + 20} textAnchor="middle" fontSize="6" fontWeight="900" fontFamily="system-ui" fill="#78350f" opacity="0.9">$</text>
-              </>}
-            </g>
-          )}
+          {/* Cash fill */}
+          {!isEmpty && (() => {
+            const fillLine = 168 - (114 * fillPct / 100)
+            // rows of 💵 scattered at different x/rotation, bottom to top
+            const bills = [
+              { x: 50,  y: 162, r: -8  },
+              { x: 105, y: 160, r:  6  },
+              { x: 148, y: 163, r: -4  },
+              { x: 72,  y: 149, r: 12  },
+              { x: 128, y: 147, r: -10 },
+              { x: 95,  y: 151, r:  3  },
+              { x: 48,  y: 137, r: -6  },
+              { x: 148, y: 135, r:  9  },
+              { x: 100, y: 139, r: -14 },
+              { x: 68,  y: 125, r:  7  },
+              { x: 132, y: 123, r: -5  },
+              { x: 95,  y: 127, r: 11  },
+              { x: 52,  y: 113, r: -9  },
+              { x: 148, y: 111, r:  6  },
+              { x: 100, y: 115, r: -3  },
+              { x: 72,  y: 101, r: 13  },
+              { x: 128, y:  99, r: -8  },
+              { x: 96,  y: 103, r:  4  },
+              { x: 50,  y:  89, r: -11 },
+              { x: 148, y:  87, r:  7  },
+              { x: 100, y:  91, r: -5  },
+              { x: 68,  y:  77, r:  9  },
+              { x: 132, y:  75, r: -12 },
+              { x: 96,  y:  79, r:  3  },
+            ]
+            return (
+              <g clipPath="url(#potClip)">
+                {/* dark base */}
+                <rect x="0" y="54" width="200" height="120" fill="#18181b" />
+                {/* cash emoji rows */}
+                {bills.map((b, i) => (
+                  <text key={i} x={b.x} y={b.y}
+                    textAnchor="middle" fontSize="18"
+                    transform={`rotate(${b.r}, ${b.x}, ${b.y})`}
+                    style={{ userSelect: 'none' }}>
+                    💵
+                  </text>
+                ))}
+                {/* dark mask covering above the fill line */}
+                <rect x="0" y="54" width="200" height={Math.max(0, fillLine - 54)} fill="#18181b" />
+              </g>
+            )
+          })()}
 
           {/* Pot rim overlay */}
           <ellipse cx="100" cy="54" rx="70" ry="11" fill="none" stroke="#3f3f46" strokeWidth="2" />
