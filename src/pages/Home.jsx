@@ -5,7 +5,7 @@ import { db } from '../firebase'
 import { getCurrentWeekId, formatWeekLabel } from '../utils'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
-import { X } from 'lucide-react'
+import { X, ChevronRight } from 'lucide-react'
 
 const MEMBERS_DOC = doc(db, 'config', 'members')
 const PENALTY = 15
@@ -280,6 +280,21 @@ export default function Home() {
               <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wide mt-0.5">The Pot</p>
             </div>
           </div>
+
+          {/* Last week recap link */}
+          <button
+            onClick={() => navigate('/recap')}
+            className="w-full flex items-center justify-between bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl px-4 py-3 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">📋</span>
+              <div className="text-left">
+                <p className="text-sm font-bold text-zinc-900 dark:text-white">Last week's recap</p>
+                <p className="text-xs text-zinc-500">See who passed, who failed, streaks</p>
+              </div>
+            </div>
+            <ChevronRight size={16} className="text-zinc-400 dark:text-zinc-600 shrink-0" />
+          </button>
 
           {/* Per-member goal progress line chart (Highcharts) */}
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4">

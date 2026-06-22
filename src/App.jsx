@@ -6,6 +6,7 @@ import Pot from './pages/Pot'
 import Members from './pages/Members'
 import MemberProfile from './pages/MemberProfile'
 import Feed from './pages/Feed'
+import Recap from './pages/Recap'
 import { ThemeProvider } from './ThemeContext'
 
 export default function App() {
@@ -19,6 +20,7 @@ export default function App() {
           <Route path="/history" element={<History />} />
           <Route path="/pot" element={<Pot />} />
           <Route path="/members" element={<Members />} />
+          <Route path="/recap" element={<Recap />} />
         </Route>
       </Routes>
     </ThemeProvider>
