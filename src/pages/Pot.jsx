@@ -5,20 +5,21 @@ import { getCurrentWeekId, formatWeekLabel } from '../utils'
 import { Check } from 'lucide-react'
 
 const PENALTY = 15
-const HANGOUT_GOAL = 100 // pot goal before hangout
 const PAYMENTS_DOC = doc(db, 'config', 'payments')
 
 function PotVisual({ total, paid, owed }) {
-  const fillPct = Math.min((paid / HANGOUT_GOAL) * 100, 100)
+  // Fill = how much of owed has been collected. If nothing owed, empty.
+  const fillPct = total > 0 ? Math.min((paid / total) * 100, 100) : 0
   const isEmpty = total === 0
+  const allPaid = total > 0 && owed === 0
 
   return (
     <div className="flex flex-col items-center py-6 select-none">
       {/* Amount above pot */}
       <div className="text-center mb-4">
-        <p className="text-6xl font-black text-zinc-900 dark:text-white tracking-tight">${paid}</p>
+        <p className="text-6xl font-black text-zinc-900 dark:text-white tracking-tight">${total}</p>
         <p className="text-sm text-zinc-500 mt-1">
-          {isEmpty ? 'pot is empty — keep it up!' : `of $${HANGOUT_GOAL} hangout goal`}
+          {isEmpty ? 'pot is empty — keep it up! 💪' : allPaid ? 'all collected — time to hang! 🎉' : `$${paid} collected · $${owed} still owed`}
         </p>
       </div>
 
@@ -112,8 +113,18 @@ function PotVisual({ total, paid, owed }) {
           )}
         </svg>
 
-        {/* Steam when full */}
-        {fillPct >= 80 && (
+        {/* Overflow coins when all paid */}
+        {allPaid && (
+          <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex gap-2">
+            {['🪙','💰','🪙'].map((e, i) => (
+              <div key={i} className="text-xl" style={{
+                animation: `float ${1.3 + i * 0.5}s ease-in-out infinite ${i * 0.4}s`,
+              }}>{e}</div>
+            ))}
+          </div>
+        )}
+        {/* Steam when getting full */}
+        {!allPaid && fillPct >= 60 && (
           <div className="absolute -top-6 left-1/2 -translate-x-1/2 flex gap-3">
             {[0, 1, 2].map(i => (
               <div key={i} className="text-lg opacity-60" style={{
@@ -124,22 +135,24 @@ function PotVisual({ total, paid, owed }) {
         )}
       </div>
 
-      {/* Progress bar */}
-      <div className="w-full max-w-xs mt-4 space-y-1.5">
-        <div className="w-full bg-zinc-200 dark:bg-zinc-800 rounded-full h-2 overflow-hidden">
-          <div
-            className="h-full rounded-full transition-all duration-1000"
-            style={{
-              width: `${fillPct}%`,
-              background: fillPct >= 100 ? '#10b981' : fillPct >= 60 ? '#f59e0b' : '#3b82f6',
-            }}
-          />
+      {/* Progress bar — paid vs owed */}
+      {total > 0 && (
+        <div className="w-full max-w-xs mt-4 space-y-1.5">
+          <div className="w-full bg-zinc-200 dark:bg-zinc-800 rounded-full h-2 overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-1000"
+              style={{
+                width: `${fillPct}%`,
+                background: allPaid ? '#10b981' : fillPct >= 60 ? '#f59e0b' : '#3b82f6',
+              }}
+            />
+          </div>
+          <div className="flex justify-between text-[10px] text-zinc-400">
+            <span>${paid} collected</span>
+            <span>${total} total owed · no limit 🔥</span>
+          </div>
         </div>
-        <div className="flex justify-between text-[10px] text-zinc-400">
-          <span>${paid} collected</span>
-          <span>${HANGOUT_GOAL} hangout goal</span>
-        </div>
-      </div>
+      )}
 
       {/* Stats */}
       {total > 0 && (
@@ -159,9 +172,9 @@ function PotVisual({ total, paid, owed }) {
         </div>
       )}
 
-      {fillPct >= 100 && (
+      {allPaid && total > 0 && (
         <div className="mt-3 w-full bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700/40 rounded-xl px-4 py-2.5 text-center">
-          <p className="text-sm font-bold text-emerald-600 dark:text-emerald-300">🎉 Pot's full — time to hang out!</p>
+          <p className="text-sm font-bold text-emerald-600 dark:text-emerald-300">🎉 All collected — time to hang out!</p>
         </div>
       )}
     </div>
