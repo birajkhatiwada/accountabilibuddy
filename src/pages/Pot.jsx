@@ -38,11 +38,6 @@ function PotVisual({ total, paid, owed }) {
             </clipPath>
             {/* Wave shape */}
             <style>{`
-              @keyframes wave {
-                0% { transform: translateX(0); }
-                100% { transform: translateX(-50%); }
-              }
-              .wave-anim { animation: wave 2.4s linear infinite; }
               @keyframes bubble1 {
                 0%, 100% { transform: translateY(0) scale(1); opacity: 0.7; }
                 50% { transform: translateY(-18px) scale(1.2); opacity: 0.3; }
@@ -72,22 +67,6 @@ function PotVisual({ total, paid, owed }) {
 
               {/* Bill fill base */}
               <rect x="0" y={168 - (114 * fillPct / 100)} width="200" height="200" fill="url(#billPattern)" opacity="0.95" />
-
-              {/* Wave on top */}
-              <g className="wave-anim">
-                <path
-                  d={`M0 ${168 - (114 * fillPct / 100)}
-                     Q25 ${168 - (114 * fillPct / 100) - 5} 50 ${168 - (114 * fillPct / 100)}
-                     Q75 ${168 - (114 * fillPct / 100) + 5} 100 ${168 - (114 * fillPct / 100)}
-                     Q125 ${168 - (114 * fillPct / 100) - 5} 150 ${168 - (114 * fillPct / 100)}
-                     Q175 ${168 - (114 * fillPct / 100) + 5} 200 ${168 - (114 * fillPct / 100)}
-                     Q225 ${168 - (114 * fillPct / 100) - 5} 250 ${168 - (114 * fillPct / 100)}
-                     Q275 ${168 - (114 * fillPct / 100) + 5} 300 ${168 - (114 * fillPct / 100)}
-                     Q325 ${168 - (114 * fillPct / 100) - 5} 400 ${168 - (114 * fillPct / 100)}
-                     L400 200 L0 200 Z`}
-                  fill="#15803d" opacity="0.9"
-                />
-              </g>
 
               {/* Floating coins */}
               {fillPct > 10 && <>
