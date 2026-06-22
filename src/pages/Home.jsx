@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { collection, query, where, onSnapshot, doc, setDoc, updateDoc } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, doc, setDoc, updateDoc, getDocs } from 'firebase/firestore'
 import { db } from '../firebase'
 import { getCurrentWeekId, formatWeekLabel } from '../utils'
 import Highcharts from 'highcharts'
@@ -53,6 +53,20 @@ export default function Home() {
   const [closeWeekOpen, setCloseWeekOpen] = useState(false)
   const [closeStatuses, setCloseStatuses] = useState({})
   const [closing, setClosing] = useState(false)
+
+  // Auto-close any active entries from past weeks (week ended = failed)
+  useEffect(() => {
+    const autoClose = async () => {
+      const q = query(
+        collection(db, 'entries'),
+        where('status', '==', 'active'),
+        where('weekId', '<', weekId)
+      )
+      const snap = await getDocs(q)
+      await Promise.all(snap.docs.map(d => updateDoc(d.ref, { status: 'failed' })))
+    }
+    autoClose()
+  }, [])
 
   useEffect(() => {
     const unsub = onSnapshot(MEMBERS_DOC, snap => {
