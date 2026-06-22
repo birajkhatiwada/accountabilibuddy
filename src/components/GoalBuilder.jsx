@@ -35,18 +35,18 @@ export default function GoalBuilder({ onChange, initialGoals }) {
   return (
     <div className="space-y-2">
       {goals.map((goal, i) => (
-        <div key={i} className="bg-zinc-800/60 border border-zinc-700/60 rounded-2xl p-3 space-y-3">
+        <div key={i} className="bg-zinc-100/60 dark:bg-zinc-800/60 border border-zinc-200/60 dark:border-zinc-700/60 rounded-2xl p-3 space-y-3">
           {/* Goal name */}
           <div className="flex gap-2 items-center">
-            <span className="text-zinc-600 text-xs font-bold w-4 text-center shrink-0">{i + 1}</span>
+            <span className="text-zinc-500 dark:text-zinc-600 text-xs font-bold w-4 text-center shrink-0">{i + 1}</span>
             <input
               type="text"
               placeholder="Goal name (e.g. Go to gym, Read pages)"
               value={goal.text}
               onChange={e => update(i, { text: e.target.value })}
-              className="flex-1 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors"
+              className="flex-1 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors"
             />
-            <button onClick={() => remove(i)} className="text-zinc-700 hover:text-red-400 transition-colors p-1 shrink-0">
+            <button onClick={() => remove(i)} className="text-zinc-400 dark:text-zinc-700 hover:text-red-400 transition-colors p-1 shrink-0">
               <Trash2 size={14} />
             </button>
           </div>
@@ -61,7 +61,7 @@ export default function GoalBuilder({ onChange, initialGoals }) {
                 className={`flex flex-col items-start px-2.5 py-2 rounded-xl border text-left transition-all ${
                   goal.type === t.value
                     ? 'border-emerald-600 bg-emerald-950/40 text-emerald-300'
-                    : 'border-zinc-700 text-zinc-500 hover:border-zinc-500 hover:text-zinc-300'
+                    : 'border-zinc-300 dark:border-zinc-700 text-zinc-500 hover:border-zinc-400 dark:hover:border-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
                 }`}
               >
                 <span className="text-[11px] font-bold">{t.label}</span>
@@ -79,14 +79,14 @@ export default function GoalBuilder({ onChange, initialGoals }) {
                 placeholder="0"
                 value={goal.target}
                 onChange={e => update(i, { target: e.target.value })}
-                className="w-20 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-1.5 text-sm text-zinc-200 text-center focus:outline-none focus:border-emerald-500 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-20 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-xl px-3 py-1.5 text-sm text-zinc-800 dark:text-zinc-200 text-center focus:outline-none focus:border-emerald-500 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
               <input
                 type="text"
                 placeholder={goal.type === 'count' ? 'times' : 'unit (pages, km…)'}
                 value={goal.unit}
                 onChange={e => update(i, { unit: e.target.value })}
-                className="flex-1 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-1.5 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors"
+                className="flex-1 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-xl px-3 py-1.5 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors"
               />
             </div>
           )}
@@ -96,7 +96,7 @@ export default function GoalBuilder({ onChange, initialGoals }) {
       <button
         type="button"
         onClick={add}
-        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:border-zinc-500 transition-colors text-sm font-semibold"
+        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:border-zinc-400 dark:hover:border-zinc-500 transition-colors text-sm font-semibold"
       >
         <Plus size={14} /> Add goal
       </button>

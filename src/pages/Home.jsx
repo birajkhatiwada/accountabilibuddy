@@ -217,7 +217,7 @@ export default function Home() {
 
   if (loading) return (
     <div className="flex items-center justify-center mt-24">
-      <div className="w-6 h-6 border-2 border-zinc-600 border-t-emerald-400 rounded-full animate-spin" />
+      <div className="w-6 h-6 border-2 border-zinc-300 dark:border-zinc-600 border-t-emerald-400 rounded-full animate-spin" />
     </div>
   )
 
@@ -250,7 +250,7 @@ export default function Home() {
 
       {/* Week label */}
       <div>
-        <h2 className="text-xl font-black text-white">This Week</h2>
+        <h2 className="text-xl font-black text-zinc-900 dark:text-white">This Week</h2>
         <p className="text-xs text-zinc-500 font-medium mt-0.5">{formatWeekLabel(weekId)}</p>
       </div>
 
@@ -258,7 +258,7 @@ export default function Home() {
       {members.length === 0 ? (
         <div className="text-center py-16 space-y-3">
           <div className="text-5xl">👥</div>
-          <p className="font-semibold text-zinc-300">No members yet</p>
+          <p className="font-semibold text-zinc-700 dark:text-zinc-300">No members yet</p>
           <p className="text-sm text-zinc-500">Add your crew below</p>
         </div>
       ) : (
@@ -266,22 +266,22 @@ export default function Home() {
 
           {/* Summary stats */}
           <div className="grid grid-cols-3 gap-2">
-            <div className="bg-zinc-900 rounded-2xl p-3 text-center border border-zinc-800">
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl p-3 text-center border border-zinc-200 dark:border-zinc-800">
               <p className="text-2xl font-black text-emerald-400">{doneThisWeek}</p>
               <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wide mt-0.5">Done</p>
             </div>
-            <div className="bg-zinc-900 rounded-2xl p-3 text-center border border-zinc-800">
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl p-3 text-center border border-zinc-200 dark:border-zinc-800">
               <p className="text-2xl font-black text-amber-400">{activeThisWeek}</p>
               <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wide mt-0.5">Active</p>
             </div>
-            <div className="bg-zinc-900 rounded-2xl p-3 text-center border border-zinc-800">
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl p-3 text-center border border-zinc-200 dark:border-zinc-800">
               <p className="text-2xl font-black text-red-400">${potTotal}</p>
               <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wide mt-0.5">The Pot</p>
             </div>
           </div>
 
           {/* Per-member goal progress line chart (Highcharts) */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4">
             <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-2">Goal progress this week</p>
             <HighchartsReact
               key={members.join(',')}
@@ -337,7 +337,7 @@ export default function Home() {
               {members.map(name => (
                 <div key={name} className="flex items-center gap-1.5">
                   <div className="w-3 h-0.5 rounded-full" style={{ backgroundColor: getAvatarHex(name, members) }} />
-                  <span className="text-[11px] text-zinc-400 font-medium">{name}</span>
+                  <span className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">{name}</span>
                 </div>
               ))}
             </div>
@@ -356,8 +356,8 @@ export default function Home() {
                   onClick={() => navigate(`/member/${encodeURIComponent(name)}`)}
                   className={`w-full text-left rounded-2xl overflow-hidden transition-colors ${
                     !e
-                      ? 'bg-zinc-900/50 border border-dashed border-zinc-700 hover:border-zinc-500'
-                      : 'bg-zinc-900 border border-zinc-800 hover:border-zinc-700'
+                      ? 'bg-zinc-50/50 dark:bg-zinc-900/50 border border-dashed border-zinc-300 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-500'
+                      : 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
                   }`}
                 >
                   {/* Top: profile */}
@@ -369,8 +369,8 @@ export default function Home() {
                       }
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`font-bold text-sm leading-tight ${!e ? 'text-zinc-500' : 'text-white'}`}>{name}</p>
-                      <p className="text-zinc-600 text-[11px]">
+                      <p className={`font-bold text-sm leading-tight ${!e ? 'text-zinc-500' : 'text-zinc-900 dark:text-white'}`}>{name}</p>
+                      <p className="text-zinc-500 dark:text-zinc-600 text-[11px]">
                         {!e ? 'No goals submitted yet' : streak >= 2 ? `🔥 ${streak}-week streak` : 'This week'}
                       </p>
                     </div>
@@ -380,7 +380,7 @@ export default function Home() {
                   </div>
 
                   {/* Divider */}
-                  <div className="h-px bg-zinc-800 mx-4" />
+                  <div className="h-px bg-zinc-200 dark:bg-zinc-800 mx-4" />
 
                   {/* Bottom: goals */}
                   <div className="px-4 py-3 flex flex-col gap-2">
@@ -402,11 +402,11 @@ export default function Home() {
                               }`}>
                                 {g.type === 'habit' ? '✓' : g.type === 'count' ? '×' : '#'}
                               </span>
-                              <span className="text-zinc-300 text-xs flex-1 truncate">{g.text}</span>
+                              <span className="text-zinc-700 dark:text-zinc-300 text-xs flex-1 truncate">{g.text}</span>
                               <span className="text-zinc-500 text-[10px] font-semibold shrink-0">{label}</span>
                             </div>
                             {prog.pct !== null && (
-                              <div className="bg-zinc-800 rounded-full h-1 overflow-hidden">
+                              <div className="bg-zinc-100 dark:bg-zinc-800 rounded-full h-1 overflow-hidden">
                                 <div
                                   className={`h-full rounded-full transition-all ${
                                     prog.pct >= 1 ? 'bg-emerald-400' :
@@ -420,7 +420,7 @@ export default function Home() {
                         )
                       })
                     ) : (
-                      <p className="text-zinc-600 text-xs italic">No goals set yet — tap to add</p>
+                      <p className="text-zinc-500 dark:text-zinc-600 text-xs italic">No goals set yet — tap to add</p>
                     )}
                   </div>
                 </button>

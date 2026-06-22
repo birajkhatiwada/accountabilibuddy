@@ -51,8 +51,8 @@ export default function SubmitGoals() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center space-y-3">
         <CheckCircle size={48} className="text-emerald-400" />
-        <h2 className="text-xl font-bold text-white">Goals submitted!</h2>
-        <p className="text-zinc-400 text-sm">Now go get it. No excuses.</p>
+        <h2 className="text-xl font-bold text-zinc-900 dark:text-white">Goals submitted!</h2>
+        <p className="text-zinc-500 dark:text-zinc-400 text-sm">Now go get it. No excuses.</p>
         <button
           onClick={() => { setDone(false); setName(''); setGoals(''); setAlreadySubmitted(false) }}
           className="mt-4 text-sm text-zinc-500 underline"
@@ -66,7 +66,7 @@ export default function SubmitGoals() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-bold text-white">Submit your goals</h2>
+        <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Submit your goals</h2>
         <p className="text-sm text-zinc-500 mt-0.5">{formatWeekLabel(weekId)}</p>
       </div>
 
@@ -79,7 +79,7 @@ export default function SubmitGoals() {
             value={name}
             onChange={e => setName(e.target.value)}
             onBlur={e => checkExisting(e.target.value)}
-            className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-emerald-600 transition-colors"
+            className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-emerald-600 transition-colors"
             required
           />
           {alreadySubmitted && (
@@ -96,10 +96,10 @@ export default function SubmitGoals() {
             value={goals}
             onChange={e => setGoals(e.target.value)}
             rows={6}
-            className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-emerald-600 transition-colors resize-none"
+            className="w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-emerald-600 transition-colors resize-none"
             required
           />
-          <p className="text-xs text-zinc-600 mt-1">Make them hard. Make them easy. Just make them honest.</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-600 mt-1">Make them hard. Make them easy. Just make them honest.</p>
         </div>
 
         <button
@@ -111,8 +111,8 @@ export default function SubmitGoals() {
         </button>
       </form>
 
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-2">
-        <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">How it works</p>
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 space-y-2">
+        <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">How it works</p>
         <ul className="text-sm text-zinc-500 space-y-1.5 list-none">
           <li>🎯 Submit your goals every week (Mon–Sun)</li>
           <li>📸 Drop proof as you make progress</li>

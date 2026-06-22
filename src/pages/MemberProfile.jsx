@@ -188,12 +188,12 @@ export default function MemberProfile() {
 
   if (entry === undefined) return (
     <div className="flex flex-col space-y-4 animate-pulse">
-      <div className="h-5 w-24 bg-zinc-800 rounded-lg" />
-      <div className="h-40 -mx-4 bg-zinc-800 rounded-none" />
+      <div className="h-5 w-24 bg-zinc-100 dark:bg-zinc-800 rounded-lg" />
+      <div className="h-40 -mx-4 bg-zinc-100 dark:bg-zinc-800 rounded-none" />
       <div className="grid grid-cols-4 gap-2">
-        {[...Array(4)].map((_, i) => <div key={i} className="h-16 bg-zinc-800 rounded-2xl" />)}
+        {[...Array(4)].map((_, i) => <div key={i} className="h-16 bg-zinc-100 dark:bg-zinc-800 rounded-2xl" />)}
       </div>
-      <div className="h-32 bg-zinc-800 rounded-2xl" />
+      <div className="h-32 bg-zinc-100 dark:bg-zinc-800 rounded-2xl" />
     </div>
   )
 
@@ -205,23 +205,23 @@ export default function MemberProfile() {
       {/* Back + delete */}
       <div className="flex items-center justify-between">
         <button onClick={() => navigate(-1)}
-          className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-200 transition-colors">
+          className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors">
           <ArrowLeft size={15} /> Back
         </button>
         {confirmDelete ? (
           <div className="flex items-center gap-2">
             <span className="text-xs text-zinc-500">Remove {name}?</span>
             <button onClick={deleteMember} className="text-xs font-bold text-red-400 hover:text-red-300 px-2 py-1 bg-red-950/40 rounded-lg">Remove</button>
-            <button onClick={() => setConfirmDelete(false)} className="text-xs text-zinc-500 hover:text-zinc-300 px-2 py-1">Cancel</button>
+            <button onClick={() => setConfirmDelete(false)} className="text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 px-2 py-1">Cancel</button>
           </div>
         ) : (
-          <button onClick={() => setConfirmDelete(true)} className="p-1.5 text-zinc-700 hover:text-red-400 transition-colors rounded-lg hover:bg-red-950/30">
+          <button onClick={() => setConfirmDelete(true)} className="p-1.5 text-zinc-400 dark:text-zinc-700 hover:text-red-400 transition-colors rounded-lg hover:bg-red-950/30">
             <Trash2 size={15} />
           </button>
         )}
       </div>
 
-      {/* Hero */}
+      {/* Hero — keep colorful gradient as-is, white/opacity classes inside are relative to gradient bg */}
       <div className={`-mx-4 bg-gradient-to-br ${color} relative overflow-hidden px-6 pt-6 pb-5`}>
         {/* Dot pattern overlay */}
         <div className="absolute inset-0 opacity-20" style={{
@@ -283,7 +283,7 @@ export default function MemberProfile() {
             <div className={`rounded-2xl p-3 text-center ${
               entry.status === 'completed' ? 'bg-emerald-950/60 border border-emerald-800/50' :
               entry.status === 'failed' ? 'bg-red-950/60 border border-red-800/50' :
-              'bg-zinc-900 border border-zinc-800'
+              'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800'
             }`}>
   <p className="text-xl mb-0.5">{entry.status === 'completed' ? '✅' : entry.status === 'failed' ? '❌' : '🔄'}</p>
               <p className={`text-[10px] font-bold uppercase tracking-wide ${
@@ -291,16 +291,16 @@ export default function MemberProfile() {
                 entry.status === 'failed' ? 'text-red-400' : 'text-amber-400'
               }`}>{entry.status === 'completed' ? 'Done!' : entry.status === 'failed' ? 'Failed' : 'Active'}</p>
             </div>
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3 text-center">
-              <p className="text-xl font-black text-white mb-0.5">{entry.goalItems?.length || 0}</p>
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-3 text-center">
+              <p className="text-xl font-black text-zinc-900 dark:text-white mb-0.5">{entry.goalItems?.length || 0}</p>
               <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">Goals</p>
             </div>
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3 text-center">
-              <p className="text-xl font-black text-white mb-0.5">{daysLogged}</p>
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-3 text-center">
+              <p className="text-xl font-black text-zinc-900 dark:text-white mb-0.5">{daysLogged}</p>
               <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">Days</p>
             </div>
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3 text-center">
-              <p className="text-xl font-black text-white mb-0.5">{entry.updates?.length || 0}</p>
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-3 text-center">
+              <p className="text-xl font-black text-zinc-900 dark:text-white mb-0.5">{entry.updates?.length || 0}</p>
               <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">Proofs</p>
             </div>
           </div>
@@ -309,8 +309,8 @@ export default function MemberProfile() {
 
       {/* No goals yet */}
       {!entry && (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
-          <p className="text-zinc-400 text-sm font-medium">Lock in your goals for this week 🔒</p>
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 space-y-4">
+          <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">Lock in your goals for this week 🔒</p>
           <GoalBuilder onChange={setGoalsInput} />
           <button
             onClick={submitGoals}
@@ -325,10 +325,10 @@ export default function MemberProfile() {
       {entry && (
         <>
           {editingGoals && (
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-3">
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-bold text-zinc-300">Edit goals</p>
-                <button onClick={() => setEditingGoals(false)} className="text-zinc-600 hover:text-zinc-400"><X size={16} /></button>
+                <p className="text-sm font-bold text-zinc-700 dark:text-zinc-300">Edit goals</p>
+                <button onClick={() => setEditingGoals(false)} className="text-zinc-500 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400"><X size={16} /></button>
               </div>
               <GoalBuilder initialGoals={entry.goalItems} onChange={setGoalsInput} />
               <button onClick={updateGoals} disabled={submitting || !goalsInput.some(g => g.text.trim())}
@@ -339,25 +339,25 @@ export default function MemberProfile() {
           )}
 
           {!editingGoals && entry.goalItems?.length > 0 && (
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Goals this week</p>
                 <button
                   onClick={() => { setGoalsInput(entry.goalItems); setEditingGoals(true) }}
-                  className="flex items-center gap-1 text-zinc-500 hover:text-zinc-200 transition-colors text-xs"
+                  className="flex items-center gap-1 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors text-xs"
                 >
                   <Pencil size={11} /> Edit
                 </button>
               </div>
               <div className="space-y-2">
                 {entry.goalItems.map((g, i) => (
-                  <div key={i} className="flex items-center gap-3 bg-zinc-800/60 rounded-xl px-3 py-2.5">
+                  <div key={i} className="flex items-center gap-3 bg-zinc-100/60 dark:bg-zinc-800/60 rounded-xl px-3 py-2.5">
                     <span className="text-base shrink-0">{g.type === 'habit' ? '✓' : g.type === 'count' ? '×' : '#'}</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-zinc-200 font-medium">{g.text}</p>
+                      <p className="text-sm text-zinc-800 dark:text-zinc-200 font-medium">{g.text}</p>
                       {g.target && <p className="text-xs text-zinc-500">{g.target} {g.unit}</p>}
                     </div>
-                    <span className="text-[10px] text-zinc-600 shrink-0">{g.type === 'habit' ? 'daily' : g.type === 'count' ? 'count' : 'total'}</span>
+                    <span className="text-[10px] text-zinc-500 dark:text-zinc-600 shrink-0">{g.type === 'habit' ? 'daily' : g.type === 'count' ? 'count' : 'total'}</span>
                   </div>
                 ))}
               </div>
@@ -366,7 +366,7 @@ export default function MemberProfile() {
 
           {/* Area chart */}
           {entry.goalItems?.length > 0 && (
-            <div className="bg-zinc-800/40 rounded-2xl p-4">
+            <div className="bg-zinc-100/40 dark:bg-zinc-800/40 rounded-2xl p-4">
               <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-2">Goal progress this week</p>
               <HighchartsReact
                 key={entry.goalItems.map(g => g.text).join(',')}
@@ -386,7 +386,7 @@ export default function MemberProfile() {
                 {entry.goalItems.map((g, i) => (
                   <div key={i} className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-sm" style={{ background: GOAL_COLORS[i % GOAL_COLORS.length] }} />
-                    <span className="text-[10px] text-zinc-400">{g.text}</span>
+                    <span className="text-[10px] text-zinc-500 dark:text-zinc-400">{g.text}</span>
                   </div>
                 ))}
               </div>
@@ -397,7 +397,6 @@ export default function MemberProfile() {
             <div className="space-y-2">
               <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold px-1">Progress log</p>
               {entry.updates.map((u, i) => {
-                const reactionKey = `proofReactions.${i}`
                 const reactions = u.reactions || {}
                 const toggleReaction = async (emoji) => {
                   const snap = await getDoc(doc(db, 'entries', entry.id))
@@ -406,12 +405,12 @@ export default function MemberProfile() {
                   await updateDoc(doc(db, 'entries', entry.id), { updates })
                 }
                 return (
-                  <div key={i} className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 space-y-2">
+                  <div key={i} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 space-y-2">
                     <div className="flex gap-3">
                       <span className="text-emerald-400 mt-0.5 shrink-0">✓</span>
                       <div className="flex-1">
-                        <p className="text-sm text-zinc-200">{u.text}</p>
-                        <p className="text-xs text-zinc-600 mt-0.5">{formatTimestamp(u.timestamp)}</p>
+                        <p className="text-sm text-zinc-800 dark:text-zinc-200">{u.text}</p>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-600 mt-0.5">{formatTimestamp(u.timestamp)}</p>
                       </div>
                     </div>
                     <div className="flex gap-1.5 pl-5">
@@ -420,10 +419,10 @@ export default function MemberProfile() {
                         return (
                           <button key={emoji} onClick={() => toggleReaction(emoji)}
                             className={`flex items-center gap-1 px-2 py-1 rounded-lg border text-sm transition-all active:scale-95 ${
-                              count > 0 ? 'bg-zinc-800 border-zinc-600' : 'border-zinc-800 text-zinc-600 hover:border-zinc-600 hover:text-zinc-400'
+                              count > 0 ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600' : 'border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-600 hover:border-zinc-300 dark:hover:border-zinc-600 hover:text-zinc-600 dark:hover:text-zinc-400'
                             }`}>
                             {emoji}
-                            {count > 0 && <span className="text-xs font-bold text-zinc-300">{count}</span>}
+                            {count > 0 && <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">{count}</span>}
                           </button>
                         )
                       })}
@@ -443,7 +442,7 @@ export default function MemberProfile() {
                   type="text" placeholder="Drop some proof..."
                   value={proofInput} onChange={e => setProofInput(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && addProof()}
-                  className="flex-1 bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors"
+                  className="flex-1 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors"
                 />
                 <button onClick={addProof} disabled={submitting || !proofInput.trim()}
                   className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white rounded-xl px-4 transition-colors">
@@ -465,7 +464,7 @@ export default function MemberProfile() {
                   </p>
                   <div className="flex gap-2">
                     <button onClick={markFailed} className="flex-1 bg-red-700 hover:bg-red-600 text-white rounded-lg py-2 text-sm font-bold transition-colors">Yeah, I failed</button>
-                    <button onClick={() => setConfirmFail(false)} className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg py-2 text-sm transition-colors">Cancel</button>
+                    <button onClick={() => setConfirmFail(false)} className="flex-1 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg py-2 text-sm transition-colors">Cancel</button>
                   </div>
                 </div>
               )}
@@ -477,15 +476,15 @@ export default function MemberProfile() {
       {/* Avatar picker overlay */}
       {pickingAvatar && (
         <div className="fixed inset-0 z-50 flex items-end justify-center pb-8 px-4" onClick={() => setPickingAvatar(false)}>
-          <div className="bg-zinc-900 border border-zinc-700 rounded-3xl p-4 shadow-2xl w-full max-w-sm" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-3xl p-4 shadow-2xl w-full max-w-sm" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-bold text-zinc-200">Pick your avatar</p>
-              <button onClick={() => setPickingAvatar(false)} className="text-zinc-500 hover:text-zinc-300"><X size={16} /></button>
+              <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200">Pick your avatar</p>
+              <button onClick={() => setPickingAvatar(false)} className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"><X size={16} /></button>
             </div>
             <div className="grid grid-cols-8 gap-1.5">
               {AVATAR_EMOJIS.map(emoji => (
                 <button key={emoji} onClick={() => saveAvatar(emoji)}
-                  className={`text-2xl rounded-xl p-1.5 hover:bg-zinc-700 transition-colors active:scale-90 ${avatars[name] === emoji ? 'bg-zinc-700 ring-2 ring-emerald-500' : ''}`}>
+                  className={`text-2xl rounded-xl p-1.5 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors active:scale-90 ${avatars[name] === emoji ? 'bg-zinc-200 dark:bg-zinc-700 ring-2 ring-emerald-500' : ''}`}>
                   {emoji}
                 </button>
               ))}
