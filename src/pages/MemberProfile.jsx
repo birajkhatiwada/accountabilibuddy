@@ -105,7 +105,9 @@ export default function MemberProfile() {
     .sort((a, b) => b.weekId.localeCompare(a.weekId))[0]
 
   const handleCarryOver = () => {
-    setCarryOverGoals(prevEntry?.goalItems || [])
+    const goals = prevEntry?.goalItems || []
+    setCarryOverGoals(goals)
+    setGoalsInput(goals)
     setGoalBuilderKey(k => k + 1)
   }
 
