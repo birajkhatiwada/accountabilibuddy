@@ -60,41 +60,48 @@ function PotVisual({ total, paid, owed }) {
           {/* Pot body */}
           <path d="M30 54 Q28 160 100 168 Q172 160 170 54 Z" fill="#18181b" />
 
-          {/* Liquid fill */}
+          {/* Money fill */}
           {!isEmpty && (
             <g clipPath="url(#potClip)">
-              {/* Liquid base */}
-              <rect
-                x="0" y={168 - (114 * fillPct / 100)} width="200" height="200"
-                fill={fillPct >= 100 ? '#10b981' : fillPct >= 60 ? '#f59e0b' : '#3b82f6'}
-                opacity="0.85"
-              />
-              {/* Wave on top of liquid */}
-              <g className="wave-anim" style={{ transformOrigin: 'center' }}>
+              {/* Repeating bill pattern */}
+              <pattern id="billPattern" x="0" y="0" width="40" height="24" patternUnits="userSpaceOnUse">
+                <rect width="40" height="24" fill="#15803d" rx="3" />
+                <rect x="2" y="2" width="36" height="20" fill="none" stroke="#166534" strokeWidth="0.8" rx="2" />
+                <text x="20" y="15" textAnchor="middle" fill="#22c55e" fontSize="10" fontWeight="900" fontFamily="system-ui" opacity="0.9">$</text>
+              </pattern>
+
+              {/* Bill fill base */}
+              <rect x="0" y={168 - (114 * fillPct / 100)} width="200" height="200" fill="url(#billPattern)" opacity="0.95" />
+
+              {/* Wave on top */}
+              <g className="wave-anim">
                 <path
                   d={`M0 ${168 - (114 * fillPct / 100)}
-                     Q25 ${168 - (114 * fillPct / 100) - 6} 50 ${168 - (114 * fillPct / 100)}
-                     Q75 ${168 - (114 * fillPct / 100) + 6} 100 ${168 - (114 * fillPct / 100)}
-                     Q125 ${168 - (114 * fillPct / 100) - 6} 150 ${168 - (114 * fillPct / 100)}
-                     Q175 ${168 - (114 * fillPct / 100) + 6} 200 ${168 - (114 * fillPct / 100)}
-                     Q225 ${168 - (114 * fillPct / 100) - 6} 250 ${168 - (114 * fillPct / 100)}
-                     Q275 ${168 - (114 * fillPct / 100) + 6} 300 ${168 - (114 * fillPct / 100)}
-                     Q325 ${168 - (114 * fillPct / 100) - 6} 400 ${168 - (114 * fillPct / 100)}
+                     Q25 ${168 - (114 * fillPct / 100) - 5} 50 ${168 - (114 * fillPct / 100)}
+                     Q75 ${168 - (114 * fillPct / 100) + 5} 100 ${168 - (114 * fillPct / 100)}
+                     Q125 ${168 - (114 * fillPct / 100) - 5} 150 ${168 - (114 * fillPct / 100)}
+                     Q175 ${168 - (114 * fillPct / 100) + 5} 200 ${168 - (114 * fillPct / 100)}
+                     Q225 ${168 - (114 * fillPct / 100) - 5} 250 ${168 - (114 * fillPct / 100)}
+                     Q275 ${168 - (114 * fillPct / 100) + 5} 300 ${168 - (114 * fillPct / 100)}
+                     Q325 ${168 - (114 * fillPct / 100) - 5} 400 ${168 - (114 * fillPct / 100)}
                      L400 200 L0 200 Z`}
-                  fill={fillPct >= 100 ? '#10b981' : fillPct >= 60 ? '#f59e0b' : '#3b82f6'}
-                  opacity="0.9"
+                  fill="#15803d" opacity="0.9"
                 />
               </g>
-              {/* Bubbles */}
+
+              {/* Floating coins */}
               {fillPct > 10 && <>
-                <circle className="bubble1" cx="72" cy={148 - (114 * fillPct / 100) + 20} r="4" fill="white" opacity="0.3" />
-                <circle className="bubble2" cx="118" cy={155 - (114 * fillPct / 100) + 20} r="3" fill="white" opacity="0.2" />
-                <circle className="bubble3" cx="95" cy={140 - (114 * fillPct / 100) + 20} r="2.5" fill="white" opacity="0.25" />
+                <circle className="bubble1" cx="72" cy={148 - (114 * fillPct / 100) + 20} r="5" fill="#fbbf24" opacity="0.8" />
+                <text className="bubble1" x="72" y={152 - (114 * fillPct / 100) + 20} textAnchor="middle" fontSize="7" fontWeight="900" fontFamily="system-ui" fill="#78350f" opacity="0.9">$</text>
+                <circle className="bubble2" cx="120" cy={155 - (114 * fillPct / 100) + 20} r="4.5" fill="#fbbf24" opacity="0.7" />
+                <text className="bubble2" x="120" y={159 - (114 * fillPct / 100) + 20} textAnchor="middle" fontSize="6" fontWeight="900" fontFamily="system-ui" fill="#78350f" opacity="0.9">$</text>
+                <circle className="bubble3" cx="94" cy={140 - (114 * fillPct / 100) + 20} r="4" fill="#fbbf24" opacity="0.75" />
+                <text className="bubble3" x="94" y={144 - (114 * fillPct / 100) + 20} textAnchor="middle" fontSize="6" fontWeight="900" fontFamily="system-ui" fill="#78350f" opacity="0.9">$</text>
               </>}
             </g>
           )}
 
-          {/* Pot rim overlay (on top of liquid) */}
+          {/* Pot rim overlay */}
           <ellipse cx="100" cy="54" rx="70" ry="11" fill="none" stroke="#3f3f46" strokeWidth="2" />
 
           {/* Handles */}
@@ -102,15 +109,6 @@ function PotVisual({ total, paid, owed }) {
           <path d="M170 80 Q190 80 190 100 Q190 120 170 118" fill="none" stroke="#27272a" strokeWidth="10" strokeLinecap="round" />
           <path d="M30 80 Q10 80 10 100 Q10 120 30 118" fill="none" stroke="#3f3f46" strokeWidth="6" strokeLinecap="round" />
           <path d="M170 80 Q190 80 190 100 Q190 120 170 118" fill="none" stroke="#3f3f46" strokeWidth="6" strokeLinecap="round" />
-
-          {/* Dollar sign in pot */}
-          {!isEmpty && (
-            <text x="100" y={Math.max(140, 168 - (114 * fillPct / 100) - 8)}
-              textAnchor="middle" fill="white" opacity="0.5"
-              fontSize="22" fontWeight="900" fontFamily="system-ui">
-              $
-            </text>
-          )}
         </svg>
 
         {/* Overflow coins when all paid */}
