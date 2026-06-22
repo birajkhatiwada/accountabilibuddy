@@ -10,12 +10,11 @@ const PAYMENTS_DOC = doc(db, 'config', 'payments')
 function PotVisual({ total, paid, owed }) {
   const isEmpty = total === 0
   const allPaid = total > 0 && owed === 0
-  const billCount = Math.min(Math.floor(total / 15), 10)
-  const spread = Math.min(billCount * 13, 100)
+  const billCount = Math.min(Math.floor(total / 15), 12)
 
   return (
     <div className="flex flex-col items-center py-6 select-none">
-      <div className="text-center mb-2">
+      <div className="text-center mb-6">
         <p className="text-6xl font-black text-zinc-900 dark:text-white tracking-tight">${total}</p>
         <p className="text-sm text-zinc-500 mt-1">
           {isEmpty
@@ -26,111 +25,35 @@ function PotVisual({ total, paid, owed }) {
         </p>
       </div>
 
-      {/* Pot + bills */}
-      <div className="relative mt-4" style={{ width: 220, height: 200 }}>
-
-        {/* 💵 bills fanning out from the pot */}
-        {Array.from({ length: billCount }).map((_, i) => {
-          const angle = billCount === 1 ? 0 : -spread / 2 + (i / (billCount - 1)) * spread
-          return (
-            <div key={i} style={{
-              position: 'absolute',
-              bottom: 70,
-              left: '50%',
-              transformOrigin: 'bottom center',
-              transform: `translateX(-50%) rotate(${angle}deg)`,
-              fontSize: 40,
-              zIndex: 30 + i,
-              lineHeight: 1,
-              filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.35))',
-            }}>
-              💵
-            </div>
-          )
-        })}
-
-        {/* Pot rim — covers bill bases */}
-        <div style={{
-          position: 'absolute',
-          bottom: 78,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: 170,
-          height: 22,
-          background: 'linear-gradient(to bottom, #52525b, #3f3f46)',
-          borderRadius: '50%',
-          zIndex: 20,
-          boxShadow: '0 3px 10px rgba(0,0,0,0.5)',
-        }} />
-
-        {/* Rim inner dark */}
-        <div style={{
-          position: 'absolute',
-          bottom: 82,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: 150,
-          height: 16,
-          background: '#27272a',
-          borderRadius: '50%',
-          zIndex: 21,
-        }} />
-
-        {/* Pot body */}
-        <div style={{
-          position: 'absolute',
-          bottom: 8,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: 154,
-          height: 82,
-          background: 'linear-gradient(135deg, #3f3f46 0%, #18181b 100%)',
-          borderRadius: '8px 8px 50px 50px',
-          zIndex: 18,
-          boxShadow: '0 8px 28px rgba(0,0,0,0.5)',
-        }} />
-
-        {/* Left handle */}
-        <div style={{
-          position: 'absolute',
-          bottom: 46,
-          left: '50%',
-          marginLeft: -101,
-          width: 22,
-          height: 36,
-          border: '7px solid #52525b',
-          borderRight: 'none',
-          borderRadius: '12px 0 0 12px',
-          zIndex: 17,
-        }} />
-
-        {/* Right handle */}
-        <div style={{
-          position: 'absolute',
-          bottom: 46,
-          left: '50%',
-          marginLeft: 79,
-          width: 22,
-          height: 36,
-          border: '7px solid #52525b',
-          borderLeft: 'none',
-          borderRadius: '0 12px 12px 0',
-          zIndex: 17,
-        }} />
-
-        {isEmpty && (
-          <div style={{
-            position: 'absolute', bottom: 24, left: '50%',
-            transform: 'translateX(-50%)', zIndex: 25, fontSize: 28, opacity: 0.35,
-          }}>
-            🫙
-          </div>
-        )}
-      </div>
+      {/* Stacked bills pile */}
+      {isEmpty ? (
+        <div className="text-6xl opacity-30 mb-2">💸</div>
+      ) : (
+        <div className="relative mb-2" style={{ height: 40 + billCount * 7, width: 120 }}>
+          {Array.from({ length: billCount }).map((_, i) => {
+            const fromTop = billCount - 1 - i
+            const wobble = (i % 3 === 0 ? -2 : i % 3 === 1 ? 1.5 : -0.5)
+            return (
+              <div key={i} style={{
+                position: 'absolute',
+                top: fromTop * 7,
+                left: '50%',
+                transform: `translateX(-50%) rotate(${wobble}deg)`,
+                fontSize: 52,
+                lineHeight: 1,
+                filter: `brightness(${0.75 + (i / billCount) * 0.25})`,
+                zIndex: i,
+              }}>
+                💵
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       {/* Stats */}
       {total > 0 && (
-        <div className="grid grid-cols-3 gap-2 w-full mt-6">
+        <div className="grid grid-cols-3 gap-2 w-full mt-4">
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl py-2.5 px-3 text-center">
             <p className="text-lg font-black text-zinc-900 dark:text-white">${total}</p>
             <p className="text-[10px] text-zinc-500 font-medium">total owed</p>
