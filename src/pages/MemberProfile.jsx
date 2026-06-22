@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, addDoc, setDoc, Timestamp, getDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { getCurrentWeekId, formatWeekLabel, formatTimestamp } from '../utils'
-import { CheckCircle, XCircle, Send, AlertTriangle, ArrowLeft, Pencil, X, Trash2 } from 'lucide-react'
+import { CheckCircle, XCircle, Send, AlertTriangle, ArrowLeft, Pencil, X, Trash2, Link2 } from 'lucide-react'
 import WeekCalendar from '../components/WeekCalendar'
 import GoalBuilder from '../components/GoalBuilder'
 import Highcharts from 'highcharts'
@@ -50,6 +50,9 @@ export default function MemberProfile() {
   const [confirmFail, setConfirmFail] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [pickingAvatar, setPickingAvatar] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [goalBuilderKey, setGoalBuilderKey] = useState(0)
+  const [carryOverGoals, setCarryOverGoals] = useState(null)
 
   useEffect(() => {
     return onSnapshot(MEMBERS_DOC, snap => {
@@ -97,6 +100,21 @@ export default function MemberProfile() {
   const colorIdx = members.indexOf(name) % AVATAR_COLORS.length
   const color = AVATAR_COLORS[colorIdx < 0 ? 0 : colorIdx] || AVATAR_COLORS[0]
   const colorHex = AVATAR_HEX[colorIdx < 0 ? 0 : colorIdx] || AVATAR_HEX[0]
+  const prevEntry = allEntries
+    .filter(e => (e.nameLower || e.name?.toLowerCase()) === name.toLowerCase() && e.weekId < weekId)
+    .sort((a, b) => b.weekId.localeCompare(a.weekId))[0]
+
+  const handleCarryOver = () => {
+    setCarryOverGoals(prevEntry?.goalItems || [])
+    setGoalBuilderKey(k => k + 1)
+  }
+
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
   const streak = (() => {
     const past = allEntries
       .filter(e => (e.nameLower || e.name?.toLowerCase()) === name.toLowerCase() && e.weekId < weekId)
@@ -202,12 +220,18 @@ export default function MemberProfile() {
       className="flex flex-col space-y-4 min-h-screen -mx-4 px-4 -mt-3 pt-3"
     >
 
-      {/* Back + delete */}
+      {/* Back + share + delete */}
       <div className="flex items-center justify-between">
         <button onClick={() => navigate(-1)}
           className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors">
           <ArrowLeft size={15} /> Back
         </button>
+        <div className="flex items-center gap-1">
+          <button onClick={handleShare}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all">
+            <Link2 size={13} />
+            {copied ? 'Copied!' : 'Share'}
+          </button>
         {confirmDelete ? (
           <div className="flex items-center gap-2">
             <span className="text-xs text-zinc-500">Remove {name}?</span>
@@ -219,6 +243,7 @@ export default function MemberProfile() {
             <Trash2 size={15} />
           </button>
         )}
+        </div>
       </div>
 
       {/* Hero — keep colorful gradient as-is, white/opacity classes inside are relative to gradient bg */}
@@ -310,8 +335,16 @@ export default function MemberProfile() {
       {/* No goals yet */}
       {!entry && (
         <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 space-y-4">
-          <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">Lock in your goals for this week 🔒</p>
-          <GoalBuilder onChange={setGoalsInput} />
+          <div className="flex items-center justify-between">
+            <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">Lock in your goals for this week 🔒</p>
+            {prevEntry?.goalItems?.length > 0 && (
+              <button onClick={handleCarryOver}
+                className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 dark:hover:text-emerald-300 transition-colors flex items-center gap-1">
+                ↩ Last week's
+              </button>
+            )}
+          </div>
+          <GoalBuilder key={goalBuilderKey} initialGoals={carryOverGoals} onChange={setGoalsInput} />
           <button
             onClick={submitGoals}
             disabled={submitting || !goalsInput.some(g => g.text.trim())}

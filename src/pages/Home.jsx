@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { collection, query, where, onSnapshot, doc, setDoc } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, doc, setDoc, updateDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { getCurrentWeekId, formatWeekLabel } from '../utils'
 import Highcharts from 'highcharts'
@@ -50,6 +50,9 @@ export default function Home() {
   const [bannerDismissed, setBannerDismissed] = useState(false)
   const [memberLogs, setMemberLogs] = useState({})
   const [avatars, setAvatars] = useState({})
+  const [closeWeekOpen, setCloseWeekOpen] = useState(false)
+  const [closeStatuses, setCloseStatuses] = useState({})
+  const [closing, setClosing] = useState(false)
 
   useEffect(() => {
     const unsub = onSnapshot(MEMBERS_DOC, snap => {
@@ -128,6 +131,26 @@ export default function Home() {
     )
     if (!e) return 'none'
     return e.status // 'active' | 'completed' | 'failed'
+  }
+
+  const activeEntries = entries.filter(e => e.status === 'active')
+
+  const openCloseWeek = () => {
+    const initial = {}
+    activeEntries.forEach(e => { initial[e.name] = 'completed' })
+    setCloseStatuses(initial)
+    setCloseWeekOpen(true)
+  }
+
+  const confirmCloseWeek = async () => {
+    setClosing(true)
+    await Promise.all(
+      activeEntries.map(e =>
+        updateDoc(doc(db, 'entries', e.id), { status: closeStatuses[e.name] || 'completed' })
+      )
+    )
+    setClosing(false)
+    setCloseWeekOpen(false)
   }
 
   const potTotal = allEntries.filter(e => e.status === 'failed').length * PENALTY
@@ -249,10 +272,18 @@ export default function Home() {
         </div>
       )}
 
-      {/* Week label */}
-      <div>
-        <h2 className="text-xl font-black text-zinc-900 dark:text-white">This Week</h2>
-        <p className="text-xs text-zinc-500 font-medium mt-0.5">{formatWeekLabel(weekId)}</p>
+      {/* Week label + close week */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-black text-zinc-900 dark:text-white">This Week</h2>
+          <p className="text-xs text-zinc-500 font-medium mt-0.5">{formatWeekLabel(weekId)}</p>
+        </div>
+        {activeEntries.length > 0 && (
+          <button onClick={openCloseWeek}
+            className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
+            Close week
+          </button>
+        )}
       </div>
 
       {/* Members grid */}
@@ -442,6 +473,55 @@ export default function Home() {
                 </button>
               )
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Close week modal */}
+      {closeWeekOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setCloseWeekOpen(false)}>
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div className="relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-t-3xl w-full max-w-lg p-6 space-y-4 shadow-2xl"
+            onClick={e => e.stopPropagation()}>
+            <div className="w-10 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto -mt-2 mb-2" />
+            <div>
+              <p className="text-base font-black text-zinc-900 dark:text-white">Close this week</p>
+              <p className="text-xs text-zinc-500 mt-0.5">Mark each person as passed or failed</p>
+            </div>
+            <div className="space-y-2">
+              {activeEntries.map(e => (
+                <div key={e.id} className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-800/60 rounded-2xl px-4 py-3">
+                  <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${getAvatarColor(e.name, members)} flex items-center justify-center shrink-0 text-base`}>
+                    {avatars[e.name] || <span className="text-white font-black text-sm">{e.name[0]}</span>}
+                  </div>
+                  <p className="flex-1 font-semibold text-sm text-zinc-800 dark:text-zinc-200">{e.name}</p>
+                  <div className="flex gap-1.5">
+                    <button
+                      onClick={() => setCloseStatuses(s => ({ ...s, [e.name]: 'completed' }))}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                        closeStatuses[e.name] === 'completed'
+                          ? 'bg-emerald-500 border-emerald-500 text-white'
+                          : 'border-zinc-300 dark:border-zinc-700 text-zinc-500 hover:border-emerald-400 hover:text-emerald-500'
+                      }`}>
+                      ✅ Pass
+                    </button>
+                    <button
+                      onClick={() => setCloseStatuses(s => ({ ...s, [e.name]: 'failed' }))}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                        closeStatuses[e.name] === 'failed'
+                          ? 'bg-red-500 border-red-500 text-white'
+                          : 'border-zinc-300 dark:border-zinc-700 text-zinc-500 hover:border-red-400 hover:text-red-500'
+                      }`}>
+                      ❌ Fail
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button onClick={confirmCloseWeek} disabled={closing}
+              className="w-full bg-zinc-900 dark:bg-white hover:bg-zinc-700 dark:hover:bg-zinc-100 disabled:opacity-40 text-white dark:text-zinc-900 font-bold rounded-xl py-3 transition-all text-sm">
+              {closing ? 'Closing...' : `Close week for ${activeEntries.length} member${activeEntries.length !== 1 ? 's' : ''}`}
+            </button>
           </div>
         </div>
       )}
