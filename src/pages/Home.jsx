@@ -5,6 +5,7 @@ import { db } from '../firebase'
 import { getCurrentWeekId, formatWeekLabel } from '../utils'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
+import { X } from 'lucide-react'
 
 const MEMBERS_DOC = doc(db, 'config', 'members')
 const PENALTY = 15
