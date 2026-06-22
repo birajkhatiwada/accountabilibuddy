@@ -40,7 +40,7 @@ function PotVisual({ total, paid, owed }) {
               transformOrigin: 'bottom center',
               transform: `translateX(-50%) rotate(${angle}deg)`,
               fontSize: 40,
-              zIndex: i + 1,
+              zIndex: 30 + i,
               lineHeight: 1,
               filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.35))',
             }}>
