@@ -118,11 +118,11 @@ export default function GoalBuilder({ onChange, initialGoals }) {
                     }
                   </div>
                   {/* Unit chips */}
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                     {UNIT_CHIPS.map(u => (
                       <button key={u} type="button"
                         onClick={() => update(i, { unit: goal.unit === u ? '' : u })}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all shrink-0 ${
                           goal.unit === u
                             ? 'text-white shadow-sm'
                             : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
@@ -131,14 +131,11 @@ export default function GoalBuilder({ onChange, initialGoals }) {
                         {u}
                       </button>
                     ))}
-                    {/* Custom unit input */}
-                    {!UNIT_CHIPS.includes(goal.unit) && (
-                      <input type="text" placeholder="custom…"
-                        value={UNIT_CHIPS.includes(goal.unit) ? '' : goal.unit}
-                        onChange={e => update(i, { unit: e.target.value })}
-                        className="px-2.5 py-1 rounded-lg text-xs bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 placeholder-zinc-300 dark:placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-emerald-500 w-20 transition-all"
-                      />
-                    )}
+                    <input type="text" placeholder="other…"
+                      value={UNIT_CHIPS.includes(goal.unit) ? '' : goal.unit}
+                      onChange={e => update(i, { unit: e.target.value })}
+                      className="px-2.5 py-1 rounded-lg text-xs bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 placeholder-zinc-300 dark:placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-emerald-500 w-16 shrink-0 transition-all"
+                    />
                   </div>
                 </div>
               )}
