@@ -6,7 +6,12 @@ const EMPTY_SUB  = () => ({ text: '', target: '', unit: '' })
 
 const ACCENT = ['#8b5cf6','#3b82f6','#10b981','#f97316','#ec4899','#14b8a6','#f59e0b','#6366f1']
 
-const UNIT_CHIPS = ['times','pages','km','min','hrs','reps','lbs','sessions','chapters','cups']
+const UNIT_GROUPS = [
+  { label: '🏃 Fitness',  units: ['reps','sets','miles','km','meters','steps','lbs','kg','calories'] },
+  { label: '📚 Learning', units: ['pages','chapters','books','problems','lessons','videos'] },
+  { label: '⏱ Time',     units: ['min','hrs','days','sessions','rounds','pomodoros'] },
+  { label: '🎯 General',  units: ['times','cups','glasses','meals','tasks','entries'] },
+]
 
 const PLACEHOLDERS = [
   'e.g. Hit the gym 💪',
@@ -30,11 +35,15 @@ export default function GoalBuilder({ onChange, initialGoals }) {
         }))
       : [EMPTY_GOAL()]
   )
+  const [unitTabs, setUnitTabs] = useState(() => goals.map(() => 0))
 
   const push = (next) => { setGoals(next); onChange(next) }
   const update = (i, patch) => push(goals.map((g, idx) => idx === i ? { ...g, ...patch } : g))
-  const add    = () => push([...goals, EMPTY_GOAL()])
-  const remove = (i) => push(goals.length > 1 ? goals.filter((_, idx) => idx !== i) : [EMPTY_GOAL()])
+  const add    = () => { push([...goals, EMPTY_GOAL()]); setUnitTabs(t => [...t, 0]) }
+  const remove = (i) => {
+    push(goals.length > 1 ? goals.filter((_, idx) => idx !== i) : [EMPTY_GOAL()])
+    setUnitTabs(t => goals.length > 1 ? t.filter((_, idx) => idx !== i) : [0])
+  }
 
   const addSub    = (i) => update(i, { subGoals: [...(goals[i].subGoals || []), EMPTY_SUB()] })
   const removeSub = (i, si) => update(i, { subGoals: goals[i].subGoals.filter((_, idx) => idx !== si) })
@@ -117,12 +126,27 @@ export default function GoalBuilder({ onChange, initialGoals }) {
                       : <span className="text-xs text-zinc-400 dark:text-zinc-600 italic">pick a unit →</span>
                     }
                   </div>
-                  {/* Unit chips */}
-                  <div className="flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                    {UNIT_CHIPS.map(u => (
+                  {/* Unit group tabs */}
+                  <div className="flex gap-1">
+                    {UNIT_GROUPS.map((g, gi) => (
+                      <button key={gi} type="button"
+                        onClick={() => setUnitTabs(t => t.map((v, ti) => ti === i ? gi : v))}
+                        className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                          (unitTabs[i] ?? 0) === gi
+                            ? 'text-white'
+                            : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300'
+                        }`}
+                        style={(unitTabs[i] ?? 0) === gi ? { background: accent } : {}}>
+                        {g.label}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Unit chips for active tab */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {UNIT_GROUPS[unitTabs[i] ?? 0].units.map(u => (
                       <button key={u} type="button"
                         onClick={() => update(i, { unit: goal.unit === u ? '' : u })}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all shrink-0 ${
+                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
                           goal.unit === u
                             ? 'text-white shadow-sm'
                             : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
@@ -132,9 +156,9 @@ export default function GoalBuilder({ onChange, initialGoals }) {
                       </button>
                     ))}
                     <input type="text" placeholder="other…"
-                      value={UNIT_CHIPS.includes(goal.unit) ? '' : goal.unit}
+                      value={UNIT_GROUPS.flatMap(g => g.units).includes(goal.unit) ? '' : goal.unit}
                       onChange={e => update(i, { unit: e.target.value })}
-                      className="px-2.5 py-1 rounded-lg text-xs bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 placeholder-zinc-300 dark:placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-emerald-500 w-16 shrink-0 transition-all"
+                      className="px-2.5 py-1 rounded-lg text-xs bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 placeholder-zinc-300 dark:placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-emerald-500 w-16 transition-all"
                     />
                   </div>
                 </div>
