@@ -6,6 +6,8 @@ const EMPTY_SUB  = () => ({ text: '', target: '', unit: '' })
 
 const ACCENT = ['#8b5cf6','#3b82f6','#10b981','#f97316','#ec4899','#14b8a6','#f59e0b','#6366f1']
 
+const UNIT_CHIPS = ['times','pages','km','min','hrs','reps','lbs','sessions','chapters','cups']
+
 const PLACEHOLDERS = [
   'e.g. Hit the gym 💪',
   'e.g. Read every night 📚',
@@ -89,17 +91,55 @@ export default function GoalBuilder({ onChange, initialGoals }) {
 
               {/* Target + unit for weekly with no breakdowns */}
               {goal.type === 'weekly' && goal.subGoals.length === 0 && (
-                <div className="flex gap-1.5">
-                  <input type="number" min="1" placeholder="0"
-                    value={goal.target}
-                    onChange={e => update(i, { target: e.target.value })}
-                    className="w-16 bg-zinc-100 dark:bg-zinc-800 rounded-lg px-2.5 py-1.5 text-sm font-bold text-zinc-800 dark:text-zinc-200 text-center focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  />
-                  <input type="text" placeholder="times, pages, km…"
-                    value={goal.unit}
-                    onChange={e => update(i, { unit: e.target.value })}
-                    className="flex-1 bg-zinc-100 dark:bg-zinc-800 rounded-lg px-2.5 py-1.5 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
-                  />
+                <div className="space-y-2">
+                  {/* Stepper + selected unit */}
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-700">
+                      <button type="button"
+                        onClick={() => update(i, { target: String(Math.max(1, (Number(goal.target) || 0) - 1) )})}
+                        className="px-3 py-1.5 text-base font-bold text-zinc-400 dark:text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors select-none">
+                        −
+                      </button>
+                      <span className="px-3 py-1.5 text-sm font-black text-zinc-800 dark:text-zinc-100 min-w-[2.5rem] text-center tabular-nums"
+                        style={{ color: goal.target ? accent : undefined }}>
+                        {goal.target || '0'}
+                      </span>
+                      <button type="button"
+                        onClick={() => update(i, { target: String((Number(goal.target) || 0) + 1) })}
+                        className="px-3 py-1.5 text-base font-bold text-zinc-400 dark:text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors select-none">
+                        +
+                      </button>
+                    </div>
+                    {goal.unit
+                      ? <span className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">{goal.unit}
+                          <button type="button" onClick={() => update(i, { unit: '' })} className="ml-1.5 text-zinc-300 dark:text-zinc-600 hover:text-red-400 transition-colors text-xs">✕</button>
+                        </span>
+                      : <span className="text-xs text-zinc-400 dark:text-zinc-600 italic">pick a unit →</span>
+                    }
+                  </div>
+                  {/* Unit chips */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {UNIT_CHIPS.map(u => (
+                      <button key={u} type="button"
+                        onClick={() => update(i, { unit: goal.unit === u ? '' : u })}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                          goal.unit === u
+                            ? 'text-white shadow-sm'
+                            : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+                        }`}
+                        style={goal.unit === u ? { background: accent } : {}}>
+                        {u}
+                      </button>
+                    ))}
+                    {/* Custom unit input */}
+                    {!UNIT_CHIPS.includes(goal.unit) && (
+                      <input type="text" placeholder="custom…"
+                        value={UNIT_CHIPS.includes(goal.unit) ? '' : goal.unit}
+                        onChange={e => update(i, { unit: e.target.value })}
+                        className="px-2.5 py-1 rounded-lg text-xs bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 placeholder-zinc-300 dark:placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-emerald-500 w-20 transition-all"
+                      />
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -114,15 +154,17 @@ export default function GoalBuilder({ onChange, initialGoals }) {
                         onChange={e => updateSub(i, si, { text: e.target.value })}
                         className="flex-1 bg-zinc-100 dark:bg-zinc-800 rounded-lg px-2.5 py-1 text-xs text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
                       />
-                      <input type="number" min="0" placeholder="0"
-                        value={sg.target}
-                        onChange={e => updateSub(i, si, { target: e.target.value })}
-                        className="w-10 bg-zinc-100 dark:bg-zinc-800 rounded-lg px-1.5 py-1 text-xs font-bold text-zinc-800 dark:text-zinc-200 text-center focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      />
+                      <div className="flex items-center rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 shrink-0">
+                        <button type="button" onClick={() => updateSub(i, si, { target: String(Math.max(1, (Number(sg.target) || 0) - 1)) })}
+                          className="px-2 py-1 text-xs font-bold text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors select-none">−</button>
+                        <span className="px-2 py-1 text-xs font-black text-zinc-800 dark:text-zinc-100 min-w-[1.5rem] text-center tabular-nums">{sg.target || '0'}</span>
+                        <button type="button" onClick={() => updateSub(i, si, { target: String((Number(sg.target) || 0) + 1) })}
+                          className="px-2 py-1 text-xs font-bold text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors select-none">+</button>
+                      </div>
                       <input type="text" placeholder="unit"
                         value={sg.unit}
                         onChange={e => updateSub(i, si, { unit: e.target.value })}
-                        className="w-12 bg-zinc-100 dark:bg-zinc-800 rounded-lg px-1.5 py-1 text-xs text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
+                        className="w-14 bg-zinc-100 dark:bg-zinc-800 rounded-lg px-1.5 py-1 text-xs text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
                       />
                       <button onClick={() => removeSub(i, si)} className="text-zinc-200 dark:text-zinc-700 hover:text-red-400 transition-colors shrink-0">
                         <Trash2 size={11} />
