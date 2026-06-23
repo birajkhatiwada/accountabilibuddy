@@ -6,12 +6,7 @@ const EMPTY_SUB  = () => ({ text: '', target: '', unit: '' })
 
 const ACCENT = ['#8b5cf6','#3b82f6','#10b981','#f97316','#ec4899','#14b8a6','#f59e0b','#6366f1']
 
-const UNIT_GROUPS = [
-  { label: '🏃 Fitness',  units: ['reps','sets','miles','km','meters','steps','lbs','kg','calories'] },
-  { label: '📚 Learning', units: ['pages','chapters','books','problems','lessons','videos'] },
-  { label: '⏱ Time',     units: ['min','hrs','days','sessions','rounds','pomodoros'] },
-  { label: '🎯 General',  units: ['times','cups','glasses','meals','tasks','entries'] },
-]
+const UNITS = ['times','min','hrs','pages','km','miles','reps','lbs']
 
 const PLACEHOLDERS = [
   'e.g. Hit the gym 💪',
@@ -24,6 +19,39 @@ const PLACEHOLDERS = [
   'e.g. Sleep by 11pm 😴',
 ]
 
+function UnitPicker({ value, onChange, accent, size = 'md' }) {
+  const isCustom = value && !UNITS.includes(value)
+  const sm = size === 'sm'
+  return (
+    <div className={`grid grid-cols-4 ${sm ? 'gap-1' : 'gap-1.5'}`}>
+      {UNITS.map(u => (
+        <button key={u} type="button"
+          onClick={() => onChange(value === u ? '' : u)}
+          className={`rounded-lg font-semibold transition-all text-center ${
+            sm ? 'py-1 text-[10px]' : 'py-1.5 text-xs'
+          } ${
+            value === u
+              ? 'text-white shadow-sm'
+              : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+          }`}
+          style={value === u ? { background: accent } : {}}>
+          {u}
+        </button>
+      ))}
+      <input
+        type="text"
+        placeholder="other"
+        value={isCustom ? value : ''}
+        onChange={e => onChange(e.target.value)}
+        className={`col-span-4 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 placeholder-zinc-300 dark:placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all text-center ${
+          sm ? 'py-1 text-[10px]' : 'py-1.5 text-xs'
+        } ${isCustom ? 'ring-1' : ''}`}
+        style={isCustom ? { ringColor: accent } : {}}
+      />
+    </div>
+  )
+}
+
 export default function GoalBuilder({ onChange, initialGoals }) {
   const [goals, setGoals] = useState(() =>
     initialGoals?.length
@@ -35,20 +63,14 @@ export default function GoalBuilder({ onChange, initialGoals }) {
         }))
       : [EMPTY_GOAL()]
   )
-  const [unitTabs, setUnitTabs] = useState(() => goals.map(() => 0))
-  const [subUnitTabs, setSubUnitTabs] = useState(() => goals.map(g => (g.subGoals || []).map(() => 0)))
 
   const push = (next) => { setGoals(next); onChange(next) }
   const update = (i, patch) => push(goals.map((g, idx) => idx === i ? { ...g, ...patch } : g))
-  const add    = () => { push([...goals, EMPTY_GOAL()]); setUnitTabs(t => [...t, 0]); setSubUnitTabs(t => [...t, []]) }
-  const remove = (i) => {
-    push(goals.length > 1 ? goals.filter((_, idx) => idx !== i) : [EMPTY_GOAL()])
-    setUnitTabs(t => goals.length > 1 ? t.filter((_, idx) => idx !== i) : [0])
-    setSubUnitTabs(t => goals.length > 1 ? t.filter((_, idx) => idx !== i) : [[]])
-  }
+  const add    = () => push([...goals, EMPTY_GOAL()])
+  const remove = (i) => push(goals.length > 1 ? goals.filter((_, idx) => idx !== i) : [EMPTY_GOAL()])
 
-  const addSub    = (i) => { update(i, { subGoals: [...(goals[i].subGoals || []), EMPTY_SUB()] }); setSubUnitTabs(t => t.map((row, ti) => ti === i ? [...row, 0] : row)) }
-  const removeSub = (i, si) => { update(i, { subGoals: goals[i].subGoals.filter((_, idx) => idx !== si) }); setSubUnitTabs(t => t.map((row, ti) => ti === i ? row.filter((_, idx) => idx !== si) : row)) }
+  const addSub    = (i) => update(i, { subGoals: [...(goals[i].subGoals || []), EMPTY_SUB()] })
+  const removeSub = (i, si) => update(i, { subGoals: goals[i].subGoals.filter((_, idx) => idx !== si) })
   const updateSub = (i, si, patch) => update(i, {
     subGoals: goals[i].subGoals.map((sg, idx) => idx === si ? { ...sg, ...patch } : sg),
   })
@@ -100,19 +122,18 @@ export default function GoalBuilder({ onChange, initialGoals }) {
                 </button>
               </div>
 
-              {/* Target + unit for weekly with no breakdowns */}
+              {/* Weekly: stepper + unit grid */}
               {goal.type === 'weekly' && goal.subGoals.length === 0 && (
                 <div className="space-y-2">
-                  {/* Stepper + selected unit */}
                   <div className="flex items-center gap-3">
                     <div className="flex items-center rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-700">
                       <button type="button"
-                        onClick={() => update(i, { target: String(Math.max(1, (Number(goal.target) || 0) - 1) )})}
+                        onClick={() => update(i, { target: String(Math.max(1, (Number(goal.target) || 0) - 1)) })}
                         className="px-3 py-1.5 text-base font-bold text-zinc-400 dark:text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors select-none">
                         −
                       </button>
-                      <span className="px-3 py-1.5 text-sm font-black text-zinc-800 dark:text-zinc-100 min-w-[2.5rem] text-center tabular-nums"
-                        style={{ color: goal.target ? accent : undefined }}>
+                      <span className="px-3 py-1.5 text-sm font-black min-w-[2.5rem] text-center tabular-nums"
+                        style={{ color: goal.target ? accent : '#a1a1aa' }}>
                         {goal.target || '0'}
                       </span>
                       <button type="button"
@@ -122,109 +143,48 @@ export default function GoalBuilder({ onChange, initialGoals }) {
                       </button>
                     </div>
                     {goal.unit
-                      ? <span className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">{goal.unit}
-                          <button type="button" onClick={() => update(i, { unit: '' })} className="ml-1.5 text-zinc-300 dark:text-zinc-600 hover:text-red-400 transition-colors text-xs">✕</button>
+                      ? <span className="text-sm font-bold" style={{ color: accent }}>
+                          {goal.unit}
+                          <button type="button" onClick={() => update(i, { unit: '' })}
+                            className="ml-1.5 text-zinc-300 dark:text-zinc-600 hover:text-red-400 transition-colors text-xs font-normal">✕</button>
                         </span>
-                      : <span className="text-xs text-zinc-400 dark:text-zinc-600 italic">pick a unit →</span>
+                      : <span className="text-xs text-zinc-300 dark:text-zinc-600">← then pick a unit</span>
                     }
                   </div>
-                  {/* Unit group tabs */}
-                  <div className="flex gap-1">
-                    {UNIT_GROUPS.map((g, gi) => (
-                      <button key={gi} type="button"
-                        onClick={() => setUnitTabs(t => t.map((v, ti) => ti === i ? gi : v))}
-                        className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${
-                          (unitTabs[i] ?? 0) === gi
-                            ? 'text-white'
-                            : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300'
-                        }`}
-                        style={(unitTabs[i] ?? 0) === gi ? { background: accent } : {}}>
-                        {g.label}
-                      </button>
-                    ))}
-                  </div>
-                  {/* Unit chips for active tab */}
-                  <div className="flex flex-wrap gap-1.5">
-                    {UNIT_GROUPS[unitTabs[i] ?? 0].units.map(u => (
-                      <button key={u} type="button"
-                        onClick={() => update(i, { unit: goal.unit === u ? '' : u })}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                          goal.unit === u
-                            ? 'text-white shadow-sm'
-                            : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
-                        }`}
-                        style={goal.unit === u ? { background: accent } : {}}>
-                        {u}
-                      </button>
-                    ))}
-                    <input type="text" placeholder="other…"
-                      value={UNIT_GROUPS.flatMap(g => g.units).includes(goal.unit) ? '' : goal.unit}
-                      onChange={e => update(i, { unit: e.target.value })}
-                      className="px-2.5 py-1 rounded-lg text-xs bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 placeholder-zinc-300 dark:placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-emerald-500 w-16 transition-all"
-                    />
-                  </div>
+                  <UnitPicker value={goal.unit} onChange={u => update(i, { unit: u })} accent={accent} />
                 </div>
               )}
 
               {/* Breakdowns */}
               {goal.type === 'weekly' && (
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   {goal.subGoals.map((sg, si) => (
-                    <div key={si} className="flex gap-1.5 items-start pl-1">
-                      <span className="text-zinc-300 dark:text-zinc-600 text-xs">↳</span>
-                      <input type="text" placeholder="e.g. Hard problems"
-                        value={sg.text}
-                        onChange={e => updateSub(i, si, { text: e.target.value })}
-                        className="flex-1 bg-zinc-100 dark:bg-zinc-800 rounded-lg px-2.5 py-1 text-xs text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
-                      />
-                      <div className="flex items-center rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 shrink-0">
-                        <button type="button" onClick={() => updateSub(i, si, { target: String(Math.max(1, (Number(sg.target) || 0) - 1)) })}
-                          className="px-2 py-1 text-xs font-bold text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors select-none">−</button>
-                        <span className="px-2 py-1 text-xs font-black text-zinc-800 dark:text-zinc-100 min-w-[1.5rem] text-center tabular-nums">{sg.target || '0'}</span>
-                        <button type="button" onClick={() => updateSub(i, si, { target: String((Number(sg.target) || 0) + 1) })}
-                          className="px-2 py-1 text-xs font-bold text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors select-none">+</button>
-                      </div>
-                      {/* Sub-goal unit picker */}
-                      <div className="flex-1 space-y-1">
-                        <div className="flex gap-1 flex-wrap">
-                          {UNIT_GROUPS.map((g, gi) => (
-                            <button key={gi} type="button"
-                              onClick={() => setSubUnitTabs(t => t.map((row, ti) => ti === i ? row.map((v, ri) => ri === si ? gi : v) : row))}
-                              className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-all ${
-                                (subUnitTabs[i]?.[si] ?? 0) === gi
-                                  ? 'text-white'
-                                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 hover:text-zinc-600'
-                              }`}
-                              style={(subUnitTabs[i]?.[si] ?? 0) === gi ? { background: accent } : {}}>
-                              {g.label}
-                            </button>
-                          ))}
+                    <div key={si} className="bg-zinc-50 dark:bg-zinc-800/60 rounded-xl p-2.5 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-zinc-300 dark:text-zinc-600 text-xs shrink-0">↳</span>
+                        <input type="text" placeholder="e.g. Hard problems"
+                          value={sg.text}
+                          onChange={e => updateSub(i, si, { text: e.target.value })}
+                          className="flex-1 bg-transparent text-xs font-semibold text-zinc-700 dark:text-zinc-300 placeholder-zinc-300 dark:placeholder-zinc-600 focus:outline-none"
+                        />
+                        <div className="flex items-center rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 shrink-0">
+                          <button type="button" onClick={() => updateSub(i, si, { target: String(Math.max(1, (Number(sg.target) || 0) - 1)) })}
+                            className="px-2 py-1 text-xs font-bold text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors select-none">−</button>
+                          <span className="px-2 py-1 text-xs font-black min-w-[1.5rem] text-center tabular-nums"
+                            style={{ color: sg.target ? accent : '#a1a1aa' }}>{sg.target || '0'}</span>
+                          <button type="button" onClick={() => updateSub(i, si, { target: String((Number(sg.target) || 0) + 1) })}
+                            className="px-2 py-1 text-xs font-bold text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors select-none">+</button>
                         </div>
-                        <div className="flex gap-1 flex-wrap">
-                          {UNIT_GROUPS[subUnitTabs[i]?.[si] ?? 0].units.map(u => (
-                            <button key={u} type="button"
-                              onClick={() => updateSub(i, si, { unit: sg.unit === u ? '' : u })}
-                              className={`px-2 py-0.5 rounded text-[10px] font-semibold transition-all ${
-                                sg.unit === u ? 'text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
-                              }`}
-                              style={sg.unit === u ? { background: accent } : {}}>
-                              {u}
-                            </button>
-                          ))}
-                          <input type="text" placeholder="other…"
-                            value={UNIT_GROUPS.flatMap(g => g.units).includes(sg.unit) ? '' : sg.unit}
-                            onChange={e => updateSub(i, si, { unit: e.target.value })}
-                            className="px-2 py-0.5 rounded text-[10px] bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 placeholder-zinc-300 dark:placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-emerald-500 w-14 transition-all"
-                          />
-                        </div>
+                        <button onClick={() => removeSub(i, si)}
+                          className="text-zinc-200 dark:text-zinc-600 hover:text-red-400 transition-colors shrink-0">
+                          <Trash2 size={11} />
+                        </button>
                       </div>
-                      <button onClick={() => removeSub(i, si)} className="text-zinc-200 dark:text-zinc-700 hover:text-red-400 transition-colors shrink-0">
-                        <Trash2 size={11} />
-                      </button>
+                      <UnitPicker value={sg.unit} onChange={u => updateSub(i, si, { unit: u })} accent={accent} size="sm" />
                     </div>
                   ))}
                   <button type="button" onClick={() => addSub(i)}
-                    className="flex items-center gap-1 text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 pl-4 transition-colors">
+                    className="flex items-center gap-1 text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 pl-2 transition-colors">
                     <Plus size={10} /> add breakdown
                   </button>
                 </div>
@@ -234,7 +194,6 @@ export default function GoalBuilder({ onChange, initialGoals }) {
         )
       })}
 
-      {/* Add goal button */}
       <button type="button" onClick={add}
         className="w-full py-3 rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-700 text-zinc-400 dark:text-zinc-600 hover:border-emerald-400 hover:text-emerald-500 transition-all text-sm font-bold flex items-center justify-center gap-2 group">
         <span className="text-base group-hover:scale-125 transition-transform">+</span> Add another goal
