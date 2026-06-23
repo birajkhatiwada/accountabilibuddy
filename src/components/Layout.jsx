@@ -17,7 +17,7 @@ export default function Layout() {
         <div className="flex items-end justify-between">
           <div>
             <h1 className="text-3xl font-black tracking-tight text-zinc-900 dark:text-white leading-none">
-              accountabili<span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">buddy</span>
+              accountabili<span style={{ background: 'linear-gradient(to right, #34d399, #2dd4bf)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>buddy</span>
             </h1>
             <p className="text-[11px] text-zinc-500 dark:text-zinc-600 mt-1 font-medium tracking-wide uppercase">honor system · no cheating yourself</p>
           </div>
