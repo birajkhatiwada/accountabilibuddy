@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Trash2, Plus } from 'lucide-react'
 
 const EMPTY_GOAL = () => ({ text: '', type: 'habit', target: '', unit: '', subGoals: [] })
@@ -24,38 +24,52 @@ const PLACEHOLDERS = [
   'e.g. Sleep by 11pm 😴',
 ]
 
-function UnitSelect({ value, onChange, accent }) {
-  const allUnits = UNIT_GROUPS.flatMap(g => g.units)
-  const isCustom = value && !allUnits.includes(value)
+const ALL_UNITS = UNIT_GROUPS.flatMap(g => g.units)
+
+function UnitInput({ value, onChange, accent }) {
+  const [query, setQuery] = useState('')
+  const [focused, setFocused] = useState(false)
+  const inputRef = useRef(null)
+
+  const suggestions = query.trim()
+    ? ALL_UNITS.filter(u => u.startsWith(query.toLowerCase()))
+    : ALL_UNITS.slice(0, 8)
+
+  const select = (u) => { onChange(u); setQuery(''); setFocused(false) }
+  const clear  = () => { onChange(''); setQuery(''); inputRef.current?.focus() }
+
   return (
-    <div className="flex gap-2 items-center">
-      <select
-        value={isCustom ? '__custom__' : (value || '')}
-        onChange={e => e.target.value !== '__custom__' && onChange(e.target.value)}
-        className="flex-1 bg-zinc-100 dark:bg-zinc-800 border-0 rounded-xl px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all appearance-none cursor-pointer"
-        style={{ color: value && !isCustom ? accent : undefined }}>
-        <option value="">pick a unit…</option>
-        {UNIT_GROUPS.map(g => (
-          <optgroup key={g.label} label={g.label}>
-            {g.units.map(u => <option key={u} value={u}>{u}</option>)}
-          </optgroup>
-        ))}
-        <optgroup label="— Custom">
-          <option value="__custom__">type my own…</option>
-        </optgroup>
-      </select>
-      {isCustom && (
-        <input type="text" placeholder="unit"
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          className="w-20 bg-zinc-100 dark:bg-zinc-800 rounded-xl px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
-          style={{ color: accent }}
-          autoFocus
-        />
-      )}
-      {value && (
-        <button type="button" onClick={() => onChange('')}
-          className="text-zinc-300 dark:text-zinc-600 hover:text-red-400 transition-colors text-xs shrink-0">✕</button>
+    <div className="relative">
+      <div className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 rounded-xl px-3 py-2">
+        {value
+          ? <>
+              <span className="text-sm font-bold flex-1" style={{ color: accent }}>{value}</span>
+              <button type="button" onClick={clear} className="text-zinc-300 dark:text-zinc-600 hover:text-red-400 transition-colors text-xs">✕</button>
+            </>
+          : <input
+              ref={inputRef}
+              type="text"
+              placeholder="type a unit…"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setTimeout(() => setFocused(false), 120)}
+              className="flex-1 bg-transparent text-sm text-zinc-700 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none"
+            />
+        }
+      </div>
+
+      {!value && focused && suggestions.length > 0 && (
+        <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-lg overflow-hidden">
+          {suggestions.map(u => (
+            <button key={u} type="button" onMouseDown={() => select(u)}
+              className="w-full text-left px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors first:rounded-t-xl last:rounded-b-xl">
+              {query ? (
+                <><span style={{ color: accent }}>{u.slice(0, query.length)}</span>{u.slice(query.length)}</>
+              ) : u}
+            </button>
+          ))}
+        </div>
       )}
     </div>
   )
@@ -151,7 +165,7 @@ export default function GoalBuilder({ onChange, initialGoals }) {
                         +
                       </button>
                     </div>
-                    <UnitSelect value={goal.unit} onChange={u => update(i, { unit: u })} accent={accent} />
+                    <UnitInput value={goal.unit} onChange={u => update(i, { unit: u })} accent={accent} />
                   </div>
                 </div>
               )}
@@ -181,7 +195,7 @@ export default function GoalBuilder({ onChange, initialGoals }) {
                           <Trash2 size={11} />
                         </button>
                       </div>
-                      <UnitSelect value={sg.unit} onChange={u => updateSub(i, si, { unit: u })} accent={accent} />
+                      <UnitInput value={sg.unit} onChange={u => updateSub(i, si, { unit: u })} accent={accent} />
                     </div>
                   ))}
                   <button type="button" onClick={() => addSub(i)}
