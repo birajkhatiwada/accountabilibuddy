@@ -35,17 +35,17 @@ function dateKey(d) { return d.toISOString().split('T')[0] }
 
 function Counter({ value, onChange, unit }) {
   return (
-    <div className="flex items-center gap-2.5">
+    <div className="flex items-center gap-1.5 shrink-0">
       <button onClick={() => onChange(Math.max(0, value - 1))}
-        className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-bold text-xl flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-90 transition-all select-none">
+        className="w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 font-bold text-base flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-90 transition-all select-none">
         −
       </button>
-      <span className="text-2xl font-black text-zinc-900 dark:text-white w-10 text-center tabular-nums">{value}</span>
+      <span className="text-sm font-black text-zinc-900 dark:text-white w-6 text-center tabular-nums">{value}</span>
       <button onClick={() => onChange(Math.min(999, value + 1))}
-        className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-bold text-xl flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-90 transition-all select-none">
+        className="w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 font-bold text-base flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-90 transition-all select-none">
         +
       </button>
-      {unit && <span className="text-xs text-zinc-400 ml-1">{unit}</span>}
+      {unit && <span className="text-[11px] text-zinc-400">{unit}</span>}
     </div>
   )
 }
@@ -480,103 +480,73 @@ export default function MemberProfile() {
               {entry.goalItems.map((goal, gi) => {
                 const isFutureDay = selectedDay > todayKey
 
-                // ── Habit card ────────────────────────────────────────────
+                // ── Habit card — single tappable row ─────────────────────
                 if (goal.type === 'habit') {
                   const checked = !!logs[selectedDay]?.habits?.[goal.text]
-                  const doneDays = weeklyHabitDays(goal.text)
                   return (
-                    <div key={gi} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-black bg-violet-500/15 text-violet-500 rounded px-1.5 py-0.5">DAILY</span>
-                          <span className="font-semibold text-sm text-zinc-800 dark:text-zinc-200">{goal.text}</span>
-                        </div>
-                        <span className="text-xs font-bold text-zinc-400">{doneDays}/7</span>
-                      </div>
-
-                      {/* Week dots */}
-                      <div className="flex gap-1">
+                    <button key={gi}
+                      onClick={() => !isFutureDay && toggleHabit(goal.text)}
+                      disabled={isFutureDay}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all active:scale-[0.99] disabled:opacity-40 ${
+                        checked
+                          ? 'bg-emerald-500/10 border-emerald-500/30'
+                          : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
+                      }`}>
+                      <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${
+                        checked ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-600'
+                      }`}>
+                        {checked && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                      </span>
+                      <span className={`flex-1 text-sm font-semibold text-left ${checked ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>
+                        {goal.text}
+                      </span>
+                      <div className="flex gap-0.5 shrink-0">
                         {weekDays.map((d, i) => {
                           const k = dateKey(d)
                           const done = !!logs[k]?.habits?.[goal.text]
                           const isSel = k === selectedDay
-                          return (
-                            <button key={i} onClick={() => !isFutureDay && setSelectedDay(k)}
-                              className={`flex-1 h-1.5 rounded-full transition-all ${
-                                done ? 'bg-emerald-500' :
-                                isSel ? 'bg-zinc-400 dark:bg-zinc-500' :
-                                k > todayKey ? 'bg-zinc-100 dark:bg-zinc-800 opacity-40' :
-                                'bg-zinc-200 dark:bg-zinc-700'
-                              }`}
-                            />
-                          )
+                          return <span key={i} className={`w-2 h-2 rounded-sm transition-all ${
+                            done ? 'bg-emerald-500' : isSel ? 'bg-zinc-400 dark:bg-zinc-500' : k > todayKey ? 'bg-zinc-100 dark:bg-zinc-800' : 'bg-zinc-200 dark:bg-zinc-700'
+                          }`} />
                         })}
                       </div>
-
-                      <button onClick={() => !isFutureDay && toggleHabit(goal.text)}
-                        disabled={isFutureDay}
-                        className={`w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-40 ${
-                          checked
-                            ? 'bg-emerald-500/15 border border-emerald-500/40 text-emerald-500'
-                            : 'bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
-                        }`}>
-                        {checked ? '✓  Done' : 'Mark done'}
-                      </button>
-                    </div>
+                      <span className="text-[11px] font-bold text-zinc-400 shrink-0 w-5 text-right">{weeklyHabitDays(goal.text)}/7</span>
+                    </button>
                   )
                 }
 
-                // ── Sub-goals card ────────────────────────────────────────
+                // ── Sub-goals card — compact rows ─────────────────────────
                 if (goal.subGoals?.length > 0) {
                   return (
-                    <div key={gi} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-black bg-blue-500/15 text-blue-500 rounded px-1.5 py-0.5">
-                            {goal.type === 'count' ? 'COUNT' : 'TOTAL'}
-                          </span>
-                          <span className="font-semibold text-sm text-zinc-800 dark:text-zinc-200">{goal.text}</span>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        {goal.subGoals.map((sg, si) => {
-                          const k = `${goal.text}::${sg.text}`
-                          const weekVal = goal.type === 'total' ? weeklyTotal(k) : weeklyCount(k)
-                          const tgt = Number(sg.target) || 0
-                          const pct = tgt ? Math.min(1, weekVal / tgt) : 0
-                          const done = tgt > 0 && weekVal >= tgt
-                          const dayVal = goal.type === 'total' ? getTotalVal(k) : getCountVal(k)
-
-                          return (
-                            <div key={si} className="space-y-2">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">{sg.text}</span>
-                                <span className={`text-xs font-bold ${done ? 'text-emerald-400' : 'text-zinc-500'}`}>
-                                  {weekVal}{tgt ? `/${tgt}` : ''}{sg.unit ? ` ${sg.unit}` : ''} this week
-                                </span>
+                    <div key={gi} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl px-4 py-3 space-y-2.5">
+                      <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{goal.text}</span>
+                      {goal.subGoals.map((sg, si) => {
+                        const k = `${goal.text}::${sg.text}`
+                        const weekVal = goal.type === 'total' ? weeklyTotal(k) : weeklyCount(k)
+                        const tgt = Number(sg.target) || 0
+                        const pct = tgt ? Math.min(1, weekVal / tgt) : 0
+                        const done = tgt > 0 && weekVal >= tgt
+                        const dayVal = goal.type === 'total' ? getTotalVal(k) : getCountVal(k)
+                        return (
+                          <div key={si} className="flex items-center gap-2">
+                            <span className="text-xs text-zinc-500 w-12 shrink-0 truncate">{sg.text}</span>
+                            {tgt > 0 && (
+                              <div className="flex-1 bg-zinc-100 dark:bg-zinc-800 rounded-full h-1.5 overflow-hidden">
+                                <div className={`h-full rounded-full transition-all duration-500 ${done ? 'bg-emerald-400' : 'bg-emerald-600'}`} style={{ width: `${pct * 100}%` }} />
                               </div>
-                              {tgt > 0 && (
-                                <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-1.5 overflow-hidden">
-                                  <div className={`h-full rounded-full transition-all duration-500 ${done ? 'bg-emerald-400' : 'bg-emerald-600'}`} style={{ width: `${pct * 100}%` }} />
-                                </div>
-                              )}
-                              <div className="flex items-center justify-end">
-                                <Counter
-                                  value={dayVal}
-                                  unit={sg.unit}
-                                  onChange={v => goal.type === 'total' ? setDayTotal(k, v) : setDayCount(k, v)}
-                                />
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
+                            )}
+                            <span className={`text-[11px] font-bold shrink-0 w-8 text-right ${done ? 'text-emerald-400' : 'text-zinc-400'}`}>
+                              {weekVal}{tgt ? `/${tgt}` : ''}
+                            </span>
+                            <Counter value={dayVal} unit={sg.unit} onChange={v => goal.type === 'total' ? setDayTotal(k, v) : setDayCount(k, v)} />
+                          </div>
+                        )
+                      })}
                     </div>
                   )
                 }
 
-                // ── Count / Total card ────────────────────────────────────
+                // ── Count / Total card — two rows ─────────────────────────
                 const isCount = goal.type === 'count'
                 const weekVal = isCount ? weeklyCount(goal.text) : weeklyTotal(goal.text)
                 const tgt = Number(goal.target) || 0
@@ -585,34 +555,20 @@ export default function MemberProfile() {
                 const dayVal = isCount ? getCountVal(goal.text) : getTotalVal(goal.text)
 
                 return (
-                  <div key={gi} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black bg-emerald-500/15 text-emerald-500 rounded px-1.5 py-0.5">
-                          {isCount ? 'COUNT' : 'TOTAL'}
-                        </span>
-                        <span className="font-semibold text-sm text-zinc-800 dark:text-zinc-200">{goal.text}</span>
-                      </div>
-                      <span className={`text-xs font-bold ${done ? 'text-emerald-400' : 'text-zinc-400'}`}>
+                  <div key={gi} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl px-4 py-3 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 truncate">{goal.text}</span>
+                      <span className={`text-xs font-bold shrink-0 ${done ? 'text-emerald-400' : 'text-zinc-400'}`}>
                         {weekVal}{tgt ? `/${tgt}` : ''}{goal.unit ? ` ${goal.unit}` : ''}
                       </span>
                     </div>
-
-                    {tgt > 0 && (
-                      <div className="space-y-1">
-                        <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-1.5 overflow-hidden">
+                    <div className="flex items-center gap-3">
+                      {tgt > 0 && (
+                        <div className="flex-1 bg-zinc-100 dark:bg-zinc-800 rounded-full h-1.5 overflow-hidden">
                           <div className={`h-full rounded-full transition-all duration-500 ${done ? 'bg-emerald-400' : 'bg-emerald-600'}`} style={{ width: `${pct * 100}%` }} />
                         </div>
-                        <p className="text-[10px] text-zinc-400">{done ? '🎉 Goal reached!' : `${Math.max(0, tgt - weekVal)} ${goal.unit || ''} left`}</p>
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-end pt-1">
-                      <Counter
-                        value={dayVal}
-                        unit={goal.unit}
-                        onChange={v => isCount ? setDayCount(goal.text, v) : setDayTotal(goal.text, v)}
-                      />
+                      )}
+                      <Counter value={dayVal} unit={goal.unit} onChange={v => isCount ? setDayCount(goal.text, v) : setDayTotal(goal.text, v)} />
                     </div>
                   </div>
                 )
