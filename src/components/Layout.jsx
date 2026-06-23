@@ -68,7 +68,7 @@ export default function Layout() {
       </main>
 
       {/* Nav */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md border-t border-zinc-200 dark:border-zinc-800/60 flex justify-around pt-2 pb-safe"
+      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-lg bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md border-t border-zinc-200 dark:border-zinc-800/60 flex justify-around pt-2 pb-safe"
         style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }}>
         <NavLink to={`/${sessionId}`} end className={linkClass}>
           {({ isActive }) => (
