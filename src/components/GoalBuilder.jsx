@@ -152,6 +152,7 @@ export default function GoalBuilder({ onChange, initialGoals }) {
                       </button>
                     </div>
                     <UnitSelect value={goal.unit} onChange={u => update(i, { unit: u })} accent={accent} />
+                  </div>
                 </div>
               )}
 
