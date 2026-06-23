@@ -243,10 +243,17 @@ export default function Home() {
           if (g.type === 'habit') {
             const checked = daysUpTo.filter(d => logs[d.toISOString().split('T')[0]]?.habits?.[g.text]).length
             return checked / 7
-          } else {
-            const done = daysUpTo.reduce((s, d) => s + (Number(logs[d.toISOString().split('T')[0]]?.counts?.[g.text]) || 0), 0)
-            return Math.min(1, done / (Number(g.target) || 1))
           }
+          if (g.subGoals?.length > 0) {
+            const ratios = g.subGoals.map(sg => {
+              const k = `${g.text}::${sg.text}`
+              const done = daysUpTo.reduce((s, d) => s + (Number(logs[d.toISOString().split('T')[0]]?.counts?.[k]) || 0), 0)
+              return Math.min(1, done / (Number(sg.target) || 1))
+            })
+            return ratios.reduce((s, r) => s + r, 0) / ratios.length
+          }
+          const done = daysUpTo.reduce((s, d) => s + (Number(logs[d.toISOString().split('T')[0]]?.counts?.[g.text]) || 0), 0)
+          return Math.min(1, done / (Number(g.target) || 1))
         })
         return progPerGoal.reduce((s, v) => s + v, 0) / progPerGoal.length
       })
