@@ -517,9 +517,17 @@ export default function MemberProfile() {
 
                 // ── Sub-goals card — compact rows ─────────────────────────
                 if (goal.subGoals?.length > 0) {
+                  const allDone = goal.subGoals.every(sg => {
+                    const k = `${goal.text}::${sg.text}`
+                    const v = goal.type === 'total' ? weeklyTotal(k) : weeklyCount(k)
+                    const t = Number(sg.target) || 0
+                    return t > 0 && v >= t
+                  })
                   return (
-                    <div key={gi} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl px-4 py-3 space-y-2.5">
-                      <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{goal.text}</span>
+                    <div key={gi} className={`border rounded-2xl px-4 py-3 space-y-2.5 transition-all ${
+                      allDone ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800'
+                    }`}>
+                      <span className={`text-sm font-semibold ${allDone ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</span>
                       {goal.subGoals.map((sg, si) => {
                         const k = `${goal.text}::${sg.text}`
                         const weekVal = goal.type === 'total' ? weeklyTotal(k) : weeklyCount(k)
@@ -555,9 +563,11 @@ export default function MemberProfile() {
                 const dayVal = isCount ? getCountVal(goal.text) : getTotalVal(goal.text)
 
                 return (
-                  <div key={gi} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl px-4 py-3 space-y-2">
+                  <div key={gi} className={`border rounded-2xl px-4 py-3 space-y-2 transition-all ${
+                    done ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800'
+                  }`}>
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 truncate">{goal.text}</span>
+                      <span className={`text-sm font-semibold truncate ${done ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</span>
                       <span className={`text-xs font-bold shrink-0 ${done ? 'text-emerald-400' : 'text-zinc-400'}`}>
                         {weekVal}{tgt ? `/${tgt}` : ''}{goal.unit ? ` ${goal.unit}` : ''}
                       </span>
