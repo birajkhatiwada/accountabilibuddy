@@ -4,7 +4,8 @@
 
 @layer base {
   html, body {
-    @apply bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 antialiased;
+    @apply bg-zinc-50 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100 antialiased;
+    color-scheme: dark light;
   }
 }
 

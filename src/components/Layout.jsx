@@ -34,7 +34,7 @@ export default function Layout() {
         </div>
       </header>
 
-      <main className="flex-1 px-4 py-3 overflow-y-auto pb-24">
+      <main className="flex-1 px-4 py-3 overflow-y-auto pb-24 bg-zinc-50 dark:bg-zinc-900">
         <Outlet />
       </main>
 
