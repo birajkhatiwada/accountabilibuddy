@@ -289,11 +289,7 @@ export default function MemberProfile() {
         })
         return Math.round(ratios.reduce((s, r) => s + r, 0) / ratios.length * 100)
       }
-      if (goal.type === 'count') {
-        const done = daysUpTo.reduce((s, d) => s + (Number(logs[dateKey(d)]?.counts?.[goal.text]) || 0), 0)
-        return Math.round(Math.min(1, done / (Number(goal.target) || 1)) * 100)
-      }
-      const done = daysUpTo.reduce((s, d) => s + (Number(logs[dateKey(d)]?.totals?.[goal.text]) || 0), 0)
+      const done = daysUpTo.reduce((s, d) => s + (Number(logs[dateKey(d)]?.counts?.[goal.text]) || 0), 0)
       return Math.round(Math.min(1, done / (Number(goal.target) || 1)) * 100)
     })
 
@@ -519,7 +515,7 @@ export default function MemberProfile() {
                 if (goal.subGoals?.length > 0) {
                   const allDone = goal.subGoals.every(sg => {
                     const k = `${goal.text}::${sg.text}`
-                    const v = goal.type === 'total' ? weeklyTotal(k) : weeklyCount(k)
+                    const v = weeklyCount(k)
                     const t = Number(sg.target) || 0
                     return t > 0 && v >= t
                   })
@@ -530,11 +526,11 @@ export default function MemberProfile() {
                       <span className={`text-sm font-semibold ${allDone ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</span>
                       {goal.subGoals.map((sg, si) => {
                         const k = `${goal.text}::${sg.text}`
-                        const weekVal = goal.type === 'total' ? weeklyTotal(k) : weeklyCount(k)
+                        const weekVal = weeklyCount(k)
                         const tgt = Number(sg.target) || 0
                         const pct = tgt ? Math.min(1, weekVal / tgt) : 0
                         const done = tgt > 0 && weekVal >= tgt
-                        const dayVal = goal.type === 'total' ? getTotalVal(k) : getCountVal(k)
+                        const dayVal = getCountVal(k)
                         return (
                           <div key={si} className="flex items-center gap-2">
                             <span className="text-xs text-zinc-500 w-12 shrink-0 truncate">{sg.text}</span>
@@ -546,7 +542,7 @@ export default function MemberProfile() {
                             <span className={`text-[11px] font-bold shrink-0 w-8 text-right ${done ? 'text-emerald-400' : 'text-zinc-400'}`}>
                               {weekVal}{tgt ? `/${tgt}` : ''}
                             </span>
-                            <Counter value={dayVal} unit={sg.unit} onChange={v => goal.type === 'total' ? setDayTotal(k, v) : setDayCount(k, v)} />
+                            <Counter value={dayVal} unit={sg.unit} onChange={v => setDayCount(k, v)} />
                           </div>
                         )
                       })}
@@ -554,13 +550,12 @@ export default function MemberProfile() {
                   )
                 }
 
-                // ── Count / Total card — two rows ─────────────────────────
-                const isCount = goal.type === 'count'
-                const weekVal = isCount ? weeklyCount(goal.text) : weeklyTotal(goal.text)
+                // ── Weekly goal card — two rows ───────────────────────────
+                const weekVal = weeklyCount(goal.text)
                 const tgt = Number(goal.target) || 0
                 const pct = tgt ? Math.min(1, weekVal / tgt) : 0
                 const done = tgt > 0 && weekVal >= tgt
-                const dayVal = isCount ? getCountVal(goal.text) : getTotalVal(goal.text)
+                const dayVal = getCountVal(goal.text)
 
                 return (
                   <div key={gi} className={`border rounded-2xl px-4 py-3 space-y-2 transition-all ${
@@ -578,7 +573,7 @@ export default function MemberProfile() {
                           <div className={`h-full rounded-full transition-all duration-500 ${done ? 'bg-emerald-400' : 'bg-emerald-600'}`} style={{ width: `${pct * 100}%` }} />
                         </div>
                       )}
-                      <Counter value={dayVal} unit={goal.unit} onChange={v => isCount ? setDayCount(goal.text, v) : setDayTotal(goal.text, v)} />
+                      <Counter value={dayVal} unit={goal.unit} onChange={v => setDayCount(goal.text, v)} />
                     </div>
                   </div>
                 )
