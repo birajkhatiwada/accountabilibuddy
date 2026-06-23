@@ -217,15 +217,10 @@ export default function Home() {
       const pct = ratios.reduce((s, r) => s + r, 0) / ratios.length
       return { done: null, total: null, pct }
     }
-    if (goal.type === 'count') {
-      const done = Object.values(logs).reduce((s, d) => s + (Number(d.counts?.[goal.text]) || 0), 0)
-      const total = Number(goal.target) || null
-      return { done, total, pct: total ? Math.min(1, done / total) : null }
-    } else {
-      const done = Object.values(logs).reduce((s, d) => s + (Number(d.totals?.[goal.text]) || 0), 0)
-      const total = Number(goal.target) || null
-      return { done, total, pct: total ? Math.min(1, done / total) : null }
-    }
+    // weekly / count / total all store in counts
+    const done = Object.values(logs).reduce((s, d) => s + (Number(d.counts?.[goal.text]) || 0), 0)
+    const total = Number(goal.target) || null
+    return { done, total, pct: total ? Math.min(1, done / total) : null }
   }
 
   const dayHasActivity = (log) =>
@@ -248,11 +243,8 @@ export default function Home() {
           if (g.type === 'habit') {
             const checked = daysUpTo.filter(d => logs[d.toISOString().split('T')[0]]?.habits?.[g.text]).length
             return checked / 7
-          } else if (g.type === 'count') {
-            const done = daysUpTo.reduce((s, d) => s + (Number(logs[d.toISOString().split('T')[0]]?.counts?.[g.text]) || 0), 0)
-            return Math.min(1, done / (Number(g.target) || 1))
           } else {
-            const done = daysUpTo.reduce((s, d) => s + (Number(logs[d.toISOString().split('T')[0]]?.totals?.[g.text]) || 0), 0)
+            const done = daysUpTo.reduce((s, d) => s + (Number(logs[d.toISOString().split('T')[0]]?.counts?.[g.text]) || 0), 0)
             return Math.min(1, done / (Number(g.target) || 1))
           }
         })
@@ -481,11 +473,9 @@ export default function Home() {
                           <div key={i}>
                             <div className="flex items-center gap-2 mb-1">
                               <span className={`text-[9px] font-black w-3.5 h-3.5 rounded flex items-center justify-center shrink-0 ${
-                                g.type === 'habit' ? 'bg-violet-500/20 text-violet-400' :
-                                g.type === 'count' ? 'bg-blue-500/20 text-blue-400' :
-                                'bg-emerald-500/20 text-emerald-400'
+                                g.type === 'habit' ? 'bg-violet-500/20 text-violet-400' : 'bg-blue-500/20 text-blue-400'
                               }`}>
-                                {g.type === 'habit' ? '✓' : g.type === 'count' ? '×' : '#'}
+                                {g.type === 'habit' ? '✓' : '#'}
                               </span>
                               <span className="text-zinc-700 dark:text-zinc-300 text-xs flex-1 truncate">{g.text}</span>
                               <span className="text-zinc-500 text-[10px] font-semibold shrink-0">{label}</span>
