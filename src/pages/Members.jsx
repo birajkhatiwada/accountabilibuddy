@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { doc, onSnapshot, updateDoc, arrayUnion, arrayRemove, setDoc } from 'firebase/firestore'
 import { db } from '../firebase'
-import { UserPlus, Trash2, ChevronRight } from 'lucide-react'
+import { UserPlus, Trash2, ChevronRight, Check } from 'lucide-react'
 
 export default function Members() {
   const navigate = useNavigate()
@@ -10,15 +10,34 @@ export default function Members() {
   const [members, setMembers] = useState([])
   const [input, setInput] = useState('')
   const [adding, setAdding] = useState(false)
+  const [penalty, setPenalty] = useState(15)
+  const [penaltyInput, setPenaltyInput] = useState('15')
+  const [savingPenalty, setSavingPenalty] = useState(false)
+  const [penaltySaved, setPenaltySaved] = useState(false)
 
   const sessionDoc = doc(db, 'sessions', sessionId)
 
   useEffect(() => {
     if (!sessionId) return
     return onSnapshot(sessionDoc, (snap) => {
-      setMembers(snap.exists() ? (snap.data().names || []) : [])
+      if (snap.exists()) {
+        setMembers(snap.data().names || [])
+        const p = snap.data().penalty ?? 15
+        setPenalty(p)
+        setPenaltyInput(String(p))
+      }
     })
   }, [sessionId])
+
+  const savePenalty = async () => {
+    const val = Math.max(1, Number(penaltyInput) || 1)
+    if (val === penalty) return
+    setSavingPenalty(true)
+    await setDoc(sessionDoc, { penalty: val }, { merge: true })
+    setSavingPenalty(false)
+    setPenaltySaved(true)
+    setTimeout(() => setPenaltySaved(false), 2000)
+  }
 
   const addMember = async () => {
     const name = input.trim()
@@ -100,6 +119,30 @@ export default function Members() {
             </button>
           </div>
         ))}
+      </div>
+
+      <div className="border-t border-zinc-200 dark:border-zinc-800 pt-5">
+        <h3 className="text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-3">Session settings</h3>
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 flex items-center gap-3">
+          <div className="flex-1">
+            <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Penalty per miss</p>
+            <p className="text-xs text-zinc-500 mt-0.5">Added to the pot when someone fails a week</p>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="text-sm font-bold text-zinc-500">$</span>
+            <input
+              type="number"
+              min={1}
+              max={1000}
+              value={penaltyInput}
+              onChange={e => setPenaltyInput(e.target.value)}
+              onBlur={savePenalty}
+              onKeyDown={e => e.key === 'Enter' && savePenalty()}
+              className="w-16 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2 py-1.5 text-sm font-bold text-zinc-800 dark:text-zinc-200 text-center focus:outline-none focus:border-emerald-500 transition-colors"
+            />
+            {penaltySaved && <Check size={14} className="text-emerald-500" />}
+          </div>
+        </div>
       </div>
     </div>
   )
