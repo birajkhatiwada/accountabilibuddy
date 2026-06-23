@@ -561,8 +561,7 @@ export default function MemberProfile() {
                                   <div className={`h-full rounded-full transition-all duration-500 ${done ? 'bg-emerald-400' : 'bg-emerald-600'}`} style={{ width: `${pct * 100}%` }} />
                                 </div>
                               )}
-                              <div className="flex items-center justify-between">
-                                <span className="text-[11px] text-zinc-400">{selectedDayLabel}</span>
+                              <div className="flex items-center justify-end">
                                 <Counter
                                   value={dayVal}
                                   unit={sg.unit}
@@ -608,8 +607,7 @@ export default function MemberProfile() {
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between pt-1">
-                      <span className="text-[11px] text-zinc-400">{selectedDayLabel}</span>
+                    <div className="flex items-center justify-end pt-1">
                       <Counter
                         value={dayVal}
                         unit={goal.unit}
