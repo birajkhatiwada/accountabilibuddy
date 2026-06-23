@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { collection, onSnapshot, doc, updateDoc, arrayUnion, addDoc, setDoc, getDoc, Timestamp } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, addDoc, setDoc, getDoc, Timestamp } from 'firebase/firestore'
 import { db } from '../firebase'
 import { getCurrentWeekId, formatWeekLabel, formatTimestamp } from '../utils'
 import { CheckCircle, XCircle, Send, AlertTriangle, ArrowLeft, Pencil, X, Trash2, Link2 } from 'lucide-react'
@@ -83,25 +83,14 @@ export default function MemberProfile() {
     })
   }, [])
 
-  useEffect(() => {
-    const { query, collection: col, where } = require('firebase/firestore')
-    // inline to avoid re-importing — use onSnapshot directly
-  }, [])
-
   // Current week entry for this member
   useEffect(() => {
-    const { query, where } = { query: (c, ...args) => c, where: () => {} }
-    return onSnapshot(
-      (() => {
-        const { query: q, where: w } = require('firebase/firestore')
-        return q(collection(db, 'entries'), w('weekId', '==', weekId))
-      })(),
-      snap => {
-        const all = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-        const mine = all.find(e => (e.nameLower || e.name?.toLowerCase()) === name.toLowerCase())
-        setEntry(mine || null)
-      }
-    )
+    const q = query(collection(db, 'entries'), where('weekId', '==', weekId))
+    return onSnapshot(q, snap => {
+      const all = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      const mine = all.find(e => (e.nameLower || e.name?.toLowerCase()) === name.toLowerCase())
+      setEntry(mine || null)
+    })
   }, [weekId, name])
 
   useEffect(() => {
