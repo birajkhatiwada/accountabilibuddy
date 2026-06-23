@@ -36,17 +36,19 @@ export default function GoalBuilder({ onChange, initialGoals }) {
       : [EMPTY_GOAL()]
   )
   const [unitTabs, setUnitTabs] = useState(() => goals.map(() => 0))
+  const [subUnitTabs, setSubUnitTabs] = useState(() => goals.map(g => (g.subGoals || []).map(() => 0)))
 
   const push = (next) => { setGoals(next); onChange(next) }
   const update = (i, patch) => push(goals.map((g, idx) => idx === i ? { ...g, ...patch } : g))
-  const add    = () => { push([...goals, EMPTY_GOAL()]); setUnitTabs(t => [...t, 0]) }
+  const add    = () => { push([...goals, EMPTY_GOAL()]); setUnitTabs(t => [...t, 0]); setSubUnitTabs(t => [...t, []]) }
   const remove = (i) => {
     push(goals.length > 1 ? goals.filter((_, idx) => idx !== i) : [EMPTY_GOAL()])
     setUnitTabs(t => goals.length > 1 ? t.filter((_, idx) => idx !== i) : [0])
+    setSubUnitTabs(t => goals.length > 1 ? t.filter((_, idx) => idx !== i) : [[]])
   }
 
-  const addSub    = (i) => update(i, { subGoals: [...(goals[i].subGoals || []), EMPTY_SUB()] })
-  const removeSub = (i, si) => update(i, { subGoals: goals[i].subGoals.filter((_, idx) => idx !== si) })
+  const addSub    = (i) => { update(i, { subGoals: [...(goals[i].subGoals || []), EMPTY_SUB()] }); setSubUnitTabs(t => t.map((row, ti) => ti === i ? [...row, 0] : row)) }
+  const removeSub = (i, si) => { update(i, { subGoals: goals[i].subGoals.filter((_, idx) => idx !== si) }); setSubUnitTabs(t => t.map((row, ti) => ti === i ? row.filter((_, idx) => idx !== si) : row)) }
   const updateSub = (i, si, patch) => update(i, {
     subGoals: goals[i].subGoals.map((sg, idx) => idx === si ? { ...sg, ...patch } : sg),
   })
@@ -168,7 +170,7 @@ export default function GoalBuilder({ onChange, initialGoals }) {
               {goal.type === 'weekly' && (
                 <div className="space-y-1.5">
                   {goal.subGoals.map((sg, si) => (
-                    <div key={si} className="flex gap-1.5 items-center pl-1">
+                    <div key={si} className="flex gap-1.5 items-start pl-1">
                       <span className="text-zinc-300 dark:text-zinc-600 text-xs">↳</span>
                       <input type="text" placeholder="e.g. Hard problems"
                         value={sg.text}
@@ -182,11 +184,40 @@ export default function GoalBuilder({ onChange, initialGoals }) {
                         <button type="button" onClick={() => updateSub(i, si, { target: String((Number(sg.target) || 0) + 1) })}
                           className="px-2 py-1 text-xs font-bold text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors select-none">+</button>
                       </div>
-                      <input type="text" placeholder="unit"
-                        value={sg.unit}
-                        onChange={e => updateSub(i, si, { unit: e.target.value })}
-                        className="w-14 bg-zinc-100 dark:bg-zinc-800 rounded-lg px-1.5 py-1 text-xs text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
-                      />
+                      {/* Sub-goal unit picker */}
+                      <div className="flex-1 space-y-1">
+                        <div className="flex gap-1 flex-wrap">
+                          {UNIT_GROUPS.map((g, gi) => (
+                            <button key={gi} type="button"
+                              onClick={() => setSubUnitTabs(t => t.map((row, ti) => ti === i ? row.map((v, ri) => ri === si ? gi : v) : row))}
+                              className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-all ${
+                                (subUnitTabs[i]?.[si] ?? 0) === gi
+                                  ? 'text-white'
+                                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 hover:text-zinc-600'
+                              }`}
+                              style={(subUnitTabs[i]?.[si] ?? 0) === gi ? { background: accent } : {}}>
+                              {g.label}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="flex gap-1 flex-wrap">
+                          {UNIT_GROUPS[subUnitTabs[i]?.[si] ?? 0].units.map(u => (
+                            <button key={u} type="button"
+                              onClick={() => updateSub(i, si, { unit: sg.unit === u ? '' : u })}
+                              className={`px-2 py-0.5 rounded text-[10px] font-semibold transition-all ${
+                                sg.unit === u ? 'text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                              }`}
+                              style={sg.unit === u ? { background: accent } : {}}>
+                              {u}
+                            </button>
+                          ))}
+                          <input type="text" placeholder="other…"
+                            value={UNIT_GROUPS.flatMap(g => g.units).includes(sg.unit) ? '' : sg.unit}
+                            onChange={e => updateSub(i, si, { unit: e.target.value })}
+                            className="px-2 py-0.5 rounded text-[10px] bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 placeholder-zinc-300 dark:placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-emerald-500 w-14 transition-all"
+                          />
+                        </div>
+                      </div>
                       <button onClick={() => removeSub(i, si)} className="text-zinc-200 dark:text-zinc-700 hover:text-red-400 transition-colors shrink-0">
                         <Trash2 size={11} />
                       </button>
