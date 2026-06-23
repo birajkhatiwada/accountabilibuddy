@@ -461,10 +461,45 @@ export default function Home() {
                   <div className="px-4 py-3 flex flex-col gap-2">
                     {e?.goalItems?.length > 0 ? (
                       e.goalItems.map((g, i) => {
+                        const logs = memberLogs[e.id] || {}
                         const prog = getGoalProgress(e?.id, g)
-                        const label = g.subGoals?.length > 0
-                          ? g.subGoals.map(sg => sg.text).join(' · ')
-                          : g.type === 'habit'
+
+                        if (g.subGoals?.length > 0) {
+                          return (
+                            <div key={i} className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[9px] font-black w-3.5 h-3.5 rounded bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">#</span>
+                                <span className="text-zinc-700 dark:text-zinc-300 text-xs font-semibold truncate">{g.text}</span>
+                              </div>
+                              <div className="pl-5 space-y-1">
+                                {g.subGoals.map((sg, si) => {
+                                  const k = `${g.text}::${sg.text}`
+                                  const done = Object.values(logs).reduce((s, d) => s + (Number(d.counts?.[k]) || 0), 0)
+                                  const tgt = Number(sg.target) || null
+                                  const pct = tgt ? Math.min(1, done / tgt) : null
+                                  return (
+                                    <div key={si}>
+                                      <div className="flex items-center gap-2 mb-0.5">
+                                        <span className="text-zinc-500 dark:text-zinc-400 text-[10px] flex-1 truncate">{sg.text}</span>
+                                        <span className="text-zinc-500 text-[10px] font-semibold shrink-0">
+                                          {tgt ? `${done}/${tgt}${sg.unit ? ' ' + sg.unit : ''}` : `${done}${sg.unit ? ' ' + sg.unit : ''}`}
+                                        </span>
+                                      </div>
+                                      {pct !== null && (
+                                        <div className="bg-zinc-100 dark:bg-zinc-800 rounded-full h-0.5 overflow-hidden">
+                                          <div className={`h-full rounded-full ${pct >= 1 ? 'bg-emerald-400' : pct >= 0.5 ? 'bg-amber-400' : 'bg-zinc-500'}`}
+                                            style={{ width: `${Math.round(pct * 100)}%` }} />
+                                        </div>
+                                      )}
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          )
+                        }
+
+                        const label = g.type === 'habit'
                           ? `${prog.done}/7 days`
                           : prog.total
                             ? `${prog.done}/${prog.total}${g.unit ? ' ' + g.unit : ''}`
