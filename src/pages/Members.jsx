@@ -1,23 +1,24 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { doc, onSnapshot, updateDoc, arrayUnion, arrayRemove, setDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { UserPlus, Trash2, ChevronRight } from 'lucide-react'
 
-const MEMBERS_DOC = doc(db, 'config', 'members')
-
 export default function Members() {
   const navigate = useNavigate()
+  const { sessionId } = useParams()
   const [members, setMembers] = useState([])
   const [input, setInput] = useState('')
   const [adding, setAdding] = useState(false)
 
+  const sessionDoc = doc(db, 'sessions', sessionId)
+
   useEffect(() => {
-    const unsub = onSnapshot(MEMBERS_DOC, (snap) => {
+    if (!sessionId) return
+    return onSnapshot(sessionDoc, (snap) => {
       setMembers(snap.exists() ? (snap.data().names || []) : [])
     })
-    return unsub
-  }, [])
+  }, [sessionId])
 
   const addMember = async () => {
     const name = input.trim()
@@ -28,23 +29,23 @@ export default function Members() {
     }
     setAdding(true)
     try {
-      await updateDoc(MEMBERS_DOC, { names: arrayUnion(name) })
+      await updateDoc(sessionDoc, { names: arrayUnion(name) })
     } catch {
-      await setDoc(MEMBERS_DOC, { names: [name] })
+      await setDoc(sessionDoc, { names: [name] }, { merge: true })
     }
     setInput('')
     setAdding(false)
   }
 
   const removeMember = async (name) => {
-    await updateDoc(MEMBERS_DOC, { names: arrayRemove(name) })
+    await updateDoc(sessionDoc, { names: arrayRemove(name) })
   }
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Members</h2>
-        <p className="text-sm text-zinc-500 mt-0.5">Everyone in the accountability group</p>
+        <p className="text-sm text-zinc-500 mt-0.5">Everyone in this session</p>
       </div>
 
       <div className="flex gap-2">
@@ -80,13 +81,13 @@ export default function Members() {
               {name[0].toUpperCase()}
             </div>
             <button
-              onClick={() => navigate(`/member/${encodeURIComponent(name)}`)}
+              onClick={() => navigate(`/${sessionId}/member/${encodeURIComponent(name)}`)}
               className="flex-1 text-left font-medium text-zinc-800 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white transition-colors"
             >
               {name}
             </button>
             <button
-              onClick={() => navigate(`/member/${encodeURIComponent(name)}`)}
+              onClick={() => navigate(`/${sessionId}/member/${encodeURIComponent(name)}`)}
               className="text-zinc-500 dark:text-zinc-600 hover:text-zinc-600 dark:hover:text-zinc-400 transition-colors p-1"
             >
               <ChevronRight size={15} />

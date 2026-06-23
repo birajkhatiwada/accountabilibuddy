@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { collection, onSnapshot, query, where, orderBy, limit, doc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { getCurrentWeekId, formatWeekLabel } from '../utils'
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react'
 
-const MEMBERS_DOC = doc(db, 'config', 'members')
 const PENALTY = 15
 
 const AVATAR_COLORS = [
@@ -29,6 +28,7 @@ function getNextWeekId(weekId) {
 
 export default function Recap() {
   const navigate = useNavigate()
+  const { sessionId } = useParams()
   const currentWeekId = getCurrentWeekId()
   const [weekId, setWeekId] = useState(() => getPrevWeekId(currentWeekId))
 
@@ -38,26 +38,35 @@ export default function Recap() {
   const [shoutouts, setShoutouts] = useState([])
 
   useEffect(() => {
-    return onSnapshot(MEMBERS_DOC, snap => {
+    if (!sessionId) return
+    return onSnapshot(doc(db, 'sessions', sessionId), snap => {
       if (snap.exists()) {
         setMembers(snap.data().names || [])
         setAvatars(snap.data().avatars || {})
       }
     })
-  }, [])
+  }, [sessionId])
 
   useEffect(() => {
-    return onSnapshot(collection(db, 'entries'), snap => {
+    if (!sessionId) return
+    const q = query(collection(db, 'entries'), where('sessionId', '==', sessionId))
+    return onSnapshot(q, snap => {
       setAllEntries(snap.docs.map(d => ({ id: d.id, ...d.data() })))
     })
-  }, [])
+  }, [sessionId])
 
   useEffect(() => {
-    const q = query(collection(db, 'shoutouts'), orderBy('timestamp', 'desc'), limit(100))
+    if (!sessionId) return
+    const q = query(
+      collection(db, 'shoutouts'),
+      where('sessionId', '==', sessionId),
+      orderBy('timestamp', 'desc'),
+      limit(100)
+    )
     return onSnapshot(q, snap => {
       setShoutouts(snap.docs.map(d => ({ id: d.id, ...d.data() })))
     })
-  }, [])
+  }, [sessionId])
 
   // Entries for the selected week
   const weekEntries = allEntries.filter(e => e.weekId === weekId)
@@ -166,7 +175,7 @@ export default function Recap() {
             const idx = members.indexOf(e.name) % AVATAR_COLORS.length
             const color = AVATAR_COLORS[idx < 0 ? 0 : idx]
             return (
-              <button key={e.id} onClick={() => navigate(`/member/${encodeURIComponent(e.name)}`)}
+              <button key={e.id} onClick={() => navigate(`/${sessionId}/member/${encodeURIComponent(e.name)}`)}
                 className="w-full text-left bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 rounded-2xl px-4 py-3 flex items-center gap-3 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors">
                 <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${color} flex items-center justify-center shrink-0 text-lg`}>
                   {avatars[e.name] || <span className="text-white font-black">{e.name[0]}</span>}
@@ -186,7 +195,7 @@ export default function Recap() {
             const idx = members.indexOf(e.name) % AVATAR_COLORS.length
             const color = AVATAR_COLORS[idx < 0 ? 0 : idx]
             return (
-              <button key={e.id} onClick={() => navigate(`/member/${encodeURIComponent(e.name)}`)}
+              <button key={e.id} onClick={() => navigate(`/${sessionId}/member/${encodeURIComponent(e.name)}`)}
                 className="w-full text-left bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30 rounded-2xl px-4 py-3 flex items-center gap-3 hover:border-red-300 dark:hover:border-red-700 transition-colors">
                 <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${color} flex items-center justify-center shrink-0 text-lg`}>
                   {avatars[e.name] || <span className="text-white font-black">{e.name[0]}</span>}

@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import { collection, query, where, onSnapshot, doc, setDoc } from 'firebase/firestore'
+import { useParams } from 'react-router-dom'
 import { db } from '../firebase'
 import { formatWeekLabel } from '../utils'
 import { Check } from 'lucide-react'
 
 const PENALTY = 15
-const PAYMENTS_DOC = doc(db, 'config', 'payments')
 
 function PotVisual({ total, paid, owed }) {
   const isEmpty = total === 0
@@ -79,27 +79,36 @@ function PotVisual({ total, paid, owed }) {
 }
 
 export default function Pot() {
+  const { sessionId } = useParams()
   const [allEntries, setAllEntries] = useState([])
   const [payments, setPayments] = useState({})
   const [loading, setLoading] = useState(true)
 
+  const paymentsDoc = doc(db, 'sessions', sessionId, 'config', 'payments')
+
   useEffect(() => {
-    const q = query(collection(db, 'entries'), where('status', '==', 'failed'))
+    if (!sessionId) return
+    const q = query(
+      collection(db, 'entries'),
+      where('sessionId', '==', sessionId),
+      where('status', '==', 'failed')
+    )
     return onSnapshot(q, snap => {
       setAllEntries(snap.docs.map(d => ({ id: d.id, ...d.data() })))
       setLoading(false)
     })
-  }, [])
+  }, [sessionId])
 
   useEffect(() => {
-    return onSnapshot(PAYMENTS_DOC, snap => {
+    if (!sessionId) return
+    return onSnapshot(paymentsDoc, snap => {
       if (snap.exists()) setPayments(snap.data() || {})
     })
-  }, [])
+  }, [sessionId])
 
   const togglePaid = async (name, weekId) => {
     const key = `${name}-${weekId}`
-    await setDoc(PAYMENTS_DOC, { ...payments, [key]: !payments[key] })
+    await setDoc(paymentsDoc, { ...payments, [key]: !payments[key] })
   }
 
   const total = allEntries.length * PENALTY

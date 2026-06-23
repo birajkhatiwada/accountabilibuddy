@@ -10,7 +10,6 @@ import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 import confetti from 'canvas-confetti'
 
-const MEMBERS_DOC = doc(db, 'config', 'members')
 const PENALTY = 15
 const DAY_LABELS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
 const GOAL_COLORS = ['#8b5cf6','#3b82f6','#10b981','#f97316','#ec4899','#14b8a6']
@@ -51,7 +50,7 @@ function Counter({ value, onChange, unit }) {
 }
 
 export default function MemberProfile() {
-  const { name } = useParams()
+  const { name, sessionId } = useParams()
   const navigate = useNavigate()
   const weekId = getCurrentWeekId()
   const todayKey = dateKey(new Date())
@@ -77,27 +76,37 @@ export default function MemberProfile() {
   const saveTimers = useRef({})
   const confettiFired = useRef(false)
 
+  const sessionDoc = doc(db, 'sessions', sessionId)
+
   useEffect(() => {
-    return onSnapshot(MEMBERS_DOC, snap => {
+    if (!sessionId) return
+    return onSnapshot(sessionDoc, snap => {
       if (snap.exists()) { setMembers(snap.data().names || []); setAvatars(snap.data().avatars || {}) }
     })
-  }, [])
+  }, [sessionId])
 
   // Current week entry for this member
   useEffect(() => {
-    const q = query(collection(db, 'entries'), where('weekId', '==', weekId))
+    if (!sessionId) return
+    const q = query(
+      collection(db, 'entries'),
+      where('sessionId', '==', sessionId),
+      where('weekId', '==', weekId)
+    )
     return onSnapshot(q, snap => {
       const all = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       const mine = all.find(e => (e.nameLower || e.name?.toLowerCase()) === name.toLowerCase())
       setEntry(mine || null)
     })
-  }, [weekId, name])
+  }, [sessionId, weekId, name])
 
   useEffect(() => {
-    return onSnapshot(collection(db, 'entries'), snap => {
+    if (!sessionId) return
+    const q = query(collection(db, 'entries'), where('sessionId', '==', sessionId))
+    return onSnapshot(q, snap => {
       setAllEntries(snap.docs.map(d => ({ id: d.id, ...d.data() })))
     })
-  }, [])
+  }, [sessionId])
 
   useEffect(() => {
     if (!entry?.id) return
@@ -236,7 +245,7 @@ export default function MemberProfile() {
       g.type === 'habit' ? `${g.text} (every day)` : g.target ? `${g.text} (${g.target} ${g.unit})` : g.text
     ).join(', ')
     await addDoc(collection(db, 'entries'), {
-      name, nameLower: name.toLowerCase(), weekId,
+      name, nameLower: name.toLowerCase(), weekId, sessionId,
       goals: goalsSummary, goalItems: valid, status: 'active',
       updates: [], createdAt: Timestamp.now(),
     })
@@ -265,8 +274,8 @@ export default function MemberProfile() {
 
   const markDone   = () => updateDoc(doc(db, 'entries', entry.id), { status: 'completed' })
   const markFailed = async () => { await updateDoc(doc(db, 'entries', entry.id), { status: 'failed' }); setConfirmFail(false) }
-  const deleteMember = async () => { await setDoc(MEMBERS_DOC, { names: members.filter(m => m !== name) }, { merge: true }); navigate('/') }
-  const saveAvatar = async (emoji) => { await setDoc(MEMBERS_DOC, { avatars: { ...avatars, [name]: emoji } }, { merge: true }); setPickingAvatar(false) }
+  const deleteMember = async () => { await setDoc(sessionDoc, { names: members.filter(m => m !== name) }, { merge: true }); navigate(`/${sessionId}`) }
+  const saveAvatar = async (emoji) => { await setDoc(sessionDoc, { avatars: { ...avatars, [name]: emoji } }, { merge: true }); setPickingAvatar(false) }
 
   // ── chart ─────────────────────────────────────────────────────────────────
 

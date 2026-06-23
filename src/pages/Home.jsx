@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { collection, query, where, onSnapshot, doc, setDoc, updateDoc, getDocs } from 'firebase/firestore'
+import { useNavigate, useParams } from 'react-router-dom'
+import { collection, query, where, onSnapshot, doc, updateDoc, getDocs } from 'firebase/firestore'
 import { db } from '../firebase'
 import { getCurrentWeekId, formatWeekLabel } from '../utils'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 import { X, ChevronRight } from 'lucide-react'
 
-const MEMBERS_DOC = doc(db, 'config', 'members')
 const PENALTY = 15
 
 const AVATAR_EMOJIS = [
@@ -42,6 +41,7 @@ const getAvatarHex = (name, members) =>
 export default function Home() {
   const weekId = getCurrentWeekId()
   const navigate = useNavigate()
+  const { sessionId } = useParams()
   const [members, setMembers] = useState([])
   const [entries, setEntries] = useState([])
   const [allEntries, setAllEntries] = useState([])
@@ -54,11 +54,13 @@ export default function Home() {
   const [closeStatuses, setCloseStatuses] = useState({})
   const [closing, setClosing] = useState(false)
 
-  // Auto-close any active entries from past weeks (week ended = failed)
+  // Auto-close any active entries from past weeks for this session
   useEffect(() => {
+    if (!sessionId) return
     const autoClose = async () => {
       const q = query(
         collection(db, 'entries'),
+        where('sessionId', '==', sessionId),
         where('status', '==', 'active'),
         where('weekId', '<', weekId)
       )
@@ -66,10 +68,11 @@ export default function Home() {
       await Promise.all(snap.docs.map(d => updateDoc(d.ref, { status: 'failed' })))
     }
     autoClose()
-  }, [])
+  }, [sessionId])
 
   useEffect(() => {
-    const unsub = onSnapshot(MEMBERS_DOC, snap => {
+    if (!sessionId) return
+    const unsub = onSnapshot(doc(db, 'sessions', sessionId), snap => {
       if (snap.exists()) {
         setMembers(snap.data().names || [])
         setAvatars(snap.data().avatars || {})
@@ -77,20 +80,27 @@ export default function Home() {
       setLoading(false)
     }, err => { setError(err.message); setLoading(false) })
     return unsub
-  }, [])
+  }, [sessionId])
 
   useEffect(() => {
-    const q = query(collection(db, 'entries'), where('weekId', '==', weekId))
+    if (!sessionId) return
+    const q = query(
+      collection(db, 'entries'),
+      where('sessionId', '==', sessionId),
+      where('weekId', '==', weekId)
+    )
     return onSnapshot(q, snap => {
       setEntries(snap.docs.map(d => ({ id: d.id, ...d.data() })))
     }, err => setError(err.message))
-  }, [weekId])
+  }, [sessionId, weekId])
 
   useEffect(() => {
-    return onSnapshot(collection(db, 'entries'), snap => {
+    if (!sessionId) return
+    const q = query(collection(db, 'entries'), where('sessionId', '==', sessionId))
+    return onSnapshot(q, snap => {
       setAllEntries(snap.docs.map(d => ({ id: d.id, ...d.data() })))
     })
-  }, [])
+  }, [sessionId])
 
   useEffect(() => {
     if (!entries.length) return
@@ -340,7 +350,7 @@ export default function Home() {
 
           {/* Last week recap link */}
           <button
-            onClick={() => navigate('/recap')}
+            onClick={() => navigate(`/${sessionId}/recap`)}
             className="w-full flex items-center justify-between bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl px-4 py-3 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
           >
             <div className="flex items-center gap-3">
@@ -426,7 +436,7 @@ export default function Home() {
               return (
                 <button
                   key={name}
-                  onClick={() => navigate(`/member/${encodeURIComponent(name)}`)}
+                  onClick={() => navigate(`/${sessionId}/member/${encodeURIComponent(name)}`)}
                   className={`w-full text-left rounded-2xl overflow-hidden transition-colors ${
                     !e
                       ? 'bg-zinc-50/50 dark:bg-zinc-900/50 border border-dashed border-zinc-300 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-500'

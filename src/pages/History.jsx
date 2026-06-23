@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { collection, onSnapshot } from 'firebase/firestore'
+import { collection, query, where, onSnapshot } from 'firebase/firestore'
+import { useParams } from 'react-router-dom'
 import { db } from '../firebase'
 import { formatWeekLabel } from '../utils'
 import { ChevronDown, ChevronUp } from 'lucide-react'
@@ -7,17 +8,19 @@ import { ChevronDown, ChevronUp } from 'lucide-react'
 const PENALTY = 15
 
 export default function History() {
+  const { sessionId } = useParams()
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState({})
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'entries'), (snap) => {
+    if (!sessionId) return
+    const q = query(collection(db, 'entries'), where('sessionId', '==', sessionId))
+    return onSnapshot(q, (snap) => {
       setEntries(snap.docs.map(d => ({ id: d.id, ...d.data() })))
       setLoading(false)
     })
-    return unsub
-  }, [])
+  }, [sessionId])
 
   // Group by week, exclude current week
   const today = new Date()

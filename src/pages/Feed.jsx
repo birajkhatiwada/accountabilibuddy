@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react'
-import { collection, onSnapshot, addDoc, Timestamp, query, orderBy, limit, doc } from 'firebase/firestore'
+import { collection, onSnapshot, addDoc, Timestamp, query, orderBy, where, limit, doc } from 'firebase/firestore'
+import { useParams } from 'react-router-dom'
 import { db } from '../firebase'
 import { getCurrentWeekId } from '../utils'
 import { Megaphone, Send } from 'lucide-react'
-
-const MEMBERS_DOC = doc(db, 'config', 'members')
 
 const AVATAR_COLORS = [
   'from-violet-500 to-purple-600', 'from-blue-500 to-cyan-600',
@@ -36,6 +35,7 @@ function timeAgo(ts) {
 
 export default function Feed() {
   const weekId = getCurrentWeekId()
+  const { sessionId } = useParams()
   const [members, setMembers] = useState([])
   const [avatars, setAvatars] = useState({})
   const [entries, setEntries] = useState([])
@@ -48,26 +48,35 @@ export default function Feed() {
   const [posting, setPosting] = useState(false)
 
   useEffect(() => {
-    return onSnapshot(MEMBERS_DOC, snap => {
+    if (!sessionId) return
+    return onSnapshot(doc(db, 'sessions', sessionId), snap => {
       if (snap.exists()) {
         setMembers(snap.data().names || [])
         setAvatars(snap.data().avatars || {})
       }
     })
-  }, [])
+  }, [sessionId])
 
   useEffect(() => {
-    return onSnapshot(collection(db, 'entries'), snap => {
+    if (!sessionId) return
+    const q = query(collection(db, 'entries'), where('sessionId', '==', sessionId))
+    return onSnapshot(q, snap => {
       setEntries(snap.docs.map(d => ({ id: d.id, ...d.data() })))
     })
-  }, [])
+  }, [sessionId])
 
   useEffect(() => {
-    const q = query(collection(db, 'shoutouts'), orderBy('timestamp', 'desc'), limit(50))
+    if (!sessionId) return
+    const q = query(
+      collection(db, 'shoutouts'),
+      where('sessionId', '==', sessionId),
+      orderBy('timestamp', 'desc'),
+      limit(50)
+    )
     return onSnapshot(q, snap => {
       setShoutouts(snap.docs.map(d => ({ id: d.id, ...d.data() })))
     })
-  }, [])
+  }, [sessionId])
 
   const postShoutout = async () => {
     if (!shoutoutFrom || !shoutoutTo || !shoutoutMsg.trim()) return
@@ -79,6 +88,7 @@ export default function Feed() {
       emoji: shoutoutEmoji,
       timestamp: Timestamp.now(),
       weekId,
+      sessionId,
     })
     setShoutoutMsg('')
     setShowShoutoutForm(false)
