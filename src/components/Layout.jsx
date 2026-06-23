@@ -25,8 +25,8 @@ export default function Layout() {
   }
 
   const linkClass = ({ isActive }) =>
-    `flex flex-col items-center gap-0.5 px-5 py-2 text-[11px] font-bold uppercase tracking-wider transition-all ${
-      isActive ? 'text-zinc-900 dark:text-white' : 'text-zinc-500 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-400'
+    `flex flex-col items-center gap-0.5 flex-1 py-1 text-[10px] font-bold uppercase tracking-wide transition-all ${
+      isActive ? 'text-zinc-900 dark:text-white' : 'text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-400'
     }`
 
   return (
@@ -63,12 +63,13 @@ export default function Layout() {
         </div>
       </header>
 
-      <main className="flex-1 px-4 py-3 overflow-y-auto pb-24">
+      <main className="flex-1 px-4 py-3 overflow-y-auto pb-28">
         <Outlet />
       </main>
 
       {/* Nav */}
-      <nav className="fixed bottom-0 left-0 right-0 max-w-lg mx-auto bg-white/90 dark:bg-zinc-950/90 backdrop-blur border-t border-zinc-200 dark:border-zinc-800/60 flex justify-around py-2">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md border-t border-zinc-200 dark:border-zinc-800/60 flex justify-around pt-2 pb-safe"
+        style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }}>
         <NavLink to={`/${sessionId}`} end className={linkClass}>
           {({ isActive }) => (
             <>
