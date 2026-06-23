@@ -40,7 +40,7 @@ function UnitSelect({ value, onChange, accent }) {
             {g.units.map(u => <option key={u} value={u}>{u}</option>)}
           </optgroup>
         ))}
-        <optgroup label="✏️ Custom">
+        <optgroup label="— Custom">
           <option value="__custom__">type my own…</option>
         </optgroup>
       </select>
