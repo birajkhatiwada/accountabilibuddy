@@ -5,8 +5,6 @@ import { db } from '../firebase'
 import { formatWeekLabel } from '../utils'
 import { Check } from 'lucide-react'
 
-const PENALTY = 15
-
 function PotVisual({ total, paid, owed }) {
   const isEmpty = total === 0
   const allPaid = total > 0 && owed === 0
@@ -82,9 +80,17 @@ export default function Pot() {
   const { sessionId } = useParams()
   const [allEntries, setAllEntries] = useState([])
   const [payments, setPayments] = useState({})
+  const [penalty, setPenalty] = useState(15)
   const [loading, setLoading] = useState(true)
 
   const paymentsDoc = doc(db, 'sessions', sessionId, 'config', 'payments')
+
+  useEffect(() => {
+    if (!sessionId) return
+    return onSnapshot(doc(db, 'sessions', sessionId), snap => {
+      if (snap.exists()) setPenalty(snap.data().penalty ?? 15)
+    })
+  }, [sessionId])
 
   useEffect(() => {
     if (!sessionId) return
@@ -111,8 +117,8 @@ export default function Pot() {
     await setDoc(paymentsDoc, { ...payments, [key]: !payments[key] })
   }
 
-  const total = allEntries.length * PENALTY
-  const paid = allEntries.filter(e => payments[`${e.name}-${e.weekId}`]).length * PENALTY
+  const total = allEntries.length * penalty
+  const paid = allEntries.filter(e => payments[`${e.name}-${e.weekId}`]).length * penalty
   const owed = total - paid
 
   const byPerson = {}
@@ -141,8 +147,8 @@ export default function Pot() {
           <p className="text-xs text-zinc-500 uppercase tracking-wider font-medium mb-3">🏆 Hall of shame</p>
           <div className="space-y-2">
             {leaderboard.map((p, i) => {
-              const totalOwed = p.weeks.length * PENALTY
-              const paidAmount = p.weeks.filter(w => payments[`${p.name}-${w}`]).length * PENALTY
+              const totalOwed = p.weeks.length * penalty
+              const paidAmount = p.weeks.filter(w => payments[`${p.name}-${w}`]).length * penalty
               const stillOwes = totalOwed - paidAmount
               return (
                 <div key={p.name} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3">
@@ -185,7 +191,7 @@ export default function Pot() {
               <div key={weekId} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-zinc-500">{formatWeekLabel(weekId)}</p>
-                  <span className="text-xs font-bold text-red-400">-${byWeek[weekId].length * PENALTY}</span>
+                  <span className="text-xs font-bold text-red-400">-${byWeek[weekId].length * penalty}</span>
                 </div>
                 <div className="space-y-1">
                   {byWeek[weekId].map(e => {
@@ -197,7 +203,7 @@ export default function Pot() {
                         }`}>
                         <span className="text-sm text-zinc-700 dark:text-zinc-300">{e.name}</span>
                         <span className={`text-[11px] font-bold flex items-center gap-1 ${isPaid ? 'text-emerald-500 dark:text-emerald-400' : 'text-zinc-400 dark:text-zinc-600'}`}>
-                          {isPaid ? <><Check size={10} /> paid</> : `$${PENALTY} owed`}
+                          {isPaid ? <><Check size={10} /> paid</> : `$${penalty} owed`}
                         </span>
                       </button>
                     )

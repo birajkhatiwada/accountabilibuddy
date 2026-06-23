@@ -1,13 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { collection, query, where, onSnapshot, doc, updateDoc, getDocs } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, doc, updateDoc, getDocs, setDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { getCurrentWeekId, formatWeekLabel } from '../utils'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 import { X, ChevronRight } from 'lucide-react'
-
-const PENALTY = 15
 
 const AVATAR_EMOJIS = [
   '🐨','🦊','🐸','🐼','🦁','🐯','🐻','🐰','🐹','🐶',
@@ -50,9 +48,14 @@ export default function Home() {
   const [bannerDismissed, setBannerDismissed] = useState(false)
   const [memberLogs, setMemberLogs] = useState({})
   const [avatars, setAvatars] = useState({})
+  const [penalty, setPenalty] = useState(15)
   const [closeWeekOpen, setCloseWeekOpen] = useState(false)
   const [closeStatuses, setCloseStatuses] = useState({})
   const [closing, setClosing] = useState(false)
+  const [quickLogEntry, setQuickLogEntry] = useState(null)
+  const [qlLogs, setQlLogs] = useState({})
+  const [qlLocalCounts, setQlLocalCounts] = useState({})
+  const qlSaveTimers = useRef({})
 
   // Auto-close any active entries from past weeks for this session
   useEffect(() => {
@@ -76,6 +79,7 @@ export default function Home() {
       if (snap.exists()) {
         setMembers(snap.data().names || [])
         setAvatars(snap.data().avatars || {})
+        setPenalty(snap.data().penalty ?? 15)
       }
       setLoading(false)
     }, err => { setError(err.message); setLoading(false) })
@@ -113,6 +117,38 @@ export default function Home() {
     )
     return () => unsubs.forEach(u => u())
   }, [entries.map(e => e.id).join(',')])
+
+  useEffect(() => {
+    if (!quickLogEntry?.id) { setQlLogs({}); setQlLocalCounts({}); return }
+    return onSnapshot(collection(db, 'entries', quickLogEntry.id, 'dailyLogs'), snap => {
+      const data = {}
+      snap.docs.forEach(d => { data[d.id] = d.data() })
+      setQlLogs(data)
+    })
+  }, [quickLogEntry?.id])
+
+  const qlToggleHabit = async (goalText) => {
+    if (!quickLogEntry?.id) return
+    const current = qlLogs[todayKey] || {}
+    const habits = { ...(current.habits || {}) }
+    habits[goalText] = !habits[goalText]
+    await setDoc(doc(db, 'entries', quickLogEntry.id, 'dailyLogs', todayKey), { ...current, habits })
+  }
+
+  const qlSetCount = (key, value) => {
+    if (!quickLogEntry?.id) return
+    const newVal = Math.max(0, Math.min(999, value))
+    setQlLocalCounts(p => ({ ...p, [key]: newVal }))
+    clearTimeout(qlSaveTimers.current[key])
+    qlSaveTimers.current[key] = setTimeout(async () => {
+      const current = qlLogs[todayKey] || {}
+      await setDoc(doc(db, 'entries', quickLogEntry.id, 'dailyLogs', todayKey), {
+        ...current, counts: { ...(current.counts || {}), [key]: newVal },
+      })
+    }, 300)
+  }
+
+  const qlGetCount = (key) => qlLocalCounts[key] ?? (Number(qlLogs[todayKey]?.counts?.[key]) || 0)
 
   const getEntry = (name) =>
     entries.find(e => (e.nameLower || e.name?.toLowerCase()) === name.toLowerCase())
@@ -177,7 +213,8 @@ export default function Home() {
     setCloseWeekOpen(false)
   }
 
-  const potTotal = allEntries.filter(e => e.status === 'failed').length * PENALTY
+  const todayKey = new Date().toISOString().split('T')[0]
+  const potTotal = allEntries.filter(e => e.status === 'failed').length * penalty
   const doneThisWeek = entries.filter(e => e.status === 'completed').length
   const activeThisWeek = entries.filter(e => e.status === 'active').length
 
@@ -433,10 +470,13 @@ export default function Home() {
               const color = getAvatarColor(name, members)
               const streak = getStreak(name)
               return (
-                <button
+                <div
                   key={name}
                   onClick={() => navigate(`/${sessionId}/member/${encodeURIComponent(name)}`)}
-                  className={`w-full text-left rounded-2xl overflow-hidden transition-colors ${
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={ev => ev.key === 'Enter' && navigate(`/${sessionId}/member/${encodeURIComponent(name)}`)}
+                  className={`w-full text-left rounded-2xl overflow-hidden transition-colors cursor-pointer ${
                     !e
                       ? 'bg-zinc-50/50 dark:bg-zinc-900/50 border border-dashed border-zinc-300 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-500'
                       : 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
@@ -456,6 +496,14 @@ export default function Home() {
                         {!e ? 'No goals submitted yet' : streak >= 2 ? `🔥 ${streak}-week streak` : 'This week'}
                       </p>
                     </div>
+                    {e?.status === 'active' && (
+                      <button
+                        onClick={ev => { ev.stopPropagation(); setQuickLogEntry(e) }}
+                        className="text-[10px] font-bold px-2 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/60 transition-colors shrink-0"
+                      >
+                        Log
+                      </button>
+                    )}
                     <span className="text-lg">
                       {e?.status === 'completed' ? '✅' : e?.status === 'failed' ? '❌' : e ? '🔥' : '💤'}
                     </span>
@@ -540,9 +588,83 @@ export default function Home() {
                       <p className="text-zinc-500 dark:text-zinc-600 text-xs italic">No goals set yet — tap to add</p>
                     )}
                   </div>
-                </button>
+                </div>
               )
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Quick log sheet */}
+      {quickLogEntry && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setQuickLogEntry(null)}>
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div className="relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-t-3xl w-full max-w-lg shadow-2xl max-h-[80vh] overflow-y-auto"
+            onClick={ev => ev.stopPropagation()}>
+            <div className="sticky top-0 bg-white dark:bg-zinc-900 px-6 pt-5 pb-3 border-b border-zinc-100 dark:border-zinc-800">
+              <div className="w-10 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto mb-4" />
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-base font-black text-zinc-900 dark:text-white">Log today</p>
+                  <p className="text-xs text-zinc-500">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${getAvatarColor(quickLogEntry.name, members)} flex items-center justify-center`}>
+                    {avatars[quickLogEntry.name]
+                      ? <span className="text-base">{avatars[quickLogEntry.name]}</span>
+                      : <span className="text-white font-black text-sm">{quickLogEntry.name[0]}</span>}
+                  </div>
+                  <p className="text-sm font-bold text-zinc-700 dark:text-zinc-300">{quickLogEntry.name}</p>
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-4 space-y-3">
+              {quickLogEntry.goalItems?.map((goal, gi) => {
+                if (goal.type === 'habit') {
+                  const checked = !!qlLogs[todayKey]?.habits?.[goal.text]
+                  return (
+                    <button key={gi}
+                      onClick={() => qlToggleHabit(goal.text)}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all ${
+                        checked ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-zinc-50 dark:bg-zinc-800/60 border-zinc-200 dark:border-zinc-700'
+                      }`}>
+                      <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 ${
+                        checked ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-600'
+                      }`}>
+                        {checked && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                      </span>
+                      <span className={`flex-1 text-sm font-semibold text-left ${checked ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</span>
+                    </button>
+                  )
+                }
+                if (goal.subGoals?.length > 0) {
+                  return (
+                    <div key={gi} className="bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-2xl px-4 py-3 space-y-2.5">
+                      <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{goal.text}</p>
+                      {goal.subGoals.map((sg, si) => {
+                        const k = `${goal.text}::${sg.text}`
+                        return (
+                          <div key={si} className="flex items-center gap-3">
+                            <span className="text-xs text-zinc-500 flex-1 truncate">{sg.text}</span>
+                            <QlCounter value={qlGetCount(k)} unit={sg.unit} onChange={v => qlSetCount(k, v)} />
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )
+                }
+                return (
+                  <div key={gi} className="bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-2xl px-4 py-3 flex items-center gap-3">
+                    <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 flex-1 truncate">{goal.text}</span>
+                    <QlCounter value={qlGetCount(goal.text)} unit={goal.unit} onChange={v => qlSetCount(goal.text, v)} />
+                  </div>
+                )
+              })}
+              <button onClick={() => setQuickLogEntry(null)}
+                className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold rounded-xl py-3 text-sm transition-all mt-2">
+                Done
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -595,6 +717,22 @@ export default function Home() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+function QlCounter({ value, onChange }) {
+  return (
+    <div className="flex items-center gap-1.5 shrink-0">
+      <button onClick={e => { e.stopPropagation(); onChange(Math.max(0, value - 1)) }}
+        className="w-7 h-7 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 font-bold flex items-center justify-center hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-all select-none">
+        −
+      </button>
+      <span className="text-sm font-black text-zinc-900 dark:text-white w-6 text-center tabular-nums">{value}</span>
+      <button onClick={e => { e.stopPropagation(); onChange(Math.min(999, value + 1)) }}
+        className="w-7 h-7 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 font-bold flex items-center justify-center hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-all select-none">
+        +
+      </button>
     </div>
   )
 }

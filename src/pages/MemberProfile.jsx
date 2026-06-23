@@ -10,7 +10,6 @@ import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 import confetti from 'canvas-confetti'
 
-const PENALTY = 15
 const DAY_LABELS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
 const GOAL_COLORS = ['#8b5cf6','#3b82f6','#10b981','#f97316','#ec4899','#14b8a6']
 
@@ -60,6 +59,7 @@ export default function MemberProfile() {
   const [allEntries, setAllEntries] = useState([])
   const [logs, setLogs] = useState({})
   const [avatars, setAvatars] = useState({})
+  const [penalty, setPenalty] = useState(15)
   const [goalsInput, setGoalsInput] = useState([])
   const [proofInput, setProofInput] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -81,7 +81,7 @@ export default function MemberProfile() {
   useEffect(() => {
     if (!sessionId) return
     return onSnapshot(sessionDoc, snap => {
-      if (snap.exists()) { setMembers(snap.data().names || []); setAvatars(snap.data().avatars || {}) }
+      if (snap.exists()) { setMembers(snap.data().names || []); setAvatars(snap.data().avatars || {}); setPenalty(snap.data().penalty ?? 15) }
     })
   }, [sessionId])
 

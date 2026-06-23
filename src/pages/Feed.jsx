@@ -3,7 +3,7 @@ import { collection, onSnapshot, addDoc, Timestamp, query, orderBy, where, limit
 import { useParams } from 'react-router-dom'
 import { db } from '../firebase'
 import { getCurrentWeekId } from '../utils'
-import { Megaphone, Send } from 'lucide-react'
+import { Megaphone, Send, MessageCircle, X } from 'lucide-react'
 
 const AVATAR_COLORS = [
   'from-violet-500 to-purple-600', 'from-blue-500 to-cyan-600',
@@ -38,8 +38,13 @@ export default function Feed() {
   const { sessionId } = useParams()
   const [members, setMembers] = useState([])
   const [avatars, setAvatars] = useState({})
+  const [penalty, setPenalty] = useState(15)
   const [entries, setEntries] = useState([])
   const [shoutouts, setShoutouts] = useState([])
+  const [comments, setComments] = useState([])
+  const [expandedComments, setExpandedComments] = useState(new Set())
+  const [commentInputs, setCommentInputs] = useState({})
+  const [postingComment, setPostingComment] = useState(null)
   const [showShoutoutForm, setShowShoutoutForm] = useState(false)
   const [shoutoutFrom, setShoutoutFrom] = useState('')
   const [shoutoutTo, setShoutoutTo] = useState('')
@@ -53,7 +58,16 @@ export default function Feed() {
       if (snap.exists()) {
         setMembers(snap.data().names || [])
         setAvatars(snap.data().avatars || {})
+        setPenalty(snap.data().penalty ?? 15)
       }
+    })
+  }, [sessionId])
+
+  useEffect(() => {
+    if (!sessionId) return
+    const q = query(collection(db, 'comments'), where('sessionId', '==', sessionId))
+    return onSnapshot(q, snap => {
+      setComments(snap.docs.map(d => ({ id: d.id, ...d.data() })))
     })
   }, [sessionId])
 
@@ -125,7 +139,7 @@ export default function Feed() {
     // Proof updates
     ;(entry.updates || []).forEach((u, i) => {
       feedItems.push({
-        id: `proof-${entry.id}-${i}`,
+        id: `proof-${entry.id}-${u.timestamp?.seconds ?? i}`,
         type: 'proof',
         name: entry.name,
         weekId: entry.weekId,
@@ -154,6 +168,33 @@ export default function Feed() {
     const tb = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp || 0)
     return tb - ta
   })
+
+  const commentsByParent = comments.reduce((acc, c) => {
+    if (!acc[c.parentId]) acc[c.parentId] = []
+    acc[c.parentId].push(c)
+    return acc
+  }, {})
+
+  const toggleComments = (id) => setExpandedComments(prev => {
+    const next = new Set(prev)
+    next.has(id) ? next.delete(id) : next.add(id)
+    return next
+  })
+
+  const postComment = async (parentId) => {
+    const input = commentInputs[parentId] || {}
+    if (!input.from || !input.text?.trim()) return
+    setPostingComment(parentId)
+    await addDoc(collection(db, 'comments'), {
+      parentId,
+      sessionId,
+      from: input.from,
+      text: input.text.trim(),
+      timestamp: Timestamp.now(),
+    })
+    setCommentInputs(p => ({ ...p, [parentId]: { from: input.from, text: '' } }))
+    setPostingComment(null)
+  }
 
   return (
     <div className="space-y-4">
@@ -242,43 +283,105 @@ export default function Feed() {
 
       <div className="space-y-2">
         {feedItems.map(item => (
-          <FeedItem key={item.id} item={item} members={members} avatars={avatars} />
+          <FeedItem
+            key={item.id}
+            item={item}
+            members={members}
+            avatars={avatars}
+            penalty={penalty}
+            itemComments={(commentsByParent[item.id] || []).sort((a, b) => {
+              const ta = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(0)
+              const tb = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(0)
+              return ta - tb
+            })}
+            commentsExpanded={expandedComments.has(item.id)}
+            onToggleComments={() => toggleComments(item.id)}
+            commentInput={commentInputs[item.id] || { from: '', text: '' }}
+            onCommentInputChange={(field, val) => setCommentInputs(p => ({ ...p, [item.id]: { ...(p[item.id] || {}), [field]: val } }))}
+            onPostComment={() => postComment(item.id)}
+            postingComment={postingComment === item.id}
+            commentMembers={members}
+          />
         ))}
       </div>
     </div>
   )
 }
 
-function FeedItem({ item, members, avatars }) {
+function FeedItem({ item, members, avatars, penalty, itemComments, commentsExpanded, onToggleComments, commentInput, onCommentInputChange, onPostComment, postingComment, commentMembers }) {
+  const commentSection = (
+    <div className="mt-2">
+      <div className="flex items-center gap-2">
+        <button onClick={onToggleComments}
+          className="flex items-center gap-1 text-[11px] text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors">
+          <MessageCircle size={11} />
+          {itemComments.length > 0 ? `${itemComments.length} comment${itemComments.length !== 1 ? 's' : ''}` : 'Reply'}
+        </button>
+      </div>
+      {commentsExpanded && (
+        <div className="mt-2 space-y-2">
+          {itemComments.map(c => (
+            <div key={c.id} className="flex gap-2 items-start">
+              <span className="text-[11px] font-bold text-zinc-600 dark:text-zinc-400 shrink-0 mt-0.5">{c.from}</span>
+              <span className="text-[11px] text-zinc-500 dark:text-zinc-400 break-words min-w-0">{c.text}</span>
+            </div>
+          ))}
+          <div className="flex gap-1.5 mt-1">
+            <select value={commentInput.from} onChange={e => onCommentInputChange('from', e.target.value)}
+              className="bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2 py-1.5 text-xs text-zinc-700 dark:text-zinc-300 focus:outline-none focus:border-zinc-400 shrink-0">
+              <option value="">Who?</option>
+              {commentMembers.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+            <input value={commentInput.text} onChange={e => onCommentInputChange('text', e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && onPostComment()}
+              placeholder="Say something..."
+              className="flex-1 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-zinc-400 transition-colors min-w-0" />
+            <button onClick={onPostComment}
+              disabled={postingComment || !commentInput.from || !commentInput.text?.trim()}
+              className="bg-zinc-800 dark:bg-zinc-200 hover:bg-zinc-700 dark:hover:bg-white disabled:opacity-40 text-white dark:text-zinc-900 rounded-lg px-2.5 transition-colors shrink-0">
+              <Send size={12} />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+
   if (item.type === 'shoutout') {
     return (
-      <div className="bg-amber-950/30 border border-amber-800/40 rounded-2xl px-4 py-3 flex gap-3">
-        <div className="text-xl shrink-0 mt-0.5">{item.emoji}</div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm text-zinc-800 dark:text-zinc-200">
-            <span className="font-bold text-amber-300">{item.from}</span>
-            <span className="text-zinc-500"> → </span>
-            <span className="font-bold text-zinc-900 dark:text-white">{item.to}</span>
-          </p>
-          <p className="text-sm text-zinc-700 dark:text-zinc-300 mt-0.5">"{item.message}"</p>
-          <p className="text-[10px] text-zinc-500 dark:text-zinc-600 mt-1">{timeAgo(item.timestamp)}</p>
+      <div className="bg-amber-950/30 border border-amber-800/40 rounded-2xl px-4 py-3">
+        <div className="flex gap-3">
+          <div className="text-xl shrink-0 mt-0.5">{item.emoji}</div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-zinc-800 dark:text-zinc-200">
+              <span className="font-bold text-amber-300">{item.from}</span>
+              <span className="text-zinc-500"> → </span>
+              <span className="font-bold text-zinc-900 dark:text-white">{item.to}</span>
+            </p>
+            <p className="text-sm text-zinc-700 dark:text-zinc-300 mt-0.5">"{item.message}"</p>
+            <p className="text-[10px] text-zinc-500 dark:text-zinc-600 mt-1">{timeAgo(item.timestamp)}</p>
+          </div>
         </div>
+        {commentSection}
       </div>
     )
   }
 
   if (item.type === 'proof') {
     return (
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl px-4 py-3 flex gap-3">
-        <Avatar name={item.name} emoji={avatars[item.name]} members={members} />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm text-zinc-800 dark:text-zinc-200">
-            <span className="font-bold">{item.name}</span>
-            <span className="text-zinc-500"> posted proof</span>
-          </p>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5 italic">"{item.text}"</p>
-          <p className="text-[10px] text-zinc-500 dark:text-zinc-600 mt-1">{timeAgo(item.timestamp)}</p>
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl px-4 py-3">
+        <div className="flex gap-3">
+          <Avatar name={item.name} emoji={avatars[item.name]} members={members} />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-zinc-800 dark:text-zinc-200">
+              <span className="font-bold">{item.name}</span>
+              <span className="text-zinc-500"> posted proof</span>
+            </p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5 italic">"{item.text}"</p>
+            <p className="text-[10px] text-zinc-500 dark:text-zinc-600 mt-1">{timeAgo(item.timestamp)}</p>
+          </div>
         </div>
+        {commentSection}
       </div>
     )
   }
@@ -310,30 +413,36 @@ function FeedItem({ item, members, avatars }) {
 
   if (item.type === 'completed') {
     return (
-      <div className="bg-emerald-950/30 border border-emerald-800/40 rounded-2xl px-4 py-3 flex gap-3">
-        <Avatar name={item.name} emoji={avatars[item.name]} members={members} />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm text-zinc-800 dark:text-zinc-200">
-            <span className="font-bold text-emerald-300">{item.name}</span>
-            <span className="text-zinc-500"> crushed the week ✅</span>
-          </p>
-          <p className="text-[10px] text-zinc-500 dark:text-zinc-600 mt-1">{timeAgo(item.timestamp)}</p>
+      <div className="bg-emerald-950/30 border border-emerald-800/40 rounded-2xl px-4 py-3">
+        <div className="flex gap-3">
+          <Avatar name={item.name} emoji={avatars[item.name]} members={members} />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-zinc-800 dark:text-zinc-200">
+              <span className="font-bold text-emerald-300">{item.name}</span>
+              <span className="text-zinc-500"> crushed the week ✅</span>
+            </p>
+            <p className="text-[10px] text-zinc-500 dark:text-zinc-600 mt-1">{timeAgo(item.timestamp)}</p>
+          </div>
         </div>
+        {commentSection}
       </div>
     )
   }
 
   if (item.type === 'failed') {
     return (
-      <div className="bg-red-950/20 border border-red-800/30 rounded-2xl px-4 py-3 flex gap-3">
-        <Avatar name={item.name} emoji={avatars[item.name]} members={members} />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm text-zinc-800 dark:text-zinc-200">
-            <span className="font-bold text-red-400">{item.name}</span>
-            <span className="text-zinc-500"> missed the week ❌ +$15 to the pot</span>
-          </p>
-          <p className="text-[10px] text-zinc-500 dark:text-zinc-600 mt-1">{timeAgo(item.timestamp)}</p>
+      <div className="bg-red-950/20 border border-red-800/30 rounded-2xl px-4 py-3">
+        <div className="flex gap-3">
+          <Avatar name={item.name} emoji={avatars[item.name]} members={members} />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-zinc-800 dark:text-zinc-200">
+              <span className="font-bold text-red-400">{item.name}</span>
+              <span className="text-zinc-500"> missed the week ❌ +${penalty} to the pot</span>
+            </p>
+            <p className="text-[10px] text-zinc-500 dark:text-zinc-600 mt-1">{timeAgo(item.timestamp)}</p>
+          </div>
         </div>
+        {commentSection}
       </div>
     )
   }

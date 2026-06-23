@@ -25,6 +25,7 @@ export default function SessionPicker() {
   const [mode, setMode] = useState(null) // 'create' | 'join'
   const [name, setName] = useState('')
   const [emoji, setEmoji] = useState('🎯')
+  const [penalty, setPenalty] = useState(15)
   const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -33,7 +34,7 @@ export default function SessionPicker() {
     if (!name.trim()) return
     setLoading(true)
     const id = genId()
-    const session = { name: name.trim(), emoji, createdAt: Timestamp.now(), names: [], avatars: {} }
+    const session = { name: name.trim(), emoji, penalty: Number(penalty) || 15, createdAt: Timestamp.now(), names: [], avatars: {} }
     await setDoc(doc(db, 'sessions', id), session)
     const s = { id, name: name.trim(), emoji }
     addSaved(s)
@@ -123,6 +124,14 @@ export default function SessionPicker() {
               className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
               autoFocus
             />
+
+            <div>
+              <p className="text-xs text-zinc-500 font-semibold mb-1.5">Penalty per miss ($)</p>
+              <input type="number" min={1} max={1000} value={penalty}
+                onChange={e => setPenalty(Math.max(1, Number(e.target.value) || 1))}
+                className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+              />
+            </div>
 
             <div className="flex gap-2">
               <button onClick={() => { setMode(null); setName('') }}
