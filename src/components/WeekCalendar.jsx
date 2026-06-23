@@ -271,6 +271,19 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
       return sum + val
     }, 0)
 
+  // sub-goal count uses "goalText::subGoalText" as the counts key
+  const subGoalKey = (goalText, subText) => `${goalText}::${subText}`
+
+  const weeklySubCount = (goalText, subText) => {
+    const k = subGoalKey(goalText, subText)
+    return days.reduce((sum, day) => {
+      const dayK = dateKey(day)
+      const localKey = `${dayK}__count__${k}`
+      const val = localCounts[localKey] ?? (Number(logs[dayK]?.counts?.[k]) || 0)
+      return sum + val
+    }, 0)
+  }
+
   // ── render ────────────────────────────────────────────────────────────────
 
   const selectedLog = getDayLog(selectedDay)
@@ -307,7 +320,8 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
       {/* Weekly summary cards */}
       {resolvedGoals.length > 0 && (
         <div className="space-y-2">
-          {resolvedGoals.map(({ text, type, target, unit }) => {
+          {resolvedGoals.map((goal) => {
+            const { text, type, target, unit, subGoals = [] } = goal
             if (type === 'habit') {
               const done = habitDaysCount(text)
               return (
@@ -324,6 +338,46 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
                 </div>
               )
             }
+
+            if (subGoals.length > 0) {
+              // Render each sub-goal as its own mini row
+              const allDone = subGoals.every(sg => {
+                const val = type === 'total' ? weeklyTotalValue(subGoalKey(text, sg.text)) : weeklySubCount(text, sg.text)
+                return Number(sg.target) > 0 ? val >= Number(sg.target) : val > 0
+              })
+              return (
+                <div key={text} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2.5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">{text}</span>
+                    {allDone && <span className="text-[10px] text-emerald-400 font-bold">🎉 All done!</span>}
+                  </div>
+                  {subGoals.map(sg => {
+                    const val = type === 'total'
+                      ? weeklyTotalValue(subGoalKey(text, sg.text))
+                      : weeklySubCount(text, sg.text)
+                    const tgt = Number(sg.target) || 0
+                    const pct = tgt ? Math.min((val / tgt) * 100, 100) : 0
+                    const done = tgt ? val >= tgt : false
+                    return (
+                      <div key={sg.text} className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] text-zinc-500 dark:text-zinc-400">{sg.text}</span>
+                          <span className={`text-[11px] font-bold ${done ? 'text-emerald-400' : 'text-zinc-600 dark:text-zinc-400'}`}>
+                            {val}{tgt ? `/${tgt}` : ''}{sg.unit ? ` ${sg.unit}` : ''}
+                          </span>
+                        </div>
+                        {tgt > 0 && (
+                          <div className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-1 overflow-hidden">
+                            <div className={`h-full rounded-full transition-all duration-500 ${done ? 'bg-emerald-400' : 'bg-emerald-600'}`} style={{ width: `${pct}%` }} />
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            }
+
             if (type === 'count') {
               const val = weeklyCountValue(text)
               const tgt = Number(target) || 0
@@ -380,7 +434,9 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
           {/* Goal inputs */}
           {resolvedGoals.length > 0 && (
             <div className="space-y-4">
-              {resolvedGoals.map(({ text, type, target, unit }) => {
+              {resolvedGoals.map((goal) => {
+                const { text, type, target, unit, subGoals = [] } = goal
+
                 if (type === 'habit') {
                   const checked = !!selectedLog.habits?.[text]
                   return (
@@ -392,6 +448,36 @@ export default function WeekCalendar({ entryId, goalItems, goals }) {
                       </span>
                       {checked && <span className="ml-auto text-[10px] text-emerald-400 font-bold">✓ done</span>}
                     </button>
+                  )
+                }
+
+                // Sub-goals: show a picker per breakdown
+                if (subGoals.length > 0) {
+                  return (
+                    <div key={text} className="space-y-3">
+                      <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">{text}</p>
+                      {subGoals.map(sg => {
+                        const k = subGoalKey(text, sg.text)
+                        const localKey = `${selectedDay}__count__${k}`
+                        const val = localCounts[localKey] ?? (logs[selectedDay]?.counts?.[k] || 0)
+                        return (
+                          <div key={sg.text} className="space-y-1">
+                            <p className="text-[11px] text-zinc-500">{sg.text}{sg.target ? ` — ${sg.target}${sg.unit ? ' ' + sg.unit : ''} goal` : ''}</p>
+                            <NumPicker value={val} unit={sg.unit} onChange={v => {
+                              setLocalCounts(p => ({ ...p, [localKey]: v }))
+                              clearTimeout(saveTimers.current[localKey])
+                              saveTimers.current[localKey] = setTimeout(async () => {
+                                const current = getDayLog(selectedDay)
+                                await setDoc(doc(db, 'entries', entryId, 'dailyLogs', selectedDay), {
+                                  ...current,
+                                  counts: { ...(current.counts || {}), [k]: v },
+                                })
+                              }, 300)
+                            }} />
+                          </div>
+                        )
+                      })}
+                    </div>
                   )
                 }
 

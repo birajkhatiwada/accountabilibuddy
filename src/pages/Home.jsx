@@ -195,7 +195,19 @@ export default function Home() {
     if (goal.type === 'habit') {
       const done = Object.values(logs).filter(d => d.habits?.[goal.text]).length
       return { done, total: 7, pct: done / 7 }
-    } else if (goal.type === 'count') {
+    }
+    // Sub-goals: progress = average of sub-goal completion ratios
+    if (goal.subGoals?.length > 0) {
+      const ratios = goal.subGoals.map(sg => {
+        const k = `${goal.text}::${sg.text}`
+        const done = Object.values(logs).reduce((s, d) => s + (Number(d.counts?.[k]) || 0), 0)
+        const tgt = Number(sg.target) || 1
+        return Math.min(1, done / tgt)
+      })
+      const pct = ratios.reduce((s, r) => s + r, 0) / ratios.length
+      return { done: null, total: null, pct }
+    }
+    if (goal.type === 'count') {
       const done = Object.values(logs).reduce((s, d) => s + (Number(d.counts?.[goal.text]) || 0), 0)
       const total = Number(goal.target) || null
       return { done, total, pct: total ? Math.min(1, done / total) : null }
@@ -448,7 +460,9 @@ export default function Home() {
                     {e?.goalItems?.length > 0 ? (
                       e.goalItems.map((g, i) => {
                         const prog = getGoalProgress(e?.id, g)
-                        const label = g.type === 'habit'
+                        const label = g.subGoals?.length > 0
+                          ? g.subGoals.map(sg => sg.text).join(' · ')
+                          : g.type === 'habit'
                           ? `${prog.done}/7 days`
                           : prog.total
                             ? `${prog.done}/${prog.total}${g.unit ? ' ' + g.unit : ''}`
