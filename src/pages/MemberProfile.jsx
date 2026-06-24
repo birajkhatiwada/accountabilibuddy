@@ -169,15 +169,6 @@ export default function MemberProfile() {
   const color = bannerColorIdx !== null ? BANNER_COLORS[bannerColorIdx] : (AVATAR_COLORS[colorIdx < 0 ? 0 : colorIdx] || AVATAR_COLORS[0])
   const colorHex = AVATAR_HEX[colorIdx < 0 ? 0 : colorIdx] || AVATAR_HEX[0]
 
-  // ── badges ────────────────────────────────────────────────────────────────
-  const badges = []
-  const completedWeeks = allEntries.filter(e => (e.nameLower || e.name?.toLowerCase()) === name.toLowerCase() && e.status === 'completed').length
-  const daysThisWeek = weekDays.filter(d => dateKey(d) <= todayKey && dayHasActivity(dateKey(d))).length
-  if (daysThisWeek >= 7) badges.push({ emoji: '💯', label: 'Perfect week' })
-  if (daysThisWeek >= 3 && daysThisWeek < 7) badges.push({ emoji: '🔥', label: 'On fire' })
-  if (streak >= 5) badges.push({ emoji: '👑', label: 'Streak king' })
-  if (completedWeeks >= 4) badges.push({ emoji: '🏆', label: 'Veteran' })
-  if (completedWeeks >= 1 && entry?.status === 'active' && allEntries.find(e => (e.nameLower || e.name?.toLowerCase()) === name.toLowerCase() && e.status === 'failed')) badges.push({ emoji: '💪', label: 'Comeback' })
 
   const prevEntry = allEntries
     .filter(e => (e.nameLower || e.name?.toLowerCase()) === name.toLowerCase() && e.weekId < weekId)
@@ -271,6 +262,16 @@ export default function MemberProfile() {
       Object.values(log.counts || {}).some(v => v > 0) ||
       Object.values(log.totals || {}).some(v => v > 0)
   }
+
+  // ── badges ────────────────────────────────────────────────────────────────
+  const badges = []
+  const completedWeeks = allEntries.filter(e => (e.nameLower || e.name?.toLowerCase()) === name.toLowerCase() && e.status === 'completed').length
+  const daysThisWeek = weekDays.filter(d => dateKey(d) <= todayKey && dayHasActivity(dateKey(d))).length
+  if (daysThisWeek >= 7) badges.push({ emoji: '💯', label: 'Perfect week' })
+  if (daysThisWeek >= 3 && daysThisWeek < 7) badges.push({ emoji: '🔥', label: 'On fire' })
+  if (streak >= 5) badges.push({ emoji: '👑', label: 'Streak king' })
+  if (completedWeeks >= 4) badges.push({ emoji: '🏆', label: 'Veteran' })
+  if (completedWeeks >= 1 && entry?.status === 'active' && allEntries.find(e => (e.nameLower || e.name?.toLowerCase()) === name.toLowerCase() && e.status === 'failed')) badges.push({ emoji: '💪', label: 'Comeback' })
 
   // ── per-goal proof helpers ────────────────────────────────────────────────
 
