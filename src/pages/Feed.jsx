@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { collection, onSnapshot, addDoc, Timestamp, query, orderBy, where, limit, doc } from 'firebase/firestore'
+import { collection, onSnapshot, addDoc, Timestamp, query, where, doc } from 'firebase/firestore'
 import { useParams } from 'react-router-dom'
 import { db } from '../firebase'
 import { getCurrentWeekId } from '../utils'
@@ -81,12 +81,7 @@ export default function Feed() {
 
   useEffect(() => {
     if (!sessionId) return
-    const q = query(
-      collection(db, 'shoutouts'),
-      where('sessionId', '==', sessionId),
-      orderBy('timestamp', 'desc'),
-      limit(50)
-    )
+    const q = query(collection(db, 'shoutouts'), where('sessionId', '==', sessionId))
     return onSnapshot(q, snap => {
       setShoutouts(snap.docs.map(d => ({ id: d.id, ...d.data() })))
     })

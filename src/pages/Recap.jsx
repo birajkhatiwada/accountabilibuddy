@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { collection, onSnapshot, query, where, orderBy, limit, doc } from 'firebase/firestore'
+import { collection, onSnapshot, query, where, doc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { getCurrentWeekId, formatWeekLabel } from '../utils'
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -57,12 +57,7 @@ export default function Recap() {
 
   useEffect(() => {
     if (!sessionId) return
-    const q = query(
-      collection(db, 'shoutouts'),
-      where('sessionId', '==', sessionId),
-      orderBy('timestamp', 'desc'),
-      limit(100)
-    )
+    const q = query(collection(db, 'shoutouts'), where('sessionId', '==', sessionId))
     return onSnapshot(q, snap => {
       setShoutouts(snap.docs.map(d => ({ id: d.id, ...d.data() })))
     })

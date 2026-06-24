@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { collection, query, where, onSnapshot, doc, updateDoc, getDocs, setDoc } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, doc, updateDoc, setDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { getCurrentWeekId, formatWeekLabel } from '../utils'
 import Highcharts from 'highcharts'
@@ -41,7 +41,6 @@ export default function Home() {
   const navigate = useNavigate()
   const { sessionId } = useParams()
   const [members, setMembers] = useState([])
-  const [entries, setEntries] = useState([])
   const [allEntries, setAllEntries] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -57,21 +56,7 @@ export default function Home() {
   const [qlLocalCounts, setQlLocalCounts] = useState({})
   const qlSaveTimers = useRef({})
 
-  // Auto-close any active entries from past weeks for this session
-  useEffect(() => {
-    if (!sessionId) return
-    const autoClose = async () => {
-      const q = query(
-        collection(db, 'entries'),
-        where('sessionId', '==', sessionId),
-        where('status', '==', 'active'),
-        where('weekId', '<', weekId)
-      )
-      const snap = await getDocs(q)
-      await Promise.all(snap.docs.map(d => updateDoc(d.ref, { status: 'failed' })))
-    }
-    autoClose()
-  }, [sessionId])
+  const entries = allEntries.filter(e => e.weekId === weekId)
 
   useEffect(() => {
     if (!sessionId) return
@@ -86,24 +71,17 @@ export default function Home() {
     return unsub
   }, [sessionId])
 
-  useEffect(() => {
-    if (!sessionId) return
-    const q = query(
-      collection(db, 'entries'),
-      where('sessionId', '==', sessionId),
-      where('weekId', '==', weekId)
-    )
-    return onSnapshot(q, snap => {
-      setEntries(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-    }, err => setError(err.message))
-  }, [sessionId, weekId])
-
+  // Single query — filter weekId client-side to avoid composite index requirement
   useEffect(() => {
     if (!sessionId) return
     const q = query(collection(db, 'entries'), where('sessionId', '==', sessionId))
     return onSnapshot(q, snap => {
-      setAllEntries(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-    })
+      const all = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      setAllEntries(all)
+      // Auto-close past weeks
+      const stale = all.filter(e => e.status === 'active' && e.weekId < weekId)
+      stale.forEach(e => updateDoc(doc(db, 'entries', e.id), { status: 'failed' }))
+    }, err => setError(err.message))
   }, [sessionId])
 
   useEffect(() => {

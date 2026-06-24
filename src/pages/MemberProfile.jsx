@@ -85,28 +85,19 @@ export default function MemberProfile() {
     })
   }, [sessionId])
 
-  // Current week entry for this member
-  useEffect(() => {
-    if (!sessionId) return
-    const q = query(
-      collection(db, 'entries'),
-      where('sessionId', '==', sessionId),
-      where('weekId', '==', weekId)
-    )
-    return onSnapshot(q, snap => {
-      const all = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      const mine = all.find(e => (e.nameLower || e.name?.toLowerCase()) === name.toLowerCase())
-      setEntry(mine || null)
-    })
-  }, [sessionId, weekId, name])
-
+  // Single query — filter weekId + name client-side to avoid composite index requirement
   useEffect(() => {
     if (!sessionId) return
     const q = query(collection(db, 'entries'), where('sessionId', '==', sessionId))
     return onSnapshot(q, snap => {
-      setAllEntries(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+      const all = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      setAllEntries(all)
+      const mine = all.find(e =>
+        e.weekId === weekId && (e.nameLower || e.name?.toLowerCase()) === name.toLowerCase()
+      )
+      setEntry(mine || null)
     })
-  }, [sessionId])
+  }, [sessionId, weekId, name])
 
   useEffect(() => {
     if (!entry?.id) return
