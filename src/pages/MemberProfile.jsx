@@ -383,7 +383,7 @@ export default function MemberProfile() {
     : ''
 
   return (
-    <div className="flex flex-col space-y-4 min-h-screen -mx-4 px-4 -mt-3 pt-3">
+    <div className="flex flex-col space-y-4 min-h-screen -mx-4 px-4 -mt-3">
 
       {/* Hero */}
       <div className={`-mx-4 bg-gradient-to-br ${color} relative overflow-hidden px-6 pt-6 pb-5`}>
