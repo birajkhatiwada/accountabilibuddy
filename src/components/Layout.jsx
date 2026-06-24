@@ -11,6 +11,10 @@ export default function Layout() {
   const navigate = useNavigate()
   const location = useLocation()
   const isHome = location.pathname === `/${sessionId}`
+
+  useEffect(() => {
+    document.querySelector('main')?.scrollTo(0, 0)
+  }, [location.pathname])
   const [session, setSession] = useState(null)
   const [copied, setCopied] = useState(false)
 
