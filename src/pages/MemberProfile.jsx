@@ -364,8 +364,8 @@ export default function MemberProfile() {
     if (!isOpen && !saved.note && !saved.photoUrl) {
       return (
         <button onClick={() => setProofOpen(p => ({ ...p, [goalText]: true }))}
-          className="mt-2 flex items-center gap-1 text-[11px] text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors">
-          <Camera size={11} /> Add proof
+          className="mt-2 w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 text-xs text-zinc-400 dark:text-zinc-500 hover:border-emerald-400 hover:text-emerald-500 transition-all">
+          <Camera size={12} /> Add proof
         </button>
       )
     }
