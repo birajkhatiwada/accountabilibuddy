@@ -474,14 +474,6 @@ export default function Home() {
                         {!e ? 'No goals submitted yet' : streak >= 2 ? `🔥 ${streak}-week streak` : 'This week'}
                       </p>
                     </div>
-                    {e?.status === 'active' && (
-                      <button
-                        onClick={ev => { ev.stopPropagation(); setQuickLogEntry(e) }}
-                        className="text-[10px] font-bold px-2 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/60 transition-colors shrink-0"
-                      >
-                        Log
-                      </button>
-                    )}
                     <span className="text-lg">
                       {e?.status === 'completed' ? '✅' : e?.status === 'failed' ? '❌' : e ? '🔥' : '💤'}
                     </span>
@@ -564,6 +556,14 @@ export default function Home() {
                       })
                     ) : (
                       <p className="text-zinc-500 dark:text-zinc-600 text-xs italic">No goals set yet — tap to add</p>
+                    )}
+                    {e?.status === 'active' && e?.goalItems?.length > 0 && (
+                      <button
+                        onClick={ev => { ev.stopPropagation(); setQuickLogEntry(e) }}
+                        className="mt-1 w-full py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-bold transition-all"
+                      >
+                        + Log today
+                      </button>
                     )}
                   </div>
                 </div>
