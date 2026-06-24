@@ -4,7 +4,7 @@ import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, addDo
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { db, storage } from '../firebase'
 import { getCurrentWeekId, formatWeekLabel, formatTimestamp } from '../utils'
-import { CheckCircle, XCircle, AlertTriangle, ArrowLeft, Pencil, X, Trash2, Camera, Link2 } from 'lucide-react'
+import { CheckCircle, XCircle, AlertTriangle, Pencil, X, Trash2, Camera, Link2 } from 'lucide-react'
 import GoalBuilder from '../components/GoalBuilder'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
@@ -385,37 +385,30 @@ export default function MemberProfile() {
   return (
     <div className="flex flex-col space-y-4 min-h-screen -mx-4 px-4 -mt-3 pt-3">
 
-      {/* Back + share + delete */}
-      <div className="flex items-center justify-between">
-        <button onClick={() => navigate(-1)}
-          className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors">
-          <ArrowLeft size={15} /> Back
-        </button>
-        <div className="flex items-center gap-1">
-          <button onClick={handleShare}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all">
-            <Link2 size={13} /> {copied ? 'Copied!' : 'Share'}
-          </button>
-          {confirmDelete ? (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-zinc-500">Remove {name}?</span>
-              <button onClick={deleteMember} className="text-xs font-bold text-red-400 hover:text-red-300 px-2 py-1 bg-red-950/40 rounded-lg">Remove</button>
-              <button onClick={() => setConfirmDelete(false)} className="text-xs text-zinc-500 px-2 py-1">Cancel</button>
-            </div>
-          ) : (
-            <button onClick={() => setConfirmDelete(true)} className="p-1.5 text-zinc-400 dark:text-zinc-700 hover:text-red-400 transition-colors rounded-lg hover:bg-red-950/30">
-              <Trash2 size={15} />
-            </button>
-          )}
-        </div>
-      </div>
-
       {/* Hero */}
       <div className={`-mx-4 bg-gradient-to-br ${color} relative overflow-hidden px-6 pt-6 pb-5`}>
         <div className="absolute inset-0 opacity-20" style={{ backgroundImage: `radial-gradient(circle, white 1.5px, transparent 1.5px)`, backgroundSize: '18px 18px' }} />
         <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-white/10" />
         <div className="absolute -left-6 -bottom-8 w-36 h-36 rounded-full bg-black/10" />
-        <p className="relative text-white/50 text-[11px] font-semibold uppercase tracking-widest mb-4">{formatWeekLabel(weekId)}</p>
+        <div className="relative flex items-center justify-between mb-4">
+          <p className="text-white/50 text-[11px] font-semibold uppercase tracking-widest">{formatWeekLabel(weekId)}</p>
+          <div className="flex items-center gap-1">
+            <button onClick={handleShare}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white text-[11px] font-medium transition-all">
+              <Link2 size={11} /> {copied ? 'Copied!' : 'Share'}
+            </button>
+            {confirmDelete ? (
+              <div className="flex items-center gap-1.5">
+                <button onClick={deleteMember} className="text-[11px] font-bold text-red-300 px-2 py-1 bg-red-900/50 rounded-lg">Remove</button>
+                <button onClick={() => setConfirmDelete(false)} className="text-[11px] text-white/50 px-2 py-1">Cancel</button>
+              </div>
+            ) : (
+              <button onClick={() => setConfirmDelete(true)} className="p-1.5 rounded-lg bg-white/10 hover:bg-red-500/30 text-white/50 hover:text-red-300 transition-all">
+                <Trash2 size={13} />
+              </button>
+            )}
+          </div>
+        </div>
         <div className="relative flex items-center gap-4">
           <button onClick={() => setPickingAvatar(v => !v)}
             className="w-16 h-16 rounded-full bg-white/25 backdrop-blur-sm flex items-center justify-center shadow-xl relative group transition-all hover:scale-105 active:scale-95 shrink-0">
