@@ -465,7 +465,6 @@ export default function MemberProfile() {
             <div className="flex items-center gap-1.5 flex-wrap mt-2">
               {entry?.status === 'completed' && <span className="text-[11px] font-bold text-emerald-200 bg-emerald-500/25 px-2.5 py-0.5 rounded-full">✅ Week done!</span>}
               {entry?.status === 'failed'    && <span className="text-[11px] font-bold text-red-200 bg-red-500/25 px-2.5 py-0.5 rounded-full">❌ Week failed</span>}
-              {entry?.status === 'active'    && <span className="text-[11px] font-semibold text-white/70 bg-white/15 px-2.5 py-0.5 rounded-full">🔄 In progress</span>}
               {!entry                        && <span className="text-[11px] text-white/40 bg-white/10 px-2.5 py-0.5 rounded-full">No goals set</span>}
               {streak >= 2 && <span className="text-[11px] font-bold text-amber-200 bg-amber-500/20 px-2.5 py-0.5 rounded-full">🔥 {streak}-week streak</span>}
             </div>
