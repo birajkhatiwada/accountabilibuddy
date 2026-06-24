@@ -65,10 +65,6 @@ export default function Layout() {
       ) : (
         <header className="px-4 pt-4 pb-2 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <button onClick={() => navigate(-1)}
-              className="text-[10px] font-bold text-zinc-400 dark:text-zinc-600 uppercase tracking-widest hover:text-zinc-600 dark:hover:text-zinc-400 transition-colors shrink-0">
-              ←
-            </button>
             <h1 className="text-lg font-black tracking-tight text-zinc-900 dark:text-white leading-none cursor-pointer shrink-0" onClick={() => navigate(`/${sessionId}`)}>
               accountabili<span style={{ background: 'linear-gradient(to right, #34d399, #2dd4bf)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>buddy</span>
             </h1>
