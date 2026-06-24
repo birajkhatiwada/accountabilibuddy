@@ -356,7 +356,7 @@ export default function MemberProfile() {
   }
 
   const renderProofSection = (goalText, isFutureDay) => {
-    if (isFutureDay || entry?.status !== 'active') return null
+    if (isFutureDay || !entry || entry.status === 'failed') return null
     const saved = getGoalProof(goalText)
     const isOpen = proofOpen[goalText]
     const noteVal = proofNoteInputs[goalText] ?? saved.note ?? ''
