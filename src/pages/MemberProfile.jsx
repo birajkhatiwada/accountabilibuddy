@@ -386,77 +386,102 @@ export default function MemberProfile() {
     <div className="flex flex-col space-y-4 min-h-screen -mx-4 px-4 -mt-3">
 
       {/* Hero */}
-      <div className={`-mx-4 bg-gradient-to-br ${color} relative overflow-hidden px-6 pt-6 pb-5`}>
-        <div className="absolute inset-0 opacity-20" style={{ backgroundImage: `radial-gradient(circle, white 1.5px, transparent 1.5px)`, backgroundSize: '18px 18px' }} />
-        <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-white/10" />
-        <div className="absolute -left-6 -bottom-8 w-36 h-36 rounded-full bg-black/10" />
-        <div className="relative flex items-center justify-between mb-4">
+      <div className={`-mx-4 bg-gradient-to-br ${color} relative overflow-hidden px-6 pt-5 pb-0`}>
+        {/* Background texture */}
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: `radial-gradient(circle, white 1px, transparent 1px)`, backgroundSize: '22px 22px' }} />
+        <div className="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-white/10" />
+        <div className="absolute -left-8 bottom-0 w-40 h-40 rounded-full bg-black/10" />
+
+        {/* Week label + actions */}
+        <div className="relative flex items-center justify-between mb-5">
           <p className="text-white/50 text-[11px] font-semibold uppercase tracking-widest">{formatWeekLabel(weekId)}</p>
           <div className="flex items-center gap-1">
             <button onClick={handleShare}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white text-[11px] font-medium transition-all">
-              <Link2 size={11} /> {copied ? 'Copied!' : 'Share'}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/15 hover:bg-white/25 text-white/80 text-[11px] font-semibold transition-all">
+              <Link2 size={10} /> {copied ? 'Copied!' : 'Share'}
             </button>
             {confirmDelete ? (
               <div className="flex items-center gap-1.5">
-                <button onClick={deleteMember} className="text-[11px] font-bold text-red-300 px-2 py-1 bg-red-900/50 rounded-lg">Remove</button>
+                <button onClick={deleteMember} className="text-[11px] font-bold text-red-300 px-2 py-1 bg-red-900/50 rounded-full">Remove</button>
                 <button onClick={() => setConfirmDelete(false)} className="text-[11px] text-white/50 px-2 py-1">Cancel</button>
               </div>
             ) : (
-              <button onClick={() => setConfirmDelete(true)} className="p-1.5 rounded-lg bg-white/10 hover:bg-red-500/30 text-white/50 hover:text-red-300 transition-all">
+              <button onClick={() => setConfirmDelete(true)} className="p-1.5 rounded-full bg-white/10 hover:bg-red-500/30 text-white/40 hover:text-red-300 transition-all">
                 <Trash2 size={13} />
               </button>
             )}
           </div>
         </div>
-        <div className="relative flex items-center gap-4">
+
+        {/* Avatar + name */}
+        <div className="relative flex items-end gap-4 mb-5">
           <button onClick={() => setPickingAvatar(v => !v)}
-            className="w-16 h-16 rounded-full bg-white/25 backdrop-blur-sm flex items-center justify-center shadow-xl relative group transition-all hover:scale-105 active:scale-95 shrink-0">
-            {avatars[name] ? <span className="text-3xl">{avatars[name]}</span> : <span className="text-white font-black text-3xl">{name[0].toUpperCase()}</span>}
-            <span className="absolute inset-0 rounded-full flex items-end justify-center pb-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <span className="text-[10px] font-bold text-white/70 bg-black/30 rounded-full px-1.5">edit</span>
+            className="w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center shadow-2xl relative group transition-all hover:scale-105 active:scale-95 shrink-0">
+            {avatars[name]
+              ? <span className="text-4xl">{avatars[name]}</span>
+              : <span className="text-white font-black text-4xl leading-none">{name[0].toUpperCase()}</span>}
+            <span className="absolute bottom-1.5 right-1.5 w-5 h-5 rounded-full bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <Pencil size={9} className="text-white" />
             </span>
           </button>
-          <div>
-            <h2 className="text-2xl font-black text-white leading-none">{name}</h2>
-            <div className="flex items-center gap-2 flex-wrap mt-1">
-              {streak >= 2 && <span className="text-white/80 text-xs font-bold">🔥 {streak}-week streak</span>}
-              {entry?.status === 'completed' && <span className="text-emerald-300 text-xs font-bold">✅ Week done!</span>}
-              {entry?.status === 'failed'    && <span className="text-red-300 text-xs font-bold">❌ Week failed</span>}
-              {entry?.status === 'active'    && <span className="text-white/60 text-xs font-semibold">🔄 In progress</span>}
-              {!entry                        && <span className="text-white/40 text-xs">No goals set yet</span>}
+          <div className="pb-1">
+            <h2 className="text-3xl font-black text-white leading-none tracking-tight">{name}</h2>
+            <div className="flex items-center gap-1.5 flex-wrap mt-2">
+              {entry?.status === 'completed' && <span className="text-[11px] font-bold text-emerald-200 bg-emerald-500/25 px-2.5 py-0.5 rounded-full">✅ Week done!</span>}
+              {entry?.status === 'failed'    && <span className="text-[11px] font-bold text-red-200 bg-red-500/25 px-2.5 py-0.5 rounded-full">❌ Week failed</span>}
+              {entry?.status === 'active'    && <span className="text-[11px] font-semibold text-white/70 bg-white/15 px-2.5 py-0.5 rounded-full">🔄 In progress</span>}
+              {!entry                        && <span className="text-[11px] text-white/40 bg-white/10 px-2.5 py-0.5 rounded-full">No goals set</span>}
+              {streak >= 2 && <span className="text-[11px] font-bold text-amber-200 bg-amber-500/20 px-2.5 py-0.5 rounded-full">🔥 {streak}-week streak</span>}
             </div>
           </div>
         </div>
+
+        {/* Stats row */}
+        {entry && (
+          <div className="relative flex gap-5 mb-4">
+            <div>
+              <p className="text-white font-black text-xl leading-none">{entry.goalItems?.length || 0}</p>
+              <p className="text-white/40 text-[10px] font-semibold uppercase tracking-wide mt-0.5">Goals</p>
+            </div>
+            <div className="w-px bg-white/20" />
+            <div>
+              <p className="text-white font-black text-xl leading-none">{daysLogged}</p>
+              <p className="text-white/40 text-[10px] font-semibold uppercase tracking-wide mt-0.5">Days logged</p>
+            </div>
+            <div className="w-px bg-white/20" />
+            <div>
+              <p className="text-white font-black text-xl leading-none">{streak}</p>
+              <p className="text-white/40 text-[10px] font-semibold uppercase tracking-wide mt-0.5">Wk streak</p>
+            </div>
+          </div>
+        )}
+
+        {/* Week progress bar flush at bottom */}
+        {entry?.status === 'active' && entry?.goalItems?.length > 0 && (() => {
+          const pct = Math.round(
+            entry.goalItems.reduce((sum, g) => {
+              if (g.type === 'habit') return sum + Math.min(1, weeklyHabitDays(g.text) / 7)
+              if (g.subGoals?.length > 0) {
+                const r = g.subGoals.reduce((s, sg) => s + Math.min(1, weeklyCount(`${g.text}::${sg.text}`) / (Number(sg.target) || 1)), 0)
+                return sum + r / g.subGoals.length
+              }
+              return sum + Math.min(1, weeklyCount(g.text) / (Number(g.target) || 1))
+            }, 0) / entry.goalItems.length * 100
+          )
+          return (
+            <div className="relative -mx-6">
+              <div className="flex items-center justify-end px-4 mb-1">
+                <span className="text-white/50 text-[10px] font-bold">{pct}%</span>
+              </div>
+              <div className="h-1 bg-black/20">
+                <div className="h-full bg-white/60 transition-all duration-700" style={{ width: `${pct}%` }} />
+              </div>
+            </div>
+          )
+        })()}
+        {(!entry?.status || entry.status !== 'active' || !entry?.goalItems?.length) && <div className="h-1 -mx-6 bg-black/10" />}
       </div>
 
-      {/* Stats */}
-      {entry && (
-        <div className="grid grid-cols-4 gap-2">
-          <div className={`rounded-2xl p-3 text-center ${
-            entry.status === 'completed' ? 'bg-emerald-950/60 border border-emerald-800/50' :
-            entry.status === 'failed'    ? 'bg-red-950/60 border border-red-800/50' :
-            'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800'
-          }`}>
-            <p className="text-xl mb-0.5">{entry.status === 'completed' ? '✅' : entry.status === 'failed' ? '❌' : '🔄'}</p>
-            <p className={`text-[10px] font-bold uppercase tracking-wide ${entry.status === 'completed' ? 'text-emerald-400' : entry.status === 'failed' ? 'text-red-400' : 'text-amber-400'}`}>
-              {entry.status === 'completed' ? 'Done!' : entry.status === 'failed' ? 'Failed' : 'Active'}
-            </p>
-          </div>
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-3 text-center">
-            <p className="text-xl font-black text-zinc-900 dark:text-white mb-0.5">{entry.goalItems?.length || 0}</p>
-            <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">Goals</p>
-          </div>
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-3 text-center">
-            <p className="text-xl font-black text-zinc-900 dark:text-white mb-0.5">{daysLogged}</p>
-            <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">Days</p>
-          </div>
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-3 text-center">
-            <p className="text-xl font-black text-zinc-900 dark:text-white mb-0.5">{entry.updates?.length || 0}</p>
-            <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">Proofs</p>
-          </div>
-        </div>
-      )}
 
       {/* No goals yet */}
       {!entry && (
