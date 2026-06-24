@@ -364,7 +364,7 @@ export default function MemberProfile() {
     if (!isOpen && !saved.note && !saved.photoUrl) {
       return (
         <button onClick={() => setProofOpen(p => ({ ...p, [goalText]: true }))}
-          className="mt-2 w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 text-xs text-zinc-400 dark:text-zinc-500 hover:border-emerald-400 hover:text-emerald-500 transition-all">
+          className="mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-white text-xs font-bold transition-all">
           <Camera size={12} /> Add proof
         </button>
       )
@@ -694,8 +694,8 @@ export default function MemberProfile() {
                         onClick={() => !isFutureDay && toggleHabit(goal.text)}
                         disabled={isFutureDay}
                         className="w-full flex items-center gap-3 px-4 py-3 disabled:opacity-40 active:scale-[0.99] transition-all">
-                        <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${
-                          checked ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-600'
+                        <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+                          checked ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800'
                         }`}>
                           {checked && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                         </span>
