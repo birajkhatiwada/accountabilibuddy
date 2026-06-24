@@ -437,30 +437,7 @@ export default function MemberProfile() {
         </div>
 
 
-        {/* Week progress bar flush at bottom */}
-        {entry?.status === 'active' && entry?.goalItems?.length > 0 && (() => {
-          const pct = Math.round(
-            entry.goalItems.reduce((sum, g) => {
-              if (g.type === 'habit') return sum + Math.min(1, weeklyHabitDays(g.text) / 7)
-              if (g.subGoals?.length > 0) {
-                const r = g.subGoals.reduce((s, sg) => s + Math.min(1, weeklyCount(`${g.text}::${sg.text}`) / (Number(sg.target) || 1)), 0)
-                return sum + r / g.subGoals.length
-              }
-              return sum + Math.min(1, weeklyCount(g.text) / (Number(g.target) || 1))
-            }, 0) / entry.goalItems.length * 100
-          )
-          return (
-            <div className="relative -mx-6">
-              <div className="flex items-center justify-end px-4 mb-1">
-                <span className="text-white/50 text-[10px] font-bold">{pct}%</span>
-              </div>
-              <div className="h-1 bg-black/20">
-                <div className="h-full bg-white/60 transition-all duration-700" style={{ width: `${pct}%` }} />
-              </div>
-            </div>
-          )
-        })()}
-        {(!entry?.status || entry.status !== 'active' || !entry?.goalItems?.length) && <div className="h-1 -mx-6 bg-black/10" />}
+        <div className="h-1 -mx-6 bg-black/10" />
       </div>
 
 
