@@ -655,6 +655,18 @@ export default function MemberProfile() {
             </div>
           )}
 
+          {/* Re-enter goals if old entry has no goalItems */}
+          {!editingGoals && !entry.goalItems?.length && (
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 space-y-4">
+              <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">Re-enter your goals to unlock logging & proof 🔒</p>
+              <GoalBuilder key="re-enter" initialGoals={[]} onChange={setGoalsInput} />
+              <button onClick={updateGoals} disabled={submitting || !goalsInput.some(g => g.text.trim())}
+                className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 disabled:opacity-40 text-white font-bold rounded-xl py-2.5 transition-all">
+                {submitting ? 'Saving...' : 'Save goals'}
+              </button>
+            </div>
+          )}
+
           {/* Goal cards */}
           {!editingGoals && entry.goalItems?.length > 0 && (
             <div className="space-y-3">
