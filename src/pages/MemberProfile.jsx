@@ -453,8 +453,8 @@ export default function MemberProfile() {
           <div className="flex items-center gap-2">
             <p className="text-white/50 text-[11px] font-semibold uppercase tracking-widest">{formatWeekLabel(weekId)}</p>
             <button onClick={() => setShowCustomize(v => !v)}
-              className="text-white/30 hover:text-white/60 transition-colors text-[11px]">
-              🎨
+              className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold transition-all ${showCustomize ? 'bg-white/25 text-white' : 'bg-white/10 text-white/50 hover:bg-white/20 hover:text-white/80'}`}>
+              🎨 Customize
             </button>
           </div>
           <div className="flex items-center gap-1">
@@ -519,33 +519,14 @@ export default function MemberProfile() {
         </div>
 
 
-        {/* Punch card */}
-        <div className="relative flex items-center gap-1.5 mb-4">
-          {weekDays.map((d, i) => {
-            const k = dateKey(d)
-            const future = k > todayKey
-            const logged = !future && dayHasActivity(k)
-            return (
-              <div key={i} className="flex flex-col items-center gap-1">
-                <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black transition-all ${
-                  logged ? 'bg-white/30 text-white shadow-sm' :
-                  future ? 'bg-white/5 text-white/20' :
-                  'bg-black/15 text-white/30'
-                }`}>
-                  {logged ? '✓' : DAY_LABELS[i][0]}
-                </div>
-                <span className="text-[8px] text-white/30 font-semibold uppercase">{DAY_LABELS[i].slice(0,1)}</span>
-              </div>
-            )
-          })}
-          {badges.length > 0 && (
-            <div className="ml-auto flex items-center gap-1">
-              {badges.map((b, i) => (
-                <span key={i} title={b.label} className="text-lg cursor-default">{b.emoji}</span>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Badges */}
+        {badges.length > 0 && (
+          <div className="relative flex items-center gap-1.5 mb-4">
+            {badges.map((b, i) => (
+              <span key={i} title={b.label} className="text-xl cursor-default">{b.emoji}</span>
+            ))}
+          </div>
+        )}
 
         {/* Customize panel */}
         {showCustomize && (
