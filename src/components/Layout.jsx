@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { Outlet, NavLink, useParams, useNavigate, useLocation } from 'react-router-dom'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase'
@@ -11,48 +11,6 @@ export default function Layout() {
   const navigate = useNavigate()
   const location = useLocation()
   const isHome = location.pathname === `/${sessionId}`
-
-  const cursorRef = useRef(null)
-  const onButtonRef = useRef(false)
-
-  useEffect(() => {
-    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches
-    if (isTouchDevice) return
-
-    document.body.style.cursor = 'none'
-
-    const move = (e) => {
-      if (!cursorRef.current) return
-      cursorRef.current.style.left = e.clientX + 'px'
-      cursorRef.current.style.top = e.clientY + 'px'
-    }
-
-    const over = (e) => {
-      const isBtn = !!e.target.closest('button, a, input, textarea, select, [role="button"]')
-      if (isBtn === onButtonRef.current) return
-      onButtonRef.current = isBtn
-      if (!cursorRef.current) return
-      if (isBtn) {
-        cursorRef.current.style.width = '10px'
-        cursorRef.current.style.height = '10px'
-        cursorRef.current.style.background = '#10b981'
-        cursorRef.current.style.border = 'none'
-      } else {
-        cursorRef.current.style.width = '18px'
-        cursorRef.current.style.height = '18px'
-        cursorRef.current.style.background = 'transparent'
-        cursorRef.current.style.border = '1.5px solid #10b981'
-      }
-    }
-
-    window.addEventListener('mousemove', move)
-    window.addEventListener('mouseover', over)
-    return () => {
-      window.removeEventListener('mousemove', move)
-      window.removeEventListener('mouseover', over)
-      document.body.style.cursor = ''
-    }
-  }, [])
 
   useEffect(() => {
     document.querySelector('main')?.scrollTo(0, 0)
@@ -78,15 +36,6 @@ export default function Layout() {
     }`
 
   return (
-    <>
-    <div ref={cursorRef} style={{
-      position: 'fixed', pointerEvents: 'none', zIndex: 99999,
-      width: 18, height: 18, borderRadius: '50%',
-      background: 'transparent', border: '1.5px solid #10b981',
-      transform: 'translate(-50%, -50%)',
-      transition: 'width 0.12s ease, height 0.12s ease, background 0.12s ease, border 0.12s ease',
-      left: -100, top: -100,
-    }} />
     <div className="min-h-screen flex flex-col max-w-lg mx-auto relative">
       {/* Header */}
       {isHome ? (
@@ -199,6 +148,5 @@ export default function Layout() {
         </NavLink>
       </nav>
     </div>
-    </>
   )
 }
