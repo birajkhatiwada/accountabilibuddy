@@ -5,7 +5,6 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { db, storage } from '../firebase'
 import { getCurrentWeekId, formatWeekLabel, formatTimestamp } from '../utils'
 import { CheckCircle, XCircle, AlertTriangle, ArrowLeft, Pencil, X, Trash2, Camera, Link2 } from 'lucide-react'
-import WeekCalendar from '../components/WeekCalendar'
 import GoalBuilder from '../components/GoalBuilder'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
@@ -722,8 +721,6 @@ export default function MemberProfile() {
             </div>
           )}
 
-          {/* Notes / photos / cheer for selected day */}
-          <WeekCalendar entryId={entry.id} selectedDay={selectedDay} logs={logs} />
 
           {/* Mark done/failed */}
           {entry.status === 'active' && (
