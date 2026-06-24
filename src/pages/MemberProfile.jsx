@@ -4,7 +4,7 @@ import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, addDo
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { db, storage } from '../firebase'
 import { getCurrentWeekId, formatWeekLabel, formatTimestamp } from '../utils'
-import { CheckCircle, XCircle, AlertTriangle, Pencil, X, Trash2, Camera, Link2 } from 'lucide-react'
+import { Pencil, X, Trash2, Camera, Link2 } from 'lucide-react'
 import GoalBuilder from '../components/GoalBuilder'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
@@ -84,7 +84,6 @@ export default function MemberProfile() {
   const [goalsInput, setGoalsInput] = useState([])
   const [submitting, setSubmitting] = useState(false)
   const [editingGoals, setEditingGoals] = useState(false)
-  const [confirmFail, setConfirmFail] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [pickingAvatar, setPickingAvatar] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -114,6 +113,22 @@ export default function MemberProfile() {
     setProofNoteInputs({})
     setProofOpen({})
   }, [selectedDay])
+
+  // Auto-complete when all goals hit 100%
+  useEffect(() => {
+    if (!entry || entry.status !== 'active' || !entry.goalItems?.length) return
+    const allDone = entry.goalItems.every(g => {
+      if (g.type === 'habit') return weekDays.filter(d => logs[dateKey(d)]?.habits?.[g.text]).length >= 7
+      if (g.subGoals?.length > 0) return g.subGoals.every(sg => {
+        const k = `${g.text}::${sg.text}`
+        const total = weekDays.reduce((s, d) => s + (Number(logs[dateKey(d)]?.counts?.[k]) || 0), 0)
+        return total >= (Number(sg.target) || 1)
+      })
+      const total = weekDays.reduce((s, d) => s + (Number(logs[dateKey(d)]?.counts?.[g.text]) || 0) + (Number(logs[dateKey(d)]?.totals?.[g.text]) || 0), 0)
+      return total >= (Number(g.target) || 1)
+    })
+    if (allDone) updateDoc(doc(db, 'entries', entry.id), { status: 'completed' })
+  }, [logs, entry?.id])
 
   useEffect(() => {
     if (!sessionId) return
@@ -380,8 +395,6 @@ export default function MemberProfile() {
     )
   }
 
-  const markDone   = () => updateDoc(doc(db, 'entries', entry.id), { status: 'completed' })
-  const markFailed = async () => { await updateDoc(doc(db, 'entries', entry.id), { status: 'failed' }); setConfirmFail(false) }
   const deleteMember = async () => { await setDoc(sessionDoc, { names: members.filter(m => m !== name) }, { merge: true }); navigate(`/${sessionId}`) }
   const saveAvatar = async (emoji) => { await setDoc(sessionDoc, { avatars: { ...avatars, [name]: emoji } }, { merge: true }); setPickingAvatar(false) }
   const saveBio = async (val) => { await setDoc(sessionDoc, { bios: { [name]: val.trim() } }, { merge: true }); setEditingBio(false) }
@@ -837,30 +850,6 @@ export default function MemberProfile() {
           )}
 
 
-          {/* Mark done/failed */}
-          {entry.status === 'active' && (
-            <div className="space-y-3">
-              <div className="flex gap-2">
-                <button onClick={markDone} className="flex-1 flex items-center justify-center gap-2 bg-emerald-900/30 hover:bg-emerald-900/50 border border-emerald-800/50 text-emerald-400 rounded-xl py-3 text-sm font-bold transition-colors">
-                  <CheckCircle size={15} /> Week complete
-                </button>
-                <button onClick={() => setConfirmFail(true)} className="flex-1 flex items-center justify-center gap-2 bg-red-900/20 hover:bg-red-900/40 border border-red-800/40 text-red-400 rounded-xl py-3 text-sm font-bold transition-colors">
-                  <XCircle size={15} /> I failed
-                </button>
-              </div>
-              {confirmFail && (
-                <div className="bg-red-950/40 border border-red-800/50 rounded-xl p-4 space-y-3">
-                  <p className="text-red-300 text-sm font-medium flex items-center gap-2">
-                    <AlertTriangle size={15} /> This adds ${PENALTY} to the pot. For real?
-                  </p>
-                  <div className="flex gap-2">
-                    <button onClick={markFailed} className="flex-1 bg-red-700 hover:bg-red-600 text-white rounded-lg py-2 text-sm font-bold transition-colors">Yeah, I failed</button>
-                    <button onClick={() => setConfirmFail(false)} className="flex-1 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-lg py-2 text-sm transition-colors">Cancel</button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
         </>
       )}
 
