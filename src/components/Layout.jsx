@@ -32,34 +32,32 @@ export default function Layout() {
   return (
     <div className="min-h-screen flex flex-col max-w-lg mx-auto relative">
       {/* Header */}
-      <header className="px-5 pt-8 pb-3">
-        <div className="flex items-end justify-between">
-          <div>
-            <button onClick={() => navigate('/')}
-              className="text-[10px] font-bold text-zinc-400 dark:text-zinc-600 uppercase tracking-widest hover:text-zinc-600 dark:hover:text-zinc-400 transition-colors mb-1 flex items-center gap-1">
-              ← sessions
+      <header className="px-4 pt-4 pb-2 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <button onClick={() => navigate('/')}
+            className="text-[10px] font-bold text-zinc-400 dark:text-zinc-600 uppercase tracking-widest hover:text-zinc-600 dark:hover:text-zinc-400 transition-colors shrink-0">
+            ←
+          </button>
+          <h1 className="text-lg font-black tracking-tight text-zinc-900 dark:text-white leading-none cursor-pointer shrink-0" onClick={() => navigate(`/${sessionId}`)}>
+            accountabili<span style={{ background: 'linear-gradient(to right, #34d399, #2dd4bf)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>buddy</span>
+          </h1>
+          {session && (
+            <button onClick={copyCode}
+              className="flex items-center gap-1 min-w-0 group">
+              <span className="text-sm shrink-0">{session.emoji || '🎯'}</span>
+              <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 truncate group-hover:text-zinc-700 dark:group-hover:text-zinc-200 transition-colors">{session.name}</span>
+              <span className="font-mono text-[10px] text-zinc-400 dark:text-zinc-600 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded shrink-0">{sessionId}</span>
+              {copied ? <Check size={10} className="text-emerald-400 shrink-0" /> : <Copy size={10} className="text-zinc-300 dark:text-zinc-700 group-hover:text-zinc-400 transition-colors shrink-0" />}
             </button>
-            <h1 className="text-3xl font-black tracking-tight text-zinc-900 dark:text-white leading-none cursor-pointer" onClick={() => navigate(`/${sessionId}`)}>
-              accountabili<span style={{ background: 'linear-gradient(to right, #34d399, #2dd4bf)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>buddy</span>
-            </h1>
-            {session && (
-              <button onClick={copyCode}
-                className="flex items-center gap-1.5 mt-1 group">
-                <span className="text-sm">{session.emoji || '🎯'}</span>
-                <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200 transition-colors">{session.name}</span>
-                <span className="font-mono text-[10px] text-zinc-400 dark:text-zinc-600 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded group-hover:text-zinc-500 dark:group-hover:text-zinc-400 transition-colors">{sessionId}</span>
-                {copied ? <Check size={10} className="text-emerald-400" /> : <Copy size={10} className="text-zinc-300 dark:text-zinc-700 group-hover:text-zinc-400 transition-colors" />}
-              </button>
-            )}
-          </div>
-          <div className="flex items-center gap-2 mb-1">
-            <button onClick={toggle}
-              className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
-              aria-label="Toggle dark mode">
-              {dark ? <Sun size={16} /> : <Moon size={16} />}
-            </button>
-            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          </div>
+          )}
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button onClick={toggle}
+            className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+            aria-label="Toggle dark mode">
+            {dark ? <Sun size={15} /> : <Moon size={15} />}
+          </button>
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
         </div>
       </header>
 
