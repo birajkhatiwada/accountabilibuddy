@@ -75,6 +75,12 @@ export default function MemberProfile() {
   const [proofOpen, setProofOpen] = useState({})
   const [proofNoteInputs, setProofNoteInputs] = useState({})
   const [uploadingPhoto, setUploadingPhoto] = useState({})
+  const [bio, setBio] = useState('')
+  const [status, setStatus] = useState('')
+  const [editingBio, setEditingBio] = useState(false)
+  const [editingStatus, setEditingStatus] = useState(false)
+  const [bioInput, setBioInput] = useState('')
+  const [statusInput, setStatusInput] = useState('')
   const saveTimers = useRef({})
   const confettiFired = useRef(false)
 
@@ -88,7 +94,14 @@ export default function MemberProfile() {
   useEffect(() => {
     if (!sessionId) return
     return onSnapshot(sessionDoc, snap => {
-      if (snap.exists()) { setMembers(snap.data().names || []); setAvatars(snap.data().avatars || {}); setPenalty(snap.data().penalty ?? 15) }
+      if (snap.exists()) {
+        const d = snap.data()
+        setMembers(d.names || [])
+        setAvatars(d.avatars || {})
+        setPenalty(d.penalty ?? 15)
+        setBio(d.bios?.[name] || '')
+        setStatus(d.statuses?.[name] || '')
+      }
     })
   }, [sessionId])
 
@@ -334,6 +347,8 @@ export default function MemberProfile() {
   const markFailed = async () => { await updateDoc(doc(db, 'entries', entry.id), { status: 'failed' }); setConfirmFail(false) }
   const deleteMember = async () => { await setDoc(sessionDoc, { names: members.filter(m => m !== name) }, { merge: true }); navigate(`/${sessionId}`) }
   const saveAvatar = async (emoji) => { await setDoc(sessionDoc, { avatars: { ...avatars, [name]: emoji } }, { merge: true }); setPickingAvatar(false) }
+  const saveBio = async (val) => { await setDoc(sessionDoc, { bios: { [name]: val.trim() } }, { merge: true }); setEditingBio(false) }
+  const saveStatus = async (val) => { await setDoc(sessionDoc, { statuses: { [name]: val.trim() } }, { merge: true }); setEditingStatus(false) }
 
   // ── chart ─────────────────────────────────────────────────────────────────
 
@@ -388,7 +403,7 @@ export default function MemberProfile() {
       {/* Hero */}
       <div className={`-mx-4 bg-gradient-to-br ${color} relative overflow-hidden px-6 pt-5 pb-0`}>
         {/* Background texture */}
-        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: `radial-gradient(circle, white 1px, transparent 1px)`, backgroundSize: '22px 22px' }} />
+        <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: `radial-gradient(circle, white 1px, transparent 1px)`, backgroundSize: '22px 22px' }} />
         <div className="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-white/10" />
         <div className="absolute -left-8 bottom-0 w-40 h-40 rounded-full bg-black/10" />
 
@@ -424,8 +439,29 @@ export default function MemberProfile() {
               <Pencil size={9} className="text-white" />
             </span>
           </button>
-          <div className="pb-1">
+          <div className="pb-1 flex-1 min-w-0">
             <h2 className="text-3xl font-black text-white leading-none tracking-tight">{name}</h2>
+
+            {/* Editable status */}
+            {editingStatus ? (
+              <input autoFocus value={statusInput}
+                onChange={e => setStatusInput(e.target.value)}
+                onBlur={() => saveStatus(statusInput)}
+                onKeyDown={e => { if (e.key === 'Enter') saveStatus(statusInput); if (e.key === 'Escape') setEditingStatus(false) }}
+                maxLength={40}
+                placeholder="What's your vibe? e.g. 💪 locked in"
+                className="mt-2 w-full bg-white/10 border border-white/20 rounded-lg px-2.5 py-1 text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/40"
+              />
+            ) : (
+              <button onClick={() => { setStatusInput(status); setEditingStatus(true) }}
+                className="mt-1.5 flex items-center gap-1 group">
+                <span className="text-xs text-white/60 group-hover:text-white/80 transition-colors">
+                  {status || '+ add status'}
+                </span>
+                <Pencil size={9} className="text-white/20 group-hover:text-white/50 transition-colors" />
+              </button>
+            )}
+
             <div className="flex items-center gap-1.5 flex-wrap mt-2">
               {entry?.status === 'completed' && <span className="text-[11px] font-bold text-emerald-200 bg-emerald-500/25 px-2.5 py-0.5 rounded-full">✅ Week done!</span>}
               {entry?.status === 'failed'    && <span className="text-[11px] font-bold text-red-200 bg-red-500/25 px-2.5 py-0.5 rounded-full">❌ Week failed</span>}
@@ -438,6 +474,29 @@ export default function MemberProfile() {
 
 
         <div className="h-1 -mx-6 bg-black/10" />
+      </div>
+
+      {/* Bio */}
+      <div className="px-1">
+        {editingBio ? (
+          <textarea autoFocus value={bioInput}
+            onChange={e => setBioInput(e.target.value)}
+            onBlur={() => saveBio(bioInput)}
+            onKeyDown={e => { if (e.key === 'Escape') setEditingBio(false) }}
+            maxLength={120}
+            rows={2}
+            placeholder="Write a short bio…"
+            className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-emerald-500 resize-none transition-colors"
+          />
+        ) : (
+          <button onClick={() => { setBioInput(bio); setEditingBio(true) }}
+            className="flex items-start gap-1.5 group w-full text-left">
+            <span className="text-sm text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200 transition-colors leading-snug">
+              {bio || 'Add a bio…'}
+            </span>
+            <Pencil size={10} className="text-zinc-300 dark:text-zinc-700 group-hover:text-zinc-400 transition-colors mt-1 shrink-0" />
+          </button>
+        )}
       </div>
 
 
