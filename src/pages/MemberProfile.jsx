@@ -25,6 +25,27 @@ const AVATAR_COLORS = [
   'from-pink-500 to-rose-600',     'from-indigo-500 to-blue-600',
   'from-teal-500 to-emerald-600',  'from-fuchsia-500 to-pink-600',
 ]
+
+const BANNER_COLORS = [
+  'from-violet-500 to-purple-600',
+  'from-blue-500 to-cyan-500',
+  'from-emerald-500 to-teal-600',
+  'from-orange-500 to-amber-500',
+  'from-pink-500 to-rose-500',
+  'from-indigo-500 to-violet-600',
+  'from-red-500 to-orange-500',
+  'from-teal-400 to-cyan-600',
+  'from-fuchsia-500 to-pink-500',
+  'from-slate-600 to-zinc-700',
+]
+
+const BANNER_COLOR_PREVIEWS = [
+  '#8b5cf6','#3b82f6','#10b981','#f97316',
+  '#ec4899','#6366f1','#ef4444','#14b8a6',
+  '#d946ef','#475569',
+]
+
+const VIBE_EMOJIS = ['⚡','🔥','🌊','🎯','💎','🦁','🚀','🌈','🌙','⭐','🎸','🏔️','🐉','🌺','🦋','💫','🍀','🎃','🦅','🌋']
 const AVATAR_HEX = [
   '#8b5cf6','#3b82f6','#10b981','#f97316','#ec4899','#6366f1','#14b8a6','#d946ef',
 ]
@@ -81,6 +102,9 @@ export default function MemberProfile() {
   const [editingStatus, setEditingStatus] = useState(false)
   const [bioInput, setBioInput] = useState('')
   const [statusInput, setStatusInput] = useState('')
+  const [bannerColorIdx, setBannerColorIdx] = useState(null)
+  const [bannerVibe, setBannerVibe] = useState('')
+  const [showCustomize, setShowCustomize] = useState(false)
   const saveTimers = useRef({})
   const confettiFired = useRef(false)
 
@@ -101,6 +125,8 @@ export default function MemberProfile() {
         setPenalty(d.penalty ?? 15)
         setBio(d.bios?.[name] || '')
         setStatus(d.statuses?.[name] || '')
+        setBannerColorIdx(d.bannerColors?.[name] ?? null)
+        setBannerVibe(d.bannerVibes?.[name] || '')
       }
     })
   }, [sessionId])
@@ -140,8 +166,18 @@ export default function MemberProfile() {
   // ── derived ──────────────────────────────────────────────────────────────────
 
   const colorIdx = members.indexOf(name) % AVATAR_COLORS.length
-  const color = AVATAR_COLORS[colorIdx < 0 ? 0 : colorIdx] || AVATAR_COLORS[0]
+  const color = bannerColorIdx !== null ? BANNER_COLORS[bannerColorIdx] : (AVATAR_COLORS[colorIdx < 0 ? 0 : colorIdx] || AVATAR_COLORS[0])
   const colorHex = AVATAR_HEX[colorIdx < 0 ? 0 : colorIdx] || AVATAR_HEX[0]
+
+  // ── badges ────────────────────────────────────────────────────────────────
+  const badges = []
+  const completedWeeks = allEntries.filter(e => (e.nameLower || e.name?.toLowerCase()) === name.toLowerCase() && e.status === 'completed').length
+  const daysThisWeek = weekDays.filter(d => dateKey(d) <= todayKey && dayHasActivity(dateKey(d))).length
+  if (daysThisWeek >= 7) badges.push({ emoji: '💯', label: 'Perfect week' })
+  if (daysThisWeek >= 3 && daysThisWeek < 7) badges.push({ emoji: '🔥', label: 'On fire' })
+  if (streak >= 5) badges.push({ emoji: '👑', label: 'Streak king' })
+  if (completedWeeks >= 4) badges.push({ emoji: '🏆', label: 'Veteran' })
+  if (completedWeeks >= 1 && entry?.status === 'active' && allEntries.find(e => (e.nameLower || e.name?.toLowerCase()) === name.toLowerCase() && e.status === 'failed')) badges.push({ emoji: '💪', label: 'Comeback' })
 
   const prevEntry = allEntries
     .filter(e => (e.nameLower || e.name?.toLowerCase()) === name.toLowerCase() && e.weekId < weekId)
@@ -349,6 +385,8 @@ export default function MemberProfile() {
   const saveAvatar = async (emoji) => { await setDoc(sessionDoc, { avatars: { ...avatars, [name]: emoji } }, { merge: true }); setPickingAvatar(false) }
   const saveBio = async (val) => { await setDoc(sessionDoc, { bios: { [name]: val.trim() } }, { merge: true }); setEditingBio(false) }
   const saveStatus = async (val) => { await setDoc(sessionDoc, { statuses: { [name]: val.trim() } }, { merge: true }); setEditingStatus(false) }
+  const saveBannerColor = async (idx) => { setBannerColorIdx(idx); await setDoc(sessionDoc, { bannerColors: { [name]: idx } }, { merge: true }) }
+  const saveBannerVibe = async (emoji) => { setBannerVibe(emoji); await setDoc(sessionDoc, { bannerVibes: { [name]: emoji } }, { merge: true }) }
 
   // ── chart ─────────────────────────────────────────────────────────────────
 
@@ -406,10 +444,18 @@ export default function MemberProfile() {
         <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: `radial-gradient(circle, white 1px, transparent 1px)`, backgroundSize: '22px 22px' }} />
         <div className="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-white/10" />
         <div className="absolute -left-8 bottom-0 w-40 h-40 rounded-full bg-black/10" />
+        {/* Vibe emoji watermark */}
+        {bannerVibe && <div className="absolute right-4 bottom-6 text-7xl opacity-20 select-none pointer-events-none">{bannerVibe}</div>}
 
         {/* Week label + actions */}
         <div className="relative flex items-center justify-between mb-5">
-          <p className="text-white/50 text-[11px] font-semibold uppercase tracking-widest">{formatWeekLabel(weekId)}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-white/50 text-[11px] font-semibold uppercase tracking-widest">{formatWeekLabel(weekId)}</p>
+            <button onClick={() => setShowCustomize(v => !v)}
+              className="text-white/30 hover:text-white/60 transition-colors text-[11px]">
+              🎨
+            </button>
+          </div>
           <div className="flex items-center gap-1">
             <button onClick={handleShare}
               className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/15 hover:bg-white/25 text-white/80 text-[11px] font-semibold transition-all">
@@ -471,6 +517,56 @@ export default function MemberProfile() {
           </div>
         </div>
 
+
+        {/* Punch card */}
+        <div className="relative flex items-center gap-1.5 mb-4">
+          {weekDays.map((d, i) => {
+            const k = dateKey(d)
+            const future = k > todayKey
+            const logged = !future && dayHasActivity(k)
+            return (
+              <div key={i} className="flex flex-col items-center gap-1">
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black transition-all ${
+                  logged ? 'bg-white/30 text-white shadow-sm' :
+                  future ? 'bg-white/5 text-white/20' :
+                  'bg-black/15 text-white/30'
+                }`}>
+                  {logged ? '✓' : DAY_LABELS[i][0]}
+                </div>
+                <span className="text-[8px] text-white/30 font-semibold uppercase">{DAY_LABELS[i].slice(0,1)}</span>
+              </div>
+            )
+          })}
+          {badges.length > 0 && (
+            <div className="ml-auto flex items-center gap-1">
+              {badges.map((b, i) => (
+                <span key={i} title={b.label} className="text-lg cursor-default">{b.emoji}</span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Customize panel */}
+        {showCustomize && (
+          <div className="relative bg-black/20 backdrop-blur-sm rounded-2xl p-3 mb-3 space-y-3">
+            <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest">Customize banner</p>
+            <div className="flex flex-wrap gap-2">
+              {BANNER_COLORS.map((_, i) => (
+                <button key={i} onClick={() => saveBannerColor(i)}
+                  className={`w-6 h-6 rounded-full transition-all ${bannerColorIdx === i ? 'ring-2 ring-white ring-offset-1 ring-offset-transparent scale-110' : 'opacity-70 hover:opacity-100'}`}
+                  style={{ background: BANNER_COLOR_PREVIEWS[i] }} />
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {VIBE_EMOJIS.map(e => (
+                <button key={e} onClick={() => saveBannerVibe(bannerVibe === e ? '' : e)}
+                  className={`text-xl transition-all ${bannerVibe === e ? 'scale-125' : 'opacity-50 hover:opacity-100'}`}>
+                  {e}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="h-1 -mx-6 bg-black/10" />
       </div>
