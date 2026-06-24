@@ -4,7 +4,7 @@ import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, addDo
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { db, storage } from '../firebase'
 import { getCurrentWeekId, formatWeekLabel, formatTimestamp } from '../utils'
-import { CheckCircle, XCircle, AlertTriangle, ArrowLeft, Pencil, X, Trash2, Camera } from 'lucide-react'
+import { CheckCircle, XCircle, AlertTriangle, ArrowLeft, Pencil, X, Trash2, Camera, Link2 } from 'lucide-react'
 import WeekCalendar from '../components/WeekCalendar'
 import GoalBuilder from '../components/GoalBuilder'
 import Highcharts from 'highcharts'
