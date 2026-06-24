@@ -581,6 +581,21 @@ export default function MemberProfile() {
             </div>
           )}
 
+          {/* Proof note — right after goal cards */}
+          {entry.status === 'active' && !editingGoals && (
+            <div className="flex gap-2">
+              <input type="text" placeholder="Add a note or proof for today..."
+                value={proofInput} onChange={e => setProofInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addProof()}
+                className="flex-1 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors"
+              />
+              <button onClick={addProof} disabled={submitting || !proofInput.trim()}
+                className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white rounded-xl px-4 transition-colors">
+                <Send size={16} />
+              </button>
+            </div>
+          )}
+
           {/* Chart */}
           {entry.goalItems?.length > 0 && (
             <div className="bg-zinc-100/40 dark:bg-zinc-800/40 rounded-2xl p-4">
@@ -654,20 +669,9 @@ export default function MemberProfile() {
           {/* Notes / photos / cheer for selected day */}
           <WeekCalendar entryId={entry.id} selectedDay={selectedDay} logs={logs} />
 
-          {/* Proof text + mark done/failed */}
+          {/* Mark done/failed */}
           {entry.status === 'active' && (
             <div className="space-y-3">
-              <div className="flex gap-2">
-                <input type="text" placeholder="Drop some proof..."
-                  value={proofInput} onChange={e => setProofInput(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && addProof()}
-                  className="flex-1 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors"
-                />
-                <button onClick={addProof} disabled={submitting || !proofInput.trim()}
-                  className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white rounded-xl px-4 transition-colors">
-                  <Send size={16} />
-                </button>
-              </div>
               <div className="flex gap-2">
                 <button onClick={markDone} className="flex-1 flex items-center justify-center gap-2 bg-emerald-900/30 hover:bg-emerald-900/50 border border-emerald-800/50 text-emerald-400 rounded-xl py-3 text-sm font-bold transition-colors">
                   <CheckCircle size={15} /> Week complete
