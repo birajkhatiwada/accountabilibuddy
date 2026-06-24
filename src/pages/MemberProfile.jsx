@@ -436,25 +436,6 @@ export default function MemberProfile() {
           </div>
         </div>
 
-        {/* Stats row */}
-        {entry && (
-          <div className="relative flex gap-5 mb-4">
-            <div>
-              <p className="text-white font-black text-xl leading-none">{entry.goalItems?.length || 0}</p>
-              <p className="text-white/40 text-[10px] font-semibold uppercase tracking-wide mt-0.5">Goals</p>
-            </div>
-            <div className="w-px bg-white/20" />
-            <div>
-              <p className="text-white font-black text-xl leading-none">{daysLogged}</p>
-              <p className="text-white/40 text-[10px] font-semibold uppercase tracking-wide mt-0.5">Days logged</p>
-            </div>
-            <div className="w-px bg-white/20" />
-            <div>
-              <p className="text-white font-black text-xl leading-none">{streak}</p>
-              <p className="text-white/40 text-[10px] font-semibold uppercase tracking-wide mt-0.5">Wk streak</p>
-            </div>
-          </div>
-        )}
 
         {/* Week progress bar flush at bottom */}
         {entry?.status === 'active' && entry?.goalItems?.length > 0 && (() => {
