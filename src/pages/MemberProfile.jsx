@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, addDoc, setDoc, getDoc, Timestamp } from 'firebase/firestore'
-import { db } from '../firebase'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { db, storage } from '../firebase'
 import { getCurrentWeekId, formatWeekLabel, formatTimestamp } from '../utils'
-import { CheckCircle, XCircle, Send, AlertTriangle, ArrowLeft, Pencil, X, Trash2, Link2 } from 'lucide-react'
+import { CheckCircle, XCircle, AlertTriangle, ArrowLeft, Pencil, X, Trash2, Camera } from 'lucide-react'
 import WeekCalendar from '../components/WeekCalendar'
 import GoalBuilder from '../components/GoalBuilder'
 import Highcharts from 'highcharts'
@@ -61,7 +62,6 @@ export default function MemberProfile() {
   const [avatars, setAvatars] = useState({})
   const [penalty, setPenalty] = useState(15)
   const [goalsInput, setGoalsInput] = useState([])
-  const [proofInput, setProofInput] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [editingGoals, setEditingGoals] = useState(false)
   const [confirmFail, setConfirmFail] = useState(false)
@@ -73,10 +73,18 @@ export default function MemberProfile() {
   const [selectedDay, setSelectedDay] = useState(todayKey)
   const [localCounts, setLocalCounts] = useState({})
   const [localTotals, setLocalTotals] = useState({})
+  const [proofOpen, setProofOpen] = useState({})
+  const [proofNoteInputs, setProofNoteInputs] = useState({})
+  const [uploadingPhoto, setUploadingPhoto] = useState({})
   const saveTimers = useRef({})
   const confettiFired = useRef(false)
 
   const sessionDoc = doc(db, 'sessions', sessionId)
+
+  useEffect(() => {
+    setProofNoteInputs({})
+    setProofOpen({})
+  }, [selectedDay])
 
   useEffect(() => {
     if (!sessionId) return
@@ -216,6 +224,35 @@ export default function MemberProfile() {
       Object.values(log.totals || {}).some(v => v > 0)
   }
 
+  // ── per-goal proof helpers ────────────────────────────────────────────────
+
+  const getGoalProof = (goalText) => logs[selectedDay]?.proof?.[goalText] || {}
+
+  const setGoalProofNote = (goalText, text) => {
+    setProofNoteInputs(p => ({ ...p, [goalText]: text }))
+    clearTimeout(saveTimers.current[`proof__${goalText}`])
+    saveTimers.current[`proof__${goalText}`] = setTimeout(async () => {
+      const current = getDayLog(selectedDay)
+      await setDoc(doc(db, 'entries', entry.id, 'dailyLogs', selectedDay), {
+        ...current,
+        proof: { ...(current.proof || {}), [goalText]: { ...(current.proof?.[goalText] || {}), note: text } }
+      })
+    }, 500)
+  }
+
+  const uploadGoalPhoto = async (goalText, file) => {
+    setUploadingPhoto(p => ({ ...p, [goalText]: true }))
+    const storageRef = ref(storage, `proofs/${entry.id}/${selectedDay}/${goalText.replace(/[^a-z0-9]/gi, '_')}`)
+    await uploadBytes(storageRef, file)
+    const url = await getDownloadURL(storageRef)
+    const current = getDayLog(selectedDay)
+    await setDoc(doc(db, 'entries', entry.id, 'dailyLogs', selectedDay), {
+      ...current,
+      proof: { ...(current.proof || {}), [goalText]: { ...(current.proof?.[goalText] || {}), photoUrl: url } }
+    })
+    setUploadingPhoto(p => ({ ...p, [goalText]: false }))
+  }
+
   // ── handlers ──────────────────────────────────────────────────────────────
 
   const handleCarryOver = () => {
@@ -254,13 +291,44 @@ export default function MemberProfile() {
     setEditingGoals(false); setSubmitting(false)
   }
 
-  const addProof = async () => {
-    if (!proofInput.trim() || !entry) return
-    setSubmitting(true)
-    await updateDoc(doc(db, 'entries', entry.id), {
-      updates: arrayUnion({ text: proofInput.trim(), timestamp: Timestamp.now() })
-    })
-    setProofInput(''); setSubmitting(false)
+  const renderProofSection = (goalText, isFutureDay) => {
+    if (isFutureDay || entry?.status !== 'active') return null
+    const saved = getGoalProof(goalText)
+    const isOpen = proofOpen[goalText]
+    const noteVal = proofNoteInputs[goalText] ?? saved.note ?? ''
+    const uploading = uploadingPhoto[goalText]
+    if (!isOpen && !saved.note && !saved.photoUrl) {
+      return (
+        <button onClick={() => setProofOpen(p => ({ ...p, [goalText]: true }))}
+          className="mt-2 flex items-center gap-1 text-[11px] text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors">
+          <Camera size={11} /> Add proof
+        </button>
+      )
+    }
+    return (
+      <div className="mt-2 space-y-2">
+        {saved.photoUrl && (
+          <img src={saved.photoUrl} alt="proof" className="w-full rounded-xl object-cover max-h-52" />
+        )}
+        {uploading && (
+          <div className="flex items-center gap-2 text-xs text-zinc-500">
+            <div className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+            Uploading…
+          </div>
+        )}
+        <div className="flex gap-2">
+          <input type="text" value={noteVal} placeholder="Add a note…"
+            onChange={e => setGoalProofNote(goalText, e.target.value)}
+            className="flex-1 text-xs bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-emerald-500 transition-colors"
+          />
+          <label className="cursor-pointer flex items-center justify-center w-8 h-8 shrink-0 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:border-emerald-500 transition-colors">
+            <Camera size={13} className="text-zinc-400" />
+            <input type="file" accept="image/*" capture="environment" className="hidden"
+              onChange={e => { const f = e.target.files?.[0]; if (f) uploadGoalPhoto(goalText, f); e.target.value = '' }} />
+          </label>
+        </div>
+      </div>
+    )
   }
 
   const markDone   = () => updateDoc(doc(db, 'entries', entry.id), { status: 'completed' })
@@ -480,34 +548,35 @@ export default function MemberProfile() {
                 if (goal.type === 'habit') {
                   const checked = !!logs[selectedDay]?.habits?.[goal.text]
                   return (
-                    <button key={gi}
-                      onClick={() => !isFutureDay && toggleHabit(goal.text)}
-                      disabled={isFutureDay}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all active:scale-[0.99] disabled:opacity-40 ${
-                        checked
-                          ? 'bg-emerald-500/10 border-emerald-500/30'
-                          : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
-                      }`}>
-                      <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${
-                        checked ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-600'
-                      }`}>
-                        {checked && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-                      </span>
-                      <span className={`flex-1 text-sm font-semibold text-left ${checked ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>
-                        {goal.text}
-                      </span>
-                      <div className="flex gap-0.5 shrink-0">
-                        {weekDays.map((d, i) => {
-                          const k = dateKey(d)
-                          const done = !!logs[k]?.habits?.[goal.text]
-                          const isSel = k === selectedDay
-                          return <span key={i} className={`w-2 h-2 rounded-sm transition-all ${
-                            done ? 'bg-emerald-500' : isSel ? 'bg-zinc-400 dark:bg-zinc-500' : k > todayKey ? 'bg-zinc-100 dark:bg-zinc-800' : 'bg-zinc-200 dark:bg-zinc-700'
-                          }`} />
-                        })}
-                      </div>
-                      <span className="text-[11px] font-bold text-zinc-400 shrink-0 w-5 text-right">{weeklyHabitDays(goal.text)}/7</span>
-                    </button>
+                    <div key={gi} className={`rounded-2xl border transition-all ${
+                      checked ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800'
+                    }`}>
+                      <button
+                        onClick={() => !isFutureDay && toggleHabit(goal.text)}
+                        disabled={isFutureDay}
+                        className="w-full flex items-center gap-3 px-4 py-3 disabled:opacity-40 active:scale-[0.99] transition-all">
+                        <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${
+                          checked ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-600'
+                        }`}>
+                          {checked && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                        </span>
+                        <span className={`flex-1 text-sm font-semibold text-left ${checked ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>
+                          {goal.text}
+                        </span>
+                        <div className="flex gap-0.5 shrink-0">
+                          {weekDays.map((d, i) => {
+                            const k = dateKey(d)
+                            const done = !!logs[k]?.habits?.[goal.text]
+                            const isSel = k === selectedDay
+                            return <span key={i} className={`w-2 h-2 rounded-sm transition-all ${
+                              done ? 'bg-emerald-500' : isSel ? 'bg-zinc-400 dark:bg-zinc-500' : k > todayKey ? 'bg-zinc-100 dark:bg-zinc-800' : 'bg-zinc-200 dark:bg-zinc-700'
+                            }`} />
+                          })}
+                        </div>
+                        <span className="text-[11px] font-bold text-zinc-400 shrink-0 w-5 text-right">{weeklyHabitDays(goal.text)}/7</span>
+                      </button>
+                      <div className="px-4 pb-3">{renderProofSection(goal.text, isFutureDay)}</div>
+                    </div>
                   )
                 }
 
@@ -546,6 +615,7 @@ export default function MemberProfile() {
                           </div>
                         )
                       })}
+                      {renderProofSection(goal.text, isFutureDay)}
                     </div>
                   )
                 }
@@ -575,24 +645,10 @@ export default function MemberProfile() {
                       )}
                       <Counter value={dayVal} unit={goal.unit} onChange={v => setDayCount(goal.text, v)} />
                     </div>
+                    {renderProofSection(goal.text, isFutureDay)}
                   </div>
                 )
               })}
-            </div>
-          )}
-
-          {/* Proof note — right after goal cards */}
-          {entry.status === 'active' && !editingGoals && (
-            <div className="flex gap-2">
-              <input type="text" placeholder="Add a note or proof for today..."
-                value={proofInput} onChange={e => setProofInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && addProof()}
-                className="flex-1 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors"
-              />
-              <button onClick={addProof} disabled={submitting || !proofInput.trim()}
-                className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white rounded-xl px-4 transition-colors">
-                <Send size={16} />
-              </button>
             </div>
           )}
 
