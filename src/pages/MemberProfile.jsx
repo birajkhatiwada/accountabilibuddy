@@ -497,7 +497,8 @@ export default function MemberProfile() {
                 onKeyDown={e => { if (e.key === 'Enter') saveStatus(statusInput); if (e.key === 'Escape') setEditingStatus(false) }}
                 maxLength={40}
                 placeholder="What's your vibe? e.g. 💪 locked in"
-                className="mt-2 w-full bg-white/10 border border-white/20 rounded-lg px-2.5 py-1 text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/40"
+                className="mt-2 w-full bg-white/10 border border-white/20 rounded-lg px-2.5 py-1 text-white placeholder-white/30 focus:outline-none focus:border-white/40"
+                style={{ fontSize: 16 }}
               />
             ) : (
               <button onClick={() => { setStatusInput(status); setEditingStatus(true) }}
@@ -522,15 +523,21 @@ export default function MemberProfile() {
         {/* Bio inside banner */}
         <div className="relative mb-4">
           {editingBio ? (
-            <textarea autoFocus value={bioInput}
-              onChange={e => setBioInput(e.target.value)}
-              onBlur={() => saveBio(bioInput)}
-              onKeyDown={e => { if (e.key === 'Escape') setEditingBio(false) }}
-              maxLength={120}
-              rows={2}
-              placeholder="Write a short bio…"
-              className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-white/40 resize-none"
-            />
+            <div className="space-y-2">
+              <textarea autoFocus value={bioInput}
+                onChange={e => setBioInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Escape') saveBio(bioInput) }}
+                maxLength={120}
+                rows={2}
+                placeholder="Write a short bio…"
+                className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white placeholder-white/30 focus:outline-none focus:border-white/40 resize-none"
+                style={{ fontSize: 16 }}
+              />
+              <button onClick={() => saveBio(bioInput)}
+                className="px-3 py-1 bg-white/20 hover:bg-white/30 text-white text-xs font-bold rounded-full transition-all">
+                Done
+              </button>
+            </div>
           ) : (
             <button onClick={() => { setBioInput(bio); setEditingBio(true) }}
               className="flex items-start gap-1.5 group text-left w-full">
