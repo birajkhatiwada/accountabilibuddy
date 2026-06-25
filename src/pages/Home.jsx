@@ -459,113 +459,80 @@ export default function Home() {
                   role="button"
                   tabIndex={0}
                   onKeyDown={ev => ev.key === 'Enter' && navigate(`/${sessionId}/member/${encodeURIComponent(name)}`)}
-                  className={`w-full text-left rounded-2xl overflow-hidden transition-colors cursor-pointer ${
-                    !e
-                      ? 'bg-zinc-50/50 dark:bg-zinc-900/50 border border-dashed border-zinc-300 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-500'
-                      : 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
-                  }`}
+                  className="flex gap-3 px-2 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/60 cursor-pointer transition-colors"
                 >
-                  {/* Top: profile */}
-                  <div className="flex items-center gap-3 px-4 py-3">
-                    <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${color} flex items-center justify-center shrink-0`}>
+                  {/* Avatar */}
+                  <div className="relative shrink-0">
+                    <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${color} flex items-center justify-center`}>
                       {avatars[name]
                         ? <span className="text-2xl">{avatars[name]}</span>
                         : <span className="text-white font-black text-lg">{name[0].toUpperCase()}</span>
                       }
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`font-bold text-sm leading-tight ${!e ? 'text-zinc-500' : 'text-zinc-900 dark:text-white'}`}>{name}</p>
-                      <p className="text-zinc-500 dark:text-zinc-600 text-[11px]">
-                        {!e ? 'No goals submitted yet' : streak >= 2 ? `🔥 ${streak}-week streak` : 'This week'}
-                      </p>
-                    </div>
-                    <span className="text-lg">
+                    <span className="absolute -bottom-0.5 -right-0.5 text-sm leading-none">
                       {e?.status === 'completed' ? '✅' : e?.status === 'failed' ? '❌' : e ? '🔥' : '💤'}
                     </span>
                   </div>
 
-                  {/* Divider */}
-                  <div className="h-px bg-zinc-200 dark:bg-zinc-800 mx-4" />
+                  {/* Right content */}
+                  <div className="flex-1 min-w-0 space-y-1.5">
+                    {/* Name + streak */}
+                    <div className="flex items-baseline gap-2">
+                      <p className={`font-bold text-sm leading-tight ${!e ? 'text-zinc-400' : 'text-zinc-900 dark:text-white'}`}>{name}</p>
+                      {streak >= 2 && <span className="text-[10px] text-zinc-400 dark:text-zinc-500">🔥 {streak}w</span>}
+                      {!e && <span className="text-[10px] text-zinc-400 italic">no goals yet</span>}
+                    </div>
 
-                  {/* Bottom: goals */}
-                  <div className="px-4 py-3 flex flex-col gap-2">
-                    {e?.goalItems?.length > 0 ? (
-                      e.goalItems.map((g, i) => {
-                        const logs = memberLogs[e.id] || {}
-                        const prog = getGoalProgress(e?.id, g)
-
-                        if (g.subGoals?.length > 0) {
-                          return (
-                            <div key={i} className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                <span className="text-[9px] font-black w-3.5 h-3.5 rounded bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">#</span>
-                                <span className="text-zinc-700 dark:text-zinc-300 text-xs font-semibold truncate">{g.text}</span>
-                              </div>
-                              <div className="pl-5 space-y-1">
-                                {g.subGoals.map((sg, si) => {
-                                  const k = `${g.text}::${sg.text}`
-                                  const done = Object.values(logs).reduce((s, d) => s + (Number(d.counts?.[k]) || 0), 0)
-                                  const tgt = Number(sg.target) || null
-                                  const pct = tgt ? Math.min(1, done / tgt) : null
-                                  return (
-                                    <div key={si}>
-                                      <div className="flex items-center gap-2 mb-0.5">
-                                        <span className="text-zinc-500 dark:text-zinc-400 text-[10px] flex-1 truncate">{sg.text}</span>
-                                        <span className="text-zinc-500 text-[10px] font-semibold shrink-0">
-                                          {tgt ? `${done}/${tgt}${sg.unit ? ' ' + sg.unit : ''}` : `${done}${sg.unit ? ' ' + sg.unit : ''}`}
-                                        </span>
-                                      </div>
-                                      {pct !== null && (
-                                        <div className="bg-zinc-100 dark:bg-zinc-800 rounded-full h-0.5 overflow-hidden">
-                                          <div className={`h-full rounded-full ${pct >= 1 ? 'bg-emerald-400' : pct >= 0.5 ? 'bg-amber-400' : 'bg-zinc-500'}`}
-                                            style={{ width: `${Math.round(pct * 100)}%` }} />
-                                        </div>
-                                      )}
-                                    </div>
-                                  )
-                                })}
-                              </div>
-                            </div>
-                          )
-                        }
-
-                        const label = g.type === 'habit'
-                          ? `${prog.done}/7 days`
-                          : prog.total
-                            ? `${prog.done}/${prog.total}${g.unit ? ' ' + g.unit : ''}`
-                            : `${prog.done}${g.unit ? ' ' + g.unit : ''}`
+                    {/* Goals */}
+                    {e?.goalItems?.length > 0 && e.goalItems.map((g, i) => {
+                      const logs = memberLogs[e.id] || {}
+                      const prog = getGoalProgress(e?.id, g)
+                      if (g.subGoals?.length > 0) {
                         return (
-                          <div key={i}>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className={`text-[9px] font-black w-3.5 h-3.5 rounded flex items-center justify-center shrink-0 ${
-                                g.type === 'habit' ? 'bg-violet-500/20 text-violet-400' : 'bg-blue-500/20 text-blue-400'
-                              }`}>
-                                {g.type === 'habit' ? '✓' : '#'}
-                              </span>
-                              <span className="text-zinc-700 dark:text-zinc-300 text-xs flex-1 truncate">{g.text}</span>
-                              <span className="text-zinc-500 text-[10px] font-semibold shrink-0">{label}</span>
-                            </div>
-                            {prog.pct !== null && (
-                              <div className="bg-zinc-100 dark:bg-zinc-800 rounded-full h-1 overflow-hidden">
-                                <div
-                                  className={`h-full rounded-full transition-all ${
-                                    prog.pct >= 1 ? 'bg-emerald-400' :
-                                    prog.pct >= 0.5 ? 'bg-amber-400' : 'bg-zinc-500'
-                                  }`}
-                                  style={{ width: `${Math.round(prog.pct * 100)}%` }}
-                                />
-                              </div>
-                            )}
+                          <div key={i} className="space-y-1">
+                            <p className="text-xs text-zinc-600 dark:text-zinc-400 font-medium truncate">{g.text}</p>
+                            {g.subGoals.map((sg, si) => {
+                              const k = `${g.text}::${sg.text}`
+                              const done = Object.values(logs).reduce((s, d) => s + (Number(d.counts?.[k]) || 0), 0)
+                              const tgt = Number(sg.target) || null
+                              const pct = tgt ? Math.min(1, done / tgt) : null
+                              return (
+                                <div key={si} className="flex items-center gap-2 pl-2">
+                                  <span className="text-[10px] text-zinc-400 flex-1 truncate">{sg.text}</span>
+                                  <span className="text-[10px] text-zinc-400 shrink-0">{tgt ? `${done}/${tgt}` : done}</span>
+                                  {pct !== null && (
+                                    <div className="w-12 bg-zinc-200 dark:bg-zinc-700 rounded-full h-1 overflow-hidden shrink-0">
+                                      <div className={`h-full rounded-full ${pct >= 1 ? 'bg-emerald-400' : 'bg-zinc-400'}`} style={{ width: `${Math.round(pct * 100)}%` }} />
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })}
                           </div>
                         )
-                      })
-                    ) : (
-                      <p className="text-zinc-500 dark:text-zinc-600 text-xs italic">No goals set yet — tap to add</p>
-                    )}
+                      }
+                      const label = g.type === 'habit'
+                        ? `${prog.done}/7`
+                        : prog.total ? `${prog.done}/${prog.total}` : `${prog.done}`
+                      return (
+                        <div key={i} className="flex items-center gap-2">
+                          <span className="text-xs text-zinc-600 dark:text-zinc-400 flex-1 truncate">{g.text}</span>
+                          <span className="text-[10px] text-zinc-400 shrink-0 font-medium">{label}</span>
+                          {prog.pct !== null && (
+                            <div className="w-12 bg-zinc-200 dark:bg-zinc-700 rounded-full h-1 overflow-hidden shrink-0">
+                              <div className={`h-full rounded-full transition-all ${prog.pct >= 1 ? 'bg-emerald-400' : prog.pct >= 0.5 ? 'bg-amber-400' : 'bg-zinc-400'}`}
+                                style={{ width: `${Math.round(prog.pct * 100)}%` }} />
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+
+                    {/* Log today */}
                     {e?.status === 'active' && e?.goalItems?.length > 0 && e?.name?.toLowerCase() === user?.displayName?.toLowerCase() && (
                       <button
                         onClick={ev => { ev.stopPropagation(); setQuickLogEntry(e) }}
-                        className="mt-1 w-full py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-bold transition-all"
+                        className="mt-1 px-3 py-1 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-bold transition-all"
                       >
                         + Log today
                       </button>
