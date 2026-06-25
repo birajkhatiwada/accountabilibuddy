@@ -363,62 +363,28 @@ export default function MemberProfile() {
   const renderProofSection = (goalText, isFutureDay) => {
     if (isFutureDay || !entry || entry.status === 'failed') return null
     const saved = getGoalProof(goalText)
-    const isOpen = proofOpen[goalText]
     const noteVal = proofNoteInputs[goalText] ?? saved.note ?? ''
     const uploading = uploadingPhoto[goalText]
-    // Nothing saved yet and not open — show Add proof trigger
-    if (!isOpen && !saved.note && !saved.photoUrl) {
-      return (
-        <button onClick={() => setProofOpen(p => ({ ...p, [goalText]: true }))}
-          className="mt-2 w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 text-xs text-zinc-400 dark:text-zinc-500 hover:border-emerald-400 hover:text-emerald-500 transition-all">
-          <Camera size={12} /> Add proof
-        </button>
-      )
-    }
-    // Saved but not editing — show compact preview
-    if (!isOpen && (saved.note || saved.photoUrl)) {
-      return (
-        <div className="mt-2 flex items-center gap-2 group">
-          {saved.photoUrl && <img src={saved.photoUrl} alt="proof" className="w-8 h-8 rounded-lg object-cover shrink-0" />}
-          {saved.note && <p className="flex-1 text-xs text-zinc-500 dark:text-zinc-400 truncate">"{saved.note}"</p>}
-          <button onClick={() => setProofOpen(p => ({ ...p, [goalText]: true }))}
-            className="shrink-0 text-[10px] text-zinc-400 hover:text-emerald-500 transition-colors flex items-center gap-1">
-            <Pencil size={10} /> Edit
-          </button>
-        </div>
-      )
-    }
-    // Open — show full input
     return (
       <div className="mt-2 space-y-2">
-        {/* Text note */}
+        {/* Text note — always visible, editable inline */}
         <input type="text" value={noteVal} placeholder="Add a note…"
           onChange={e => setGoalProofNote(goalText, e.target.value)}
-          onBlur={() => setProofOpen(p => ({ ...p, [goalText]: false }))}
-          autoFocus
           style={{ fontSize: 16 }}
-          className="w-full text-xs bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-emerald-500 transition-colors"
+          className="w-full text-xs bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-emerald-500 transition-colors"
         />
-        {/* Photo upload */}
-        {saved.photoUrl ? (
-          <div className="relative">
-            <img src={saved.photoUrl} alt="proof" className="w-full rounded-xl object-cover max-h-52" />
-            <label className="absolute bottom-2 right-2 cursor-pointer flex items-center gap-1 px-2 py-1 bg-black/50 text-white text-[10px] rounded-lg hover:bg-black/70 transition-colors">
-              <Camera size={10} /> Change
-              <input type="file" accept="image/*" capture="environment" className="hidden"
-                onChange={e => { const f = e.target.files?.[0]; if (f) uploadGoalPhoto(goalText, f); e.target.value = '' }} />
-            </label>
-          </div>
-        ) : (
-          <label className="cursor-pointer w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 text-xs text-zinc-400 hover:border-emerald-400 hover:text-emerald-500 transition-all">
-            {uploading
-              ? <><div className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /> Uploading…</>
-              : <><Camera size={12} /> Add photo</>
-            }
-            <input type="file" accept="image/*" capture="environment" className="hidden"
-              onChange={e => { const f = e.target.files?.[0]; if (f) uploadGoalPhoto(goalText, f); e.target.value = '' }} />
-          </label>
+        {/* Photo — show image if uploaded, then always show add/change button below */}
+        {saved.photoUrl && (
+          <img src={saved.photoUrl} alt="proof" className="w-full rounded-xl object-cover max-h-52" />
         )}
+        <label className="cursor-pointer w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 text-xs text-zinc-400 hover:border-emerald-400 hover:text-emerald-500 transition-all">
+          {uploading
+            ? <><div className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /> Uploading…</>
+            : <><Camera size={12} /> {saved.photoUrl ? 'Change photo' : 'Add photo'}</>
+          }
+          <input type="file" accept="image/*" capture="environment" className="hidden"
+            onChange={e => { const f = e.target.files?.[0]; if (f) uploadGoalPhoto(goalText, f); e.target.value = '' }} />
+        </label>
       </div>
     )
   }
