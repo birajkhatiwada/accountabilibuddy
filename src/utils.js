@@ -5,7 +5,11 @@ export function getCurrentWeekId(date = new Date()) {
   // Shift so week starts Monday (0=Mon ... 6=Sun)
   const diff = (day === 0 ? -6 : 1) - day
   d.setDate(d.getDate() + diff)
-  return d.toISOString().split('T')[0]
+  // Use local date to avoid UTC rollover marking entries as past-week mid-evening
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${dd}`
 }
 
 export function formatWeekLabel(weekId) {

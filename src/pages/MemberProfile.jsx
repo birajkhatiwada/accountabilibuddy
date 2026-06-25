@@ -50,7 +50,12 @@ const AVATAR_HEX = [
   '#8b5cf6','#3b82f6','#10b981','#f97316','#ec4899','#6366f1','#14b8a6','#d946ef',
 ]
 
-function dateKey(d) { return d.toISOString().split('T')[0] }
+function dateKey(d) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${dd}`
+}
 
 function Counter({ value, onChange, unit }) {
   return (
