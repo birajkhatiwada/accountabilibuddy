@@ -366,6 +366,7 @@ export default function MemberProfile() {
     const isOpen = proofOpen[goalText]
     const noteVal = proofNoteInputs[goalText] ?? saved.note ?? ''
     const uploading = uploadingPhoto[goalText]
+    // Nothing saved yet and not open — show Add proof trigger
     if (!isOpen && !saved.note && !saved.photoUrl) {
       return (
         <button onClick={() => setProofOpen(p => ({ ...p, [goalText]: true }))}
@@ -374,6 +375,20 @@ export default function MemberProfile() {
         </button>
       )
     }
+    // Saved but not editing — show compact preview
+    if (!isOpen && (saved.note || saved.photoUrl)) {
+      return (
+        <div className="mt-2 flex items-center gap-2 group">
+          {saved.photoUrl && <img src={saved.photoUrl} alt="proof" className="w-8 h-8 rounded-lg object-cover shrink-0" />}
+          {saved.note && <p className="flex-1 text-xs text-zinc-500 dark:text-zinc-400 truncate">"{saved.note}"</p>}
+          <button onClick={() => setProofOpen(p => ({ ...p, [goalText]: true }))}
+            className="shrink-0 text-[10px] text-zinc-400 hover:text-emerald-500 transition-colors flex items-center gap-1">
+            <Pencil size={10} /> Edit
+          </button>
+        </div>
+      )
+    }
+    // Open — show full input
     return (
       <div className="mt-2 space-y-2">
         {saved.photoUrl && (
@@ -388,6 +403,9 @@ export default function MemberProfile() {
         <div className="flex gap-2">
           <input type="text" value={noteVal} placeholder="Add a note…"
             onChange={e => setGoalProofNote(goalText, e.target.value)}
+            onBlur={() => setProofOpen(p => ({ ...p, [goalText]: false }))}
+            autoFocus
+            style={{ fontSize: 16 }}
             className="flex-1 text-xs bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-emerald-500 transition-colors"
           />
           <label className="cursor-pointer flex items-center justify-center w-8 h-8 shrink-0 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:border-emerald-500 transition-colors">
