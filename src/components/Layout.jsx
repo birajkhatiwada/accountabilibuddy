@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react'
 import { Outlet, NavLink, useParams, useNavigate, useLocation } from 'react-router-dom'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase'
-import { Target, DollarSign, Clock, Users, Rss, Moon, Sun, Copy, Check } from 'lucide-react'
+import { Target, DollarSign, Clock, Users, Rss, Moon, Sun, Copy, Check, LogOut } from 'lucide-react'
 import { useTheme } from '../ThemeContext'
+import { useAuth } from '../AuthContext'
 
 export default function Layout() {
   const { dark, toggle } = useTheme()
+  const { user, signOut } = useAuth()
   const { sessionId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
@@ -59,8 +61,12 @@ export default function Layout() {
               )}
             </div>
             <div className="flex items-center gap-2 mb-1">
+              {user && <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500">{user.displayName}</span>}
               <button onClick={toggle} className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Toggle dark mode">
                 {dark ? <Sun size={16} /> : <Moon size={16} />}
+              </button>
+              <button onClick={signOut} className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Sign out">
+                <LogOut size={15} />
               </button>
               <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             </div>
@@ -81,8 +87,12 @@ export default function Layout() {
             )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            {user && <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500">{user.displayName}</span>}
             <button onClick={toggle} className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Toggle dark mode">
               {dark ? <Sun size={15} /> : <Moon size={15} />}
+            </button>
+            <button onClick={signOut} className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Sign out">
+              <LogOut size={14} />
             </button>
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
           </div>

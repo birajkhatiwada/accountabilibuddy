@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, addDoc, setDoc, getDoc, Timestamp } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { db, storage } from '../firebase'
+import { useAuth } from '../AuthContext'
 import { getCurrentWeekId, formatWeekLabel, formatTimestamp } from '../utils'
 import { Pencil, X, Trash2, Camera, Link2 } from 'lucide-react'
 import GoalBuilder from '../components/GoalBuilder'
@@ -77,6 +78,8 @@ function Counter({ value, onChange, unit }) {
 export default function MemberProfile() {
   const { name, sessionId } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const isOwner = user?.displayName?.toLowerCase() === name?.toLowerCase()
   const weekId = getCurrentWeekId()
   const todayKey = dateKey(new Date())
 
@@ -364,14 +367,26 @@ export default function MemberProfile() {
 
   const QUICK_REACTIONS = ['💪','🔥','👏','❤️','🎉','😤']
 
-  const addReaction = async (goalText, emoji) => {
+  const toggleReaction = async (goalText, emoji) => {
+    if (!user) return
     const current = getDayLog(selectedDay)
     const existing = current.proof?.[goalText]?.reactions || []
     const arr = Array.isArray(existing) ? existing : []
     const i = arr.findIndex(r => r.e === emoji)
-    const updated = i >= 0
-      ? arr.map((r, j) => j === i ? { ...r, n: r.n + 1 } : r)
-      : [...arr, { e: emoji, n: 1 }]
+    let updated
+    if (i >= 0) {
+      const alreadyReacted = arr[i].users?.includes(user.uid)
+      if (alreadyReacted) {
+        const users = arr[i].users.filter(u => u !== user.uid)
+        updated = users.length === 0
+          ? arr.filter((_, j) => j !== i)
+          : arr.map((r, j) => j === i ? { ...r, users } : r)
+      } else {
+        updated = arr.map((r, j) => j === i ? { ...r, users: [...(r.users || []), user.uid] } : r)
+      }
+    } else {
+      updated = [...arr, { e: emoji, users: [user.uid] }]
+    }
     await setDoc(doc(db, 'entries', entry.id, 'dailyLogs', selectedDay), {
       ...current,
       proof: { ...(current.proof || {}), [goalText]: { ...(current.proof?.[goalText] || {}), reactions: updated } }
@@ -404,12 +419,19 @@ export default function MemberProfile() {
             {saved.note && <p className="text-sm text-zinc-800 dark:text-zinc-200">{saved.note}</p>}
             {/* Reactions row */}
             <div className="flex flex-wrap items-center gap-1">
-              {reactions.map(({ e, n }) => (
-                <button key={e} onClick={() => addReaction(goalText, e)}
-                  className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border bg-emerald-50 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 transition-all">
-                  {e}<span className="font-bold ml-0.5">{n}</span>
-                </button>
-              ))}
+              {reactions.map(({ e, users: us = [] }) => {
+                const reacted = us.includes(user?.uid)
+                return (
+                  <button key={e} onClick={() => toggleReaction(goalText, e)}
+                    className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border transition-all ${
+                      reacted
+                        ? 'bg-emerald-100 dark:bg-emerald-900/40 border-emerald-400 dark:border-emerald-600 text-emerald-700 dark:text-emerald-300'
+                        : 'bg-white dark:bg-zinc-700 border-zinc-200 dark:border-zinc-600 text-zinc-500 hover:border-emerald-400'
+                    }`}>
+                    {e}<span className="font-bold ml-0.5">{us.length}</span>
+                  </button>
+                )
+              })}
               {/* Add reaction button */}
               <div className="relative">
                 <button
@@ -422,7 +444,7 @@ export default function MemberProfile() {
                   <div className="absolute bottom-7 left-0 flex items-center gap-0.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full px-2 py-1.5 shadow-xl z-20">
                     {QUICK_REACTIONS.map(emoji => (
                       <button key={emoji}
-                        onClick={() => { addReaction(goalText, emoji); setReactionPickerOpen(null) }}
+                        onClick={() => { toggleReaction(goalText, emoji); setReactionPickerOpen(null) }}
                         className="text-lg hover:scale-125 active:scale-125 transition-transform px-0.5">
                         {emoji}
                       </button>
@@ -433,8 +455,8 @@ export default function MemberProfile() {
             </div>
           </div>
         )}
-        {/* Discord-style input bar */}
-        <div className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 rounded-2xl px-3 py-2">
+        {/* Discord-style input bar — owner only */}
+        {isOwner && <div className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 rounded-2xl px-3 py-2">
           <input
             type="text"
             value={inputVal}
@@ -456,7 +478,7 @@ export default function MemberProfile() {
             className="shrink-0 text-zinc-400 hover:text-emerald-500 disabled:opacity-30 transition-colors">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
           </button>
-        </div>
+        </div>}
       </div>
     )
   }
@@ -740,10 +762,12 @@ export default function MemberProfile() {
                 <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">
                   {selectedDay === todayKey ? 'Today' : selectedDayLabel}
                 </p>
-                <button onClick={() => { setGoalsInput(entry.goalItems); setEditingGoals(true) }}
-                  className="flex items-center gap-1 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors text-xs">
-                  <Pencil size={11} /> Edit goals
-                </button>
+                {isOwner && (
+                  <button onClick={() => { setGoalsInput(entry.goalItems); setEditingGoals(true) }}
+                    className="flex items-center gap-1 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors text-xs">
+                    <Pencil size={11} /> Edit goals
+                  </button>
+                )}
               </div>
 
               {entry.goalItems.map((goal, gi) => {
@@ -757,8 +781,8 @@ export default function MemberProfile() {
                       checked ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800'
                     }`}>
                       <button
-                        onClick={() => !isFutureDay && toggleHabit(goal.text)}
-                        disabled={isFutureDay}
+                        onClick={() => isOwner && !isFutureDay && toggleHabit(goal.text)}
+                        disabled={isFutureDay || !isOwner}
                         className="w-full flex items-center gap-3 px-4 py-3 disabled:opacity-40 active:scale-[0.99] transition-all">
                         <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${
                           checked ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-600'
