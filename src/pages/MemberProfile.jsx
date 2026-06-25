@@ -360,45 +360,83 @@ export default function MemberProfile() {
     setEditingGoals(false); setSubmitting(false)
   }
 
+  const QUICK_REACTIONS = ['💪','🔥','👏','❤️','🎉','😤']
+
+  const addReaction = async (goalText, emoji) => {
+    const current = getDayLog(selectedDay)
+    const existing = current.proof?.[goalText]?.reactions || {}
+    const count = (existing[emoji] || 0) + 1
+    await setDoc(doc(db, 'entries', entry.id, 'dailyLogs', selectedDay), {
+      ...current,
+      proof: { ...(current.proof || {}), [goalText]: { ...(current.proof?.[goalText] || {}), reactions: { ...existing, [emoji]: count } } }
+    })
+  }
+
+  const sendProofNote = async (goalText) => {
+    const text = (proofNoteInputs[goalText] ?? '').trim()
+    if (!text) return
+    const current = getDayLog(selectedDay)
+    await setDoc(doc(db, 'entries', entry.id, 'dailyLogs', selectedDay), {
+      ...current,
+      proof: { ...(current.proof || {}), [goalText]: { ...(current.proof?.[goalText] || {}), note: text } }
+    })
+    setProofNoteInputs(p => ({ ...p, [goalText]: '' }))
+  }
+
   const renderProofSection = (goalText, isFutureDay) => {
     if (isFutureDay || !entry || entry.status === 'failed') return null
     const saved = getGoalProof(goalText)
-    const noteVal = proofNoteInputs[goalText] ?? saved.note ?? ''
+    const inputVal = proofNoteInputs[goalText] ?? ''
     const uploading = uploadingPhoto[goalText]
-    const editingNote = proofOpen[goalText]
+    const reactions = saved.reactions || {}
     return (
       <div className="mt-2 space-y-2">
-        {/* Text note */}
-        {saved.note && !editingNote ? (
-          <div className="flex items-center gap-2">
-            <p className="flex-1 text-sm text-zinc-700 dark:text-zinc-300 truncate">{saved.note}</p>
-            <button onClick={() => setProofOpen(p => ({ ...p, [goalText]: true }))}
-              className="shrink-0 flex items-center gap-1 text-[10px] text-zinc-400 hover:text-emerald-500 transition-colors">
-              <Pencil size={10} /> Edit
-            </button>
+        {/* Proof bubble */}
+        {(saved.note || saved.photoUrl) && (
+          <div className="bg-zinc-100 dark:bg-zinc-800 rounded-2xl rounded-tl-sm px-3 py-2.5 space-y-2">
+            {saved.photoUrl && <img src={saved.photoUrl} alt="proof" className="w-full rounded-xl object-cover max-h-52" />}
+            {saved.note && <p className="text-sm text-zinc-800 dark:text-zinc-200">{saved.note}</p>}
+            <div className="flex flex-wrap gap-1">
+              {QUICK_REACTIONS.map(emoji => {
+                const count = reactions[emoji] || 0
+                return (
+                  <button key={emoji} onClick={() => addReaction(goalText, emoji)}
+                    className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border transition-all ${
+                      count > 0
+                        ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300'
+                        : 'bg-white dark:bg-zinc-700 border-zinc-200 dark:border-zinc-600 text-zinc-500 hover:border-emerald-400 hover:text-emerald-500'
+                    }`}>
+                    {emoji}{count > 0 && <span className="font-bold ml-0.5">{count}</span>}
+                  </button>
+                )
+              })}
+            </div>
           </div>
-        ) : (
-          <input type="text" value={noteVal} placeholder="Add a note…"
-            onChange={e => setGoalProofNote(goalText, e.target.value)}
-            onBlur={() => setProofOpen(p => ({ ...p, [goalText]: false }))}
-            onKeyDown={e => e.key === 'Enter' && setProofOpen(p => ({ ...p, [goalText]: false }))}
-            autoFocus={!!editingNote}
+        )}
+        {/* Discord-style input bar */}
+        <div className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 rounded-2xl px-3 py-2">
+          <input
+            type="text"
+            value={inputVal}
+            placeholder={saved.note ? 'Update note…' : 'Add a note…'}
+            onChange={e => setProofNoteInputs(p => ({ ...p, [goalText]: e.target.value }))}
+            onKeyDown={e => e.key === 'Enter' && sendProofNote(goalText)}
             style={{ fontSize: 16 }}
-            className="w-full text-xs bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-emerald-500 transition-colors"
+            className="flex-1 bg-transparent text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 focus:outline-none"
           />
-        )}
-        {/* Photo — show image if uploaded, then always show add/change button below */}
-        {saved.photoUrl && (
-          <img src={saved.photoUrl} alt="proof" className="w-full rounded-xl object-cover max-h-52" />
-        )}
-        <label className="cursor-pointer w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 text-xs text-zinc-400 hover:border-emerald-400 hover:text-emerald-500 transition-all">
-          {uploading
-            ? <><div className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /> Uploading…</>
-            : <><Camera size={12} /> {saved.photoUrl ? 'Change photo' : 'Add photo'}</>
-          }
-          <input type="file" accept="image/*" capture="environment" className="hidden"
-            onChange={e => { const f = e.target.files?.[0]; if (f) uploadGoalPhoto(goalText, f); e.target.value = '' }} />
-        </label>
+          <label className="cursor-pointer text-zinc-400 hover:text-emerald-500 transition-colors shrink-0">
+            {uploading
+              ? <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+              : <Camera size={16} />
+            }
+            <input type="file" accept="image/*" capture="environment" className="hidden"
+              onChange={e => { const f = e.target.files?.[0]; if (f) uploadGoalPhoto(goalText, f); e.target.value = '' }} />
+          </label>
+          <button onClick={() => sendProofNote(goalText)} disabled={!inputVal.trim()}
+            className="shrink-0 text-zinc-400 hover:text-emerald-500 disabled:opacity-30 transition-colors">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+          </button>
+        </div>
       </div>
     )
   }
