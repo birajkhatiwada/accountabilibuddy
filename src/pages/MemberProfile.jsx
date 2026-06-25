@@ -391,29 +391,34 @@ export default function MemberProfile() {
     // Open — show full input
     return (
       <div className="mt-2 space-y-2">
-        {saved.photoUrl && (
-          <img src={saved.photoUrl} alt="proof" className="w-full rounded-xl object-cover max-h-52" />
-        )}
-        {uploading && (
-          <div className="flex items-center gap-2 text-xs text-zinc-500">
-            <div className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-            Uploading…
+        {/* Text note */}
+        <input type="text" value={noteVal} placeholder="Add a note…"
+          onChange={e => setGoalProofNote(goalText, e.target.value)}
+          onBlur={() => setProofOpen(p => ({ ...p, [goalText]: false }))}
+          autoFocus
+          style={{ fontSize: 16 }}
+          className="w-full text-xs bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-emerald-500 transition-colors"
+        />
+        {/* Photo upload */}
+        {saved.photoUrl ? (
+          <div className="relative">
+            <img src={saved.photoUrl} alt="proof" className="w-full rounded-xl object-cover max-h-52" />
+            <label className="absolute bottom-2 right-2 cursor-pointer flex items-center gap-1 px-2 py-1 bg-black/50 text-white text-[10px] rounded-lg hover:bg-black/70 transition-colors">
+              <Camera size={10} /> Change
+              <input type="file" accept="image/*" capture="environment" className="hidden"
+                onChange={e => { const f = e.target.files?.[0]; if (f) uploadGoalPhoto(goalText, f); e.target.value = '' }} />
+            </label>
           </div>
-        )}
-        <div className="flex gap-2">
-          <input type="text" value={noteVal} placeholder="Add a note…"
-            onChange={e => setGoalProofNote(goalText, e.target.value)}
-            onBlur={() => setProofOpen(p => ({ ...p, [goalText]: false }))}
-            autoFocus
-            style={{ fontSize: 16 }}
-            className="flex-1 text-xs bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-emerald-500 transition-colors"
-          />
-          <label className="cursor-pointer flex items-center justify-center w-8 h-8 shrink-0 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:border-emerald-500 transition-colors">
-            <Camera size={13} className="text-zinc-400" />
+        ) : (
+          <label className="cursor-pointer w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 text-xs text-zinc-400 hover:border-emerald-400 hover:text-emerald-500 transition-all">
+            {uploading
+              ? <><div className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /> Uploading…</>
+              : <><Camera size={12} /> Add photo</>
+            }
             <input type="file" accept="image/*" capture="environment" className="hidden"
               onChange={e => { const f = e.target.files?.[0]; if (f) uploadGoalPhoto(goalText, f); e.target.value = '' }} />
           </label>
-        </div>
+        )}
       </div>
     )
   }
