@@ -395,39 +395,38 @@ export default function MemberProfile() {
       <div className="mt-2 space-y-2">
         {/* Proof bubble */}
         {(saved.note || saved.photoUrl) && (
-          <div
-            className="group/bubble bg-zinc-100 dark:bg-zinc-800 rounded-2xl rounded-tl-sm px-3 py-2.5 space-y-2 relative select-none"
-            onMouseEnter={() => setReactionPickerOpen(goalText)}
-            onMouseLeave={() => setReactionPickerOpen(null)}
-            onTouchStart={() => { longPressTimer.current = setTimeout(() => setReactionPickerOpen(goalText), 500) }}
-            onTouchEnd={() => { clearTimeout(longPressTimer.current) }}
-            onTouchMove={() => { clearTimeout(longPressTimer.current) }}
-          >
+          <div className="bg-zinc-100 dark:bg-zinc-800 rounded-2xl rounded-tl-sm px-3 py-2.5 space-y-2 relative">
             {saved.photoUrl && <img src={saved.photoUrl} alt="proof" className="w-full rounded-xl object-cover max-h-52" />}
             {saved.note && <p className="text-sm text-zinc-800 dark:text-zinc-200">{saved.note}</p>}
-            {/* Active reactions always visible */}
-            {Object.values(reactions).some(c => c > 0) && (
-              <div className="flex flex-wrap gap-1">
-                {QUICK_REACTIONS.filter(e => reactions[e] > 0).map(emoji => (
-                  <button key={emoji} onClick={() => addReaction(goalText, emoji)}
-                    className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border bg-emerald-50 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 transition-all">
-                    {emoji}<span className="font-bold">{reactions[emoji]}</span>
-                  </button>
-                ))}
+            {/* Reactions row */}
+            <div className="flex flex-wrap items-center gap-1">
+              {QUICK_REACTIONS.filter(e => reactions[e] > 0).map(emoji => (
+                <button key={emoji} onClick={() => addReaction(goalText, emoji)}
+                  className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border bg-emerald-50 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 transition-all">
+                  {emoji}<span className="font-bold">{reactions[emoji]}</span>
+                </button>
+              ))}
+              {/* Add reaction button */}
+              <div className="relative">
+                <button
+                  onClick={() => setReactionPickerOpen(reactionPickerOpen === goalText ? null : goalText)}
+                  className="flex items-center gap-0.5 px-2 py-0.5 rounded-full text-xs border border-zinc-300 dark:border-zinc-600 text-zinc-400 hover:border-emerald-400 hover:text-emerald-500 bg-white dark:bg-zinc-700 transition-all">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                  +
+                </button>
+                {reactionPickerOpen === goalText && (
+                  <div className="absolute bottom-7 left-0 flex items-center gap-0.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full px-2 py-1.5 shadow-xl z-20">
+                    {QUICK_REACTIONS.map(emoji => (
+                      <button key={emoji}
+                        onClick={() => { addReaction(goalText, emoji); setReactionPickerOpen(null) }}
+                        className="text-lg hover:scale-125 active:scale-125 transition-transform px-0.5">
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-            {/* Emoji picker — hover on desktop, long-press on mobile */}
-            {reactionPickerOpen === goalText && (
-              <div className="absolute -bottom-5 right-2 flex items-center gap-0.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full px-2 py-1 shadow-lg z-10">
-                {QUICK_REACTIONS.map(emoji => (
-                  <button key={emoji}
-                    onClick={() => { addReaction(goalText, emoji); setReactionPickerOpen(null) }}
-                    className="text-base hover:scale-125 active:scale-125 transition-transform px-0.5">
-                    {emoji}
-                  </button>
-                ))}
-              </div>
-            )}
+            </div>
           </div>
         )}
         {/* Discord-style input bar */}
