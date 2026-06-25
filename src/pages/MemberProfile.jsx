@@ -365,13 +365,16 @@ export default function MemberProfile() {
   const QUICK_REACTIONS = ['💪','🔥','👏','❤️','🎉','😤']
 
   const addReaction = async (goalText, emoji) => {
-    const idx = QUICK_REACTIONS.indexOf(emoji)
-    if (idx === -1) return
     const current = getDayLog(selectedDay)
-    const existing = current.proof?.[goalText]?.reactions || {}
+    const existing = current.proof?.[goalText]?.reactions || []
+    const arr = Array.isArray(existing) ? existing : []
+    const i = arr.findIndex(r => r.e === emoji)
+    const updated = i >= 0
+      ? arr.map((r, j) => j === i ? { ...r, n: r.n + 1 } : r)
+      : [...arr, { e: emoji, n: 1 }]
     await setDoc(doc(db, 'entries', entry.id, 'dailyLogs', selectedDay), {
       ...current,
-      proof: { ...(current.proof || {}), [goalText]: { ...(current.proof?.[goalText] || {}), reactions: { ...existing, [idx]: (existing[idx] || 0) + 1 } } }
+      proof: { ...(current.proof || {}), [goalText]: { ...(current.proof?.[goalText] || {}), reactions: updated } }
     })
   }
 
@@ -391,7 +394,7 @@ export default function MemberProfile() {
     const saved = getGoalProof(goalText)
     const inputVal = proofNoteInputs[goalText] ?? ''
     const uploading = uploadingPhoto[goalText]
-    const reactions = saved.reactions || {}
+    const reactions = Array.isArray(saved.reactions) ? saved.reactions : []
     return (
       <div className="mt-2 space-y-2">
         {/* Proof bubble */}
@@ -401,16 +404,12 @@ export default function MemberProfile() {
             {saved.note && <p className="text-sm text-zinc-800 dark:text-zinc-200">{saved.note}</p>}
             {/* Reactions row */}
             <div className="flex flex-wrap items-center gap-1">
-              {QUICK_REACTIONS.map((emoji, idx) => {
-                const count = reactions[idx] || 0
-                if (!count) return null
-                return (
-                  <button key={idx} onClick={() => addReaction(goalText, emoji)}
-                    className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border bg-emerald-50 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 transition-all">
-                    {emoji}<span className="font-bold">{count}</span>
-                  </button>
-                )
-              })}
+              {reactions.map(({ e, n }) => (
+                <button key={e} onClick={() => addReaction(goalText, e)}
+                  className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border bg-emerald-50 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 transition-all">
+                  {e}<span className="font-bold ml-0.5">{n}</span>
+                </button>
+              ))}
               {/* Add reaction button */}
               <div className="relative">
                 <button
