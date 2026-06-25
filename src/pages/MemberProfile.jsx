@@ -365,12 +365,13 @@ export default function MemberProfile() {
   const QUICK_REACTIONS = ['💪','🔥','👏','❤️','🎉','😤']
 
   const addReaction = async (goalText, emoji) => {
+    const idx = QUICK_REACTIONS.indexOf(emoji)
+    if (idx === -1) return
     const current = getDayLog(selectedDay)
     const existing = current.proof?.[goalText]?.reactions || {}
-    const count = (existing[emoji] || 0) + 1
     await setDoc(doc(db, 'entries', entry.id, 'dailyLogs', selectedDay), {
       ...current,
-      proof: { ...(current.proof || {}), [goalText]: { ...(current.proof?.[goalText] || {}), reactions: { ...existing, [emoji]: count } } }
+      proof: { ...(current.proof || {}), [goalText]: { ...(current.proof?.[goalText] || {}), reactions: { ...existing, [idx]: (existing[idx] || 0) + 1 } } }
     })
   }
 
@@ -400,12 +401,16 @@ export default function MemberProfile() {
             {saved.note && <p className="text-sm text-zinc-800 dark:text-zinc-200">{saved.note}</p>}
             {/* Reactions row */}
             <div className="flex flex-wrap items-center gap-1">
-              {QUICK_REACTIONS.filter(e => reactions[e] > 0).map(emoji => (
-                <button key={emoji} onClick={() => addReaction(goalText, emoji)}
-                  className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border bg-emerald-50 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 transition-all">
-                  {emoji}<span className="font-bold">{reactions[emoji]}</span>
-                </button>
-              ))}
+              {QUICK_REACTIONS.map((emoji, idx) => {
+                const count = reactions[idx] || 0
+                if (!count) return null
+                return (
+                  <button key={idx} onClick={() => addReaction(goalText, emoji)}
+                    className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border bg-emerald-50 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 transition-all">
+                    {emoji}<span className="font-bold">{count}</span>
+                  </button>
+                )
+              })}
               {/* Add reaction button */}
               <div className="relative">
                 <button
