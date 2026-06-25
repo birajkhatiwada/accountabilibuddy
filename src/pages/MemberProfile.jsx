@@ -100,6 +100,8 @@ export default function MemberProfile() {
   const [proofOpen, setProofOpen] = useState({})
   const [proofNoteInputs, setProofNoteInputs] = useState({})
   const [uploadingPhoto, setUploadingPhoto] = useState({})
+  const [reactionPickerOpen, setReactionPickerOpen] = useState(null)
+  const longPressTimer = useRef(null)
   const [bio, setBio] = useState('')
   const [status, setStatus] = useState('')
   const [editingBio, setEditingBio] = useState(false)
@@ -393,7 +395,14 @@ export default function MemberProfile() {
       <div className="mt-2 space-y-2">
         {/* Proof bubble */}
         {(saved.note || saved.photoUrl) && (
-          <div className="group/bubble bg-zinc-100 dark:bg-zinc-800 rounded-2xl rounded-tl-sm px-3 py-2.5 space-y-2 relative">
+          <div
+            className="group/bubble bg-zinc-100 dark:bg-zinc-800 rounded-2xl rounded-tl-sm px-3 py-2.5 space-y-2 relative select-none"
+            onMouseEnter={() => setReactionPickerOpen(goalText)}
+            onMouseLeave={() => setReactionPickerOpen(null)}
+            onTouchStart={() => { longPressTimer.current = setTimeout(() => setReactionPickerOpen(goalText), 500) }}
+            onTouchEnd={() => { clearTimeout(longPressTimer.current) }}
+            onTouchMove={() => { clearTimeout(longPressTimer.current) }}
+          >
             {saved.photoUrl && <img src={saved.photoUrl} alt="proof" className="w-full rounded-xl object-cover max-h-52" />}
             {saved.note && <p className="text-sm text-zinc-800 dark:text-zinc-200">{saved.note}</p>}
             {/* Active reactions always visible */}
@@ -407,15 +416,18 @@ export default function MemberProfile() {
                 ))}
               </div>
             )}
-            {/* Hover emoji picker */}
-            <div className="absolute -bottom-4 right-2 hidden group-hover/bubble:flex items-center gap-0.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full px-2 py-1 shadow-lg z-10">
-              {QUICK_REACTIONS.map(emoji => (
-                <button key={emoji} onClick={() => addReaction(goalText, emoji)}
-                  className="text-base hover:scale-125 transition-transform px-0.5">
-                  {emoji}
-                </button>
-              ))}
-            </div>
+            {/* Emoji picker — hover on desktop, long-press on mobile */}
+            {reactionPickerOpen === goalText && (
+              <div className="absolute -bottom-5 right-2 flex items-center gap-0.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full px-2 py-1 shadow-lg z-10">
+                {QUICK_REACTIONS.map(emoji => (
+                  <button key={emoji}
+                    onClick={() => { addReaction(goalText, emoji); setReactionPickerOpen(null) }}
+                    className="text-base hover:scale-125 active:scale-125 transition-transform px-0.5">
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
         {/* Discord-style input bar */}
