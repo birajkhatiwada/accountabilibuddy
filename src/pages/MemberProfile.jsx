@@ -393,23 +393,28 @@ export default function MemberProfile() {
       <div className="mt-2 space-y-2">
         {/* Proof bubble */}
         {(saved.note || saved.photoUrl) && (
-          <div className="bg-zinc-100 dark:bg-zinc-800 rounded-2xl rounded-tl-sm px-3 py-2.5 space-y-2">
+          <div className="group/bubble bg-zinc-100 dark:bg-zinc-800 rounded-2xl rounded-tl-sm px-3 py-2.5 space-y-2 relative">
             {saved.photoUrl && <img src={saved.photoUrl} alt="proof" className="w-full rounded-xl object-cover max-h-52" />}
             {saved.note && <p className="text-sm text-zinc-800 dark:text-zinc-200">{saved.note}</p>}
-            <div className="flex flex-wrap gap-1">
-              {QUICK_REACTIONS.map(emoji => {
-                const count = reactions[emoji] || 0
-                return (
+            {/* Active reactions always visible */}
+            {Object.values(reactions).some(c => c > 0) && (
+              <div className="flex flex-wrap gap-1">
+                {QUICK_REACTIONS.filter(e => reactions[e] > 0).map(emoji => (
                   <button key={emoji} onClick={() => addReaction(goalText, emoji)}
-                    className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border transition-all ${
-                      count > 0
-                        ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300'
-                        : 'bg-white dark:bg-zinc-700 border-zinc-200 dark:border-zinc-600 text-zinc-500 hover:border-emerald-400 hover:text-emerald-500'
-                    }`}>
-                    {emoji}{count > 0 && <span className="font-bold ml-0.5">{count}</span>}
+                    className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border bg-emerald-50 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 transition-all">
+                    {emoji}<span className="font-bold">{reactions[emoji]}</span>
                   </button>
-                )
-              })}
+                ))}
+              </div>
+            )}
+            {/* Hover emoji picker */}
+            <div className="absolute -bottom-4 right-2 hidden group-hover/bubble:flex items-center gap-0.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full px-2 py-1 shadow-lg z-10">
+              {QUICK_REACTIONS.map(emoji => (
+                <button key={emoji} onClick={() => addReaction(goalText, emoji)}
+                  className="text-base hover:scale-125 transition-transform px-0.5">
+                  {emoji}
+                </button>
+              ))}
             </div>
           </div>
         )}
