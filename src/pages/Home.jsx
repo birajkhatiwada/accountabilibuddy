@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { collection, query, where, onSnapshot, doc, updateDoc, setDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { getCurrentWeekId, formatWeekLabel } from '../utils'
+import { useAuth } from '../AuthContext'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 import { X, ChevronRight } from 'lucide-react'
@@ -37,6 +38,7 @@ const getAvatarHex = (name, members) =>
   AVATAR_HEX[members.indexOf(name) % AVATAR_HEX.length]
 
 export default function Home() {
+  const { user } = useAuth()
   const weekId = getCurrentWeekId()
   const navigate = useNavigate()
   const { sessionId } = useParams()
@@ -560,7 +562,7 @@ export default function Home() {
                     ) : (
                       <p className="text-zinc-500 dark:text-zinc-600 text-xs italic">No goals set yet — tap to add</p>
                     )}
-                    {e?.status === 'active' && e?.goalItems?.length > 0 && (
+                    {e?.status === 'active' && e?.goalItems?.length > 0 && e?.name?.toLowerCase() === user?.displayName?.toLowerCase() && (
                       <button
                         onClick={ev => { ev.stopPropagation(); setQuickLogEntry(e) }}
                         className="mt-1 w-full py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-bold transition-all"
