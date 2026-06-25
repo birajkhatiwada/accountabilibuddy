@@ -371,7 +371,7 @@ export default function MemberProfile() {
         {/* Text note */}
         {saved.note && !editingNote ? (
           <div className="flex items-center gap-2">
-            <p className="flex-1 text-xs text-zinc-500 dark:text-zinc-400 truncate">"{saved.note}"</p>
+            <p className="flex-1 text-sm text-zinc-700 dark:text-zinc-300 truncate">{saved.note}</p>
             <button onClick={() => setProofOpen(p => ({ ...p, [goalText]: true }))}
               className="shrink-0 flex items-center gap-1 text-[10px] text-zinc-400 hover:text-emerald-500 transition-colors">
               <Pencil size={10} /> Edit
