@@ -61,7 +61,7 @@ export default function Layout() {
               )}
             </div>
             <div className="flex items-center gap-2 mb-1">
-              {user && <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500">{user.displayName}</span>}
+              {user && <button onClick={() => navigate(`/${sessionId}/member/${encodeURIComponent(user.displayName)}`)} className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 hover:text-emerald-500 transition-colors">{user.displayName}</button>}
               <button onClick={toggle} className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Toggle dark mode">
                 {dark ? <Sun size={16} /> : <Moon size={16} />}
               </button>
