@@ -81,6 +81,9 @@ export default function Home() {
       // Auto-close past weeks
       const stale = all.filter(e => e.status === 'active' && e.weekId < weekId)
       stale.forEach(e => updateDoc(doc(db, 'entries', e.id), { status: 'failed' }))
+      // Heal current-week entries wrongly marked failed by the UTC timezone bug
+      const wronglyFailed = all.filter(e => e.status === 'failed' && e.weekId === weekId)
+      wronglyFailed.forEach(e => updateDoc(doc(db, 'entries', e.id), { status: 'active' }))
     }, err => setError(err.message))
   }, [sessionId])
 
