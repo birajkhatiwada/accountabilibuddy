@@ -365,14 +365,28 @@ export default function MemberProfile() {
     const saved = getGoalProof(goalText)
     const noteVal = proofNoteInputs[goalText] ?? saved.note ?? ''
     const uploading = uploadingPhoto[goalText]
+    const editingNote = proofOpen[goalText]
     return (
       <div className="mt-2 space-y-2">
-        {/* Text note — always visible, editable inline */}
-        <input type="text" value={noteVal} placeholder="Add a note…"
-          onChange={e => setGoalProofNote(goalText, e.target.value)}
-          style={{ fontSize: 16 }}
-          className="w-full text-xs bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-emerald-500 transition-colors"
-        />
+        {/* Text note */}
+        {saved.note && !editingNote ? (
+          <div className="flex items-center gap-2">
+            <p className="flex-1 text-xs text-zinc-500 dark:text-zinc-400 truncate">"{saved.note}"</p>
+            <button onClick={() => setProofOpen(p => ({ ...p, [goalText]: true }))}
+              className="shrink-0 flex items-center gap-1 text-[10px] text-zinc-400 hover:text-emerald-500 transition-colors">
+              <Pencil size={10} /> Edit
+            </button>
+          </div>
+        ) : (
+          <input type="text" value={noteVal} placeholder="Add a note…"
+            onChange={e => setGoalProofNote(goalText, e.target.value)}
+            onBlur={() => setProofOpen(p => ({ ...p, [goalText]: false }))}
+            onKeyDown={e => e.key === 'Enter' && setProofOpen(p => ({ ...p, [goalText]: false }))}
+            autoFocus={!!editingNote}
+            style={{ fontSize: 16 }}
+            className="w-full text-xs bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-emerald-500 transition-colors"
+          />
+        )}
         {/* Photo — show image if uploaded, then always show add/change button below */}
         {saved.photoUrl && (
           <img src={saved.photoUrl} alt="proof" className="w-full rounded-xl object-cover max-h-52" />
