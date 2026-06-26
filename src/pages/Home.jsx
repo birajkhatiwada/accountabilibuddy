@@ -515,15 +515,17 @@ export default function Home() {
                         ? `${prog.done}/7`
                         : prog.total ? `${prog.done}/${prog.total}` : `${prog.done}`
                       return (
-                        <div key={i} className="flex items-center gap-2">
-                          <span className="text-xs text-zinc-600 dark:text-zinc-400 flex-1 truncate">{g.text}</span>
-                          <span className="text-[10px] text-zinc-400 shrink-0 font-medium">{label}</span>
-                          {prog.pct !== null && (
-                            <div className="w-12 bg-zinc-200 dark:bg-zinc-700 rounded-full h-1 overflow-hidden shrink-0">
-                              <div className={`h-full rounded-full transition-all ${prog.pct >= 1 ? 'bg-emerald-400' : prog.pct >= 0.5 ? 'bg-amber-400' : 'bg-zinc-400'}`}
-                                style={{ width: `${Math.round(prog.pct * 100)}%` }} />
-                            </div>
-                          )}
+                        <div key={i} className="space-y-0.5">
+                          <span className="text-xs text-zinc-600 dark:text-zinc-400 block truncate">{g.text}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-zinc-400 font-medium shrink-0">{label}</span>
+                            {prog.pct !== null && (
+                              <div className="flex-1 bg-zinc-200 dark:bg-zinc-700 rounded-full h-1 overflow-hidden">
+                                <div className={`h-full rounded-full transition-all ${prog.pct >= 1 ? 'bg-emerald-400' : prog.pct >= 0.5 ? 'bg-amber-400' : 'bg-zinc-400'}`}
+                                  style={{ width: `${Math.round(prog.pct * 100)}%` }} />
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )
                     })}
