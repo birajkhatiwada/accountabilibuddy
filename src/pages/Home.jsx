@@ -469,9 +469,11 @@ export default function Home() {
                         : <span className="text-white font-black text-lg">{name[0].toUpperCase()}</span>
                       }
                     </div>
-                    <span className="absolute -bottom-0.5 -right-0.5 text-sm leading-none">
-                      {e?.status === 'completed' ? '✅' : e?.status === 'failed' ? '❌' : e ? '🔥' : '💤'}
-                    </span>
+                    {(e?.status === 'completed' || e?.status === 'failed' || !e) && (
+                      <span className="absolute -bottom-0.5 -right-0.5 text-sm leading-none">
+                        {e?.status === 'completed' ? '✅' : e?.status === 'failed' ? '❌' : '💤'}
+                      </span>
+                    )}
                   </div>
 
                   {/* Right content */}
