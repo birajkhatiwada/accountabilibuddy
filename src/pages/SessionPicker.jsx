@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore'
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, Timestamp } from 'firebase/firestore'
 import { db } from '../firebase'
+import { useAuth } from '../AuthContext'
 import { Plus, ArrowRight, Users } from 'lucide-react'
 
 const SESSION_EMOJIS = ['💼','👨‍👩‍👧‍👦','🏋️','📚','🎯','🚀','🌱','🎮','🏠','✈️']
@@ -21,6 +22,7 @@ function genId() {
 
 export default function SessionPicker() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [saved, setSaved] = useState(getSaved)
   const [mode, setMode] = useState(null) // 'create' | 'join'
   const [name, setName] = useState('')
@@ -34,7 +36,8 @@ export default function SessionPicker() {
     if (!name.trim()) return
     setLoading(true)
     const id = genId()
-    const session = { name: name.trim(), emoji, penalty: Number(penalty) || 15, createdAt: Timestamp.now(), names: [], avatars: {} }
+    const username = user?.displayName || ''
+    const session = { name: name.trim(), emoji, penalty: Number(penalty) || 15, createdAt: Timestamp.now(), names: username ? [username] : [], avatars: {} }
     await setDoc(doc(db, 'sessions', id), session)
     const s = { id, name: name.trim(), emoji }
     addSaved(s)
@@ -48,12 +51,18 @@ export default function SessionPicker() {
     const snap = await getDoc(doc(db, 'sessions', id))
     if (!snap.exists()) { setError('Session not found. Check the code and try again.'); setLoading(false); return }
     const data = snap.data()
+    if (user?.displayName) {
+      await updateDoc(doc(db, 'sessions', id), { names: arrayUnion(user.displayName) })
+    }
     addSaved({ id, name: data.name, emoji: data.emoji || '🎯' })
     navigate(`/${id}`)
   }
 
-  const openSession = (s) => {
+  const openSession = async (s) => {
     addSaved(s)
+    if (user?.displayName) {
+      try { await updateDoc(doc(db, 'sessions', s.id), { names: arrayUnion(user.displayName) }) } catch {}
+    }
     navigate(`/${s.id}`)
   }
 
