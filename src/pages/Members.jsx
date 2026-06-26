@@ -81,18 +81,10 @@ export default function Members() {
                 <ChevronRight size={15} />
               </button>
               {isMe && (
-                confirmLeave
-                  ? <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-xs text-zinc-400">Sure?</span>
-                      <button onClick={() => { removeMember(name); setConfirmLeave(false) }}
-                        className="text-xs text-red-400 hover:text-red-500 font-bold transition-colors">Yes, leave</button>
-                      <button onClick={() => setConfirmLeave(false)}
-                        className="text-xs text-zinc-400 hover:text-zinc-600 transition-colors">Cancel</button>
-                    </div>
-                  : <button onClick={() => setConfirmLeave(true)}
-                      className="text-xs text-zinc-400 hover:text-red-400 transition-colors font-medium shrink-0">
-                      Leave
-                    </button>
+                <button onClick={() => setConfirmLeave(true)}
+                  className="text-xs text-zinc-400 hover:text-red-400 transition-colors font-medium shrink-0">
+                  Leave
+                </button>
               )}
             </div>
           )
@@ -122,6 +114,28 @@ export default function Members() {
           </div>
         </div>
       </div>
+      {confirmLeave && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-6" onClick={() => setConfirmLeave(false)}>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="relative bg-white dark:bg-zinc-900 rounded-2xl p-6 w-full max-w-xs shadow-xl space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="text-center space-y-1">
+              <p className="text-2xl">👋</p>
+              <p className="font-bold text-zinc-900 dark:text-white">Leave this session?</p>
+              <p className="text-sm text-zinc-500">You can always rejoin with the session code.</p>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setConfirmLeave(false)}
+                className="flex-1 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors">
+                Cancel
+              </button>
+              <button onClick={() => { removeMember(members.find(m => m.toLowerCase() === user?.displayName?.toLowerCase())); setConfirmLeave(false) }}
+                className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-400 text-white text-sm font-bold transition-colors">
+                Yes, leave
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
