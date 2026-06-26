@@ -11,6 +11,7 @@ export default function Members() {
   const { user } = useAuth()
   const [members, setMembers] = useState([])
   const [penalty, setPenalty] = useState(15)
+  const [confirmLeave, setConfirmLeave] = useState(false)
   const [penaltyInput, setPenaltyInput] = useState('15')
   const [savingPenalty, setSavingPenalty] = useState(false)
   const [penaltySaved, setPenaltySaved] = useState(false)
@@ -80,12 +81,18 @@ export default function Members() {
                 <ChevronRight size={15} />
               </button>
               {isMe && (
-                <button
-                  onClick={() => removeMember(name)}
-                  className="text-xs text-zinc-400 hover:text-red-400 transition-colors font-medium shrink-0"
-                >
-                  Leave
-                </button>
+                confirmLeave
+                  ? <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs text-zinc-400">Sure?</span>
+                      <button onClick={() => { removeMember(name); setConfirmLeave(false) }}
+                        className="text-xs text-red-400 hover:text-red-500 font-bold transition-colors">Yes, leave</button>
+                      <button onClick={() => setConfirmLeave(false)}
+                        className="text-xs text-zinc-400 hover:text-zinc-600 transition-colors">Cancel</button>
+                    </div>
+                  : <button onClick={() => setConfirmLeave(true)}
+                      className="text-xs text-zinc-400 hover:text-red-400 transition-colors font-medium shrink-0">
+                      Leave
+                    </button>
               )}
             </div>
           )
