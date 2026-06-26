@@ -9,6 +9,7 @@ import { useAuth } from '../AuthContext'
 export default function Layout() {
   const { dark, toggle } = useTheme()
   const { user, signOut } = useAuth()
+  const handleSignOut = async () => { await signOut(); navigate('/') }
   const { sessionId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
@@ -65,7 +66,7 @@ export default function Layout() {
               <button onClick={toggle} className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Toggle dark mode">
                 {dark ? <Sun size={16} /> : <Moon size={16} />}
               </button>
-              <button onClick={signOut} className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Sign out">
+              <button onClick={handleSignOut} className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Sign out">
                 <LogOut size={15} />
               </button>
               <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -91,7 +92,7 @@ export default function Layout() {
             <button onClick={toggle} className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Toggle dark mode">
               {dark ? <Sun size={15} /> : <Moon size={15} />}
             </button>
-            <button onClick={signOut} className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Sign out">
+            <button onClick={handleSignOut} className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Sign out">
               <LogOut size={14} />
             </button>
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
