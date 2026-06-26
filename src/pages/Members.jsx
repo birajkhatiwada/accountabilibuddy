@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { doc, onSnapshot, updateDoc, arrayRemove, setDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuth } from '../AuthContext'
-import { Trash2, ChevronRight, Check } from 'lucide-react'
+import { ChevronRight, Check } from 'lucide-react'
 
 export default function Members() {
   const navigate = useNavigate()
@@ -82,10 +82,9 @@ export default function Members() {
               {isMe && (
                 <button
                   onClick={() => removeMember(name)}
-                  className="text-zinc-500 dark:text-zinc-600 hover:text-red-400 transition-colors p-1"
-                  title="Leave session"
+                  className="text-xs text-zinc-400 hover:text-red-400 transition-colors font-medium shrink-0"
                 >
-                  <Trash2 size={15} />
+                  Leave
                 </button>
               )}
             </div>
