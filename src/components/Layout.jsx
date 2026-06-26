@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Outlet, NavLink, useParams, useNavigate, useLocation } from 'react-router-dom'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase'
@@ -9,6 +9,7 @@ import { useAuth } from '../AuthContext'
 export default function Layout() {
   const { dark, toggle } = useTheme()
   const { user, signOut } = useAuth()
+  const [confirmSignOut, setConfirmSignOut] = useState(false)
   const handleSignOut = async () => { await signOut(); navigate('/') }
   const { sessionId } = useParams()
   const navigate = useNavigate()
@@ -66,7 +67,7 @@ export default function Layout() {
               <button onClick={toggle} className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Toggle dark mode">
                 {dark ? <Sun size={16} /> : <Moon size={16} />}
               </button>
-              <button onClick={handleSignOut} className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Sign out">
+              <button onClick={() => setConfirmSignOut(true)} className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Sign out">
                 <LogOut size={15} />
               </button>
               <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -92,7 +93,7 @@ export default function Layout() {
             <button onClick={toggle} className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Toggle dark mode">
               {dark ? <Sun size={15} /> : <Moon size={15} />}
             </button>
-            <button onClick={handleSignOut} className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Sign out">
+            <button onClick={() => setConfirmSignOut(true)} className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Sign out">
               <LogOut size={14} />
             </button>
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -158,6 +159,29 @@ export default function Layout() {
           )}
         </NavLink>
       </nav>
+
+      {confirmSignOut && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-6" onClick={() => setConfirmSignOut(false)}>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="relative bg-white dark:bg-zinc-900 rounded-2xl p-6 w-full max-w-xs shadow-xl space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="text-center space-y-1">
+              <p className="text-2xl">🔐</p>
+              <p className="font-bold text-zinc-900 dark:text-white">Sign out?</p>
+              <p className="text-sm text-zinc-500">You'll need your username and password to sign back in.</p>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setConfirmSignOut(false)}
+                className="flex-1 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors">
+                Cancel
+              </button>
+              <button onClick={handleSignOut}
+                className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-400 text-white text-sm font-bold transition-colors">
+                Sign out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
