@@ -412,74 +412,80 @@ export default function MemberProfile() {
     const uploading = uploadingPhoto[goalText]
     const reactions = Array.isArray(saved.reactions) ? saved.reactions : []
     return (
-      <div className="mt-2 space-y-2">
-        {/* Proof bubble */}
+      <div className="mt-3 space-y-2">
+        {/* Saved proof bubble */}
         {(saved.note || saved.photoUrl) && (
-          <div className="bg-zinc-100 dark:bg-zinc-800 rounded-2xl rounded-tl-sm px-3 py-2.5 space-y-2 relative">
-            {saved.photoUrl && <img src={saved.photoUrl} alt="proof" className="w-full rounded-xl object-cover max-h-52" />}
-            {saved.note && <p className="text-sm text-zinc-800 dark:text-zinc-200">{saved.note}</p>}
-            {/* Reactions row */}
-            <div className="flex flex-wrap items-center gap-1">
-              {reactions.map(({ e, users: us = [] }) => {
-                const reacted = us.includes(user?.uid)
-                return (
-                  <button key={e} onClick={() => toggleReaction(goalText, e)}
-                    className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border transition-all ${
-                      reacted
-                        ? 'bg-emerald-100 dark:bg-emerald-900/40 border-emerald-400 dark:border-emerald-600 text-emerald-700 dark:text-emerald-300'
-                        : 'bg-white dark:bg-zinc-700 border-zinc-200 dark:border-zinc-600 text-zinc-500 hover:border-emerald-400'
-                    }`}>
-                    {e}<span className="font-bold ml-0.5">{us.length}</span>
-                  </button>
-                )
-              })}
-              {/* Add reaction button */}
-              <div className="relative">
-                <button
-                  onClick={() => setReactionPickerOpen(reactionPickerOpen === goalText ? null : goalText)}
-                  className="flex items-center gap-0.5 px-2 py-0.5 rounded-full text-xs border border-zinc-300 dark:border-zinc-600 text-zinc-400 hover:border-emerald-400 hover:text-emerald-500 bg-white dark:bg-zinc-700 transition-all">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
-                  +
-                </button>
-                {reactionPickerOpen === goalText && (
-                  <div className="absolute bottom-7 left-0 flex items-center gap-0.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full px-2 py-1.5 shadow-xl z-20">
-                    {QUICK_REACTIONS.map(emoji => (
-                      <button key={emoji}
-                        onClick={() => { toggleReaction(goalText, emoji); setReactionPickerOpen(null) }}
-                        className="text-lg hover:scale-125 active:scale-125 transition-transform px-0.5">
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-                )}
+          <div className="rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-700">
+            {saved.photoUrl && <img src={saved.photoUrl} alt="proof" className="w-full object-cover max-h-52" />}
+            {saved.note && (
+              <div className="px-3 py-2.5">
+                <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-snug">{saved.note}</p>
               </div>
-            </div>
+            )}
+            {/* Reactions */}
+            {(reactions.length > 0 || true) && (
+              <div className="flex flex-wrap items-center gap-1 px-3 pb-2.5">
+                {reactions.map(({ e, users: us = [] }) => {
+                  const reacted = us.includes(user?.uid)
+                  return (
+                    <button key={e} onClick={() => toggleReaction(goalText, e)}
+                      className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border transition-all ${
+                        reacted
+                          ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-400 dark:border-emerald-600 text-emerald-700 dark:text-emerald-300'
+                          : 'bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-600 text-zinc-500 hover:border-emerald-400'
+                      }`}>
+                      {e}<span className="font-semibold ml-0.5">{us.length}</span>
+                    </button>
+                  )
+                })}
+                <div className="relative">
+                  <button onClick={() => setReactionPickerOpen(reactionPickerOpen === goalText ? null : goalText)}
+                    className="flex items-center gap-0.5 px-2 py-0.5 rounded-full text-xs border border-dashed border-zinc-300 dark:border-zinc-600 text-zinc-400 hover:text-emerald-500 hover:border-emerald-400 transition-all">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                    +
+                  </button>
+                  {reactionPickerOpen === goalText && (
+                    <div className="absolute bottom-7 left-0 flex items-center gap-0.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full px-2 py-1.5 shadow-xl z-20">
+                      {QUICK_REACTIONS.map(emoji => (
+                        <button key={emoji} onClick={() => { toggleReaction(goalText, emoji); setReactionPickerOpen(null) }}
+                          className="text-lg hover:scale-125 active:scale-125 transition-transform px-0.5">
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
-        {/* Discord-style input bar — owner only */}
-        {isOwner && <div className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 rounded-2xl px-3 py-2">
-          <input
-            type="text"
-            value={inputVal}
-            placeholder={saved.note ? 'Update note…' : 'Add a note…'}
-            onChange={e => setProofNoteInputs(p => ({ ...p, [goalText]: e.target.value }))}
-            onKeyDown={e => e.key === 'Enter' && sendProofNote(goalText)}
-            style={{ fontSize: 16 }}
-            className="flex-1 bg-transparent text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 focus:outline-none"
-          />
-          <label className="cursor-pointer text-zinc-400 hover:text-emerald-500 transition-colors shrink-0">
-            {uploading
-              ? <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-              : <Camera size={16} />
-            }
-            <input type="file" accept="image/*" capture="environment" className="hidden"
-              onChange={e => { const f = e.target.files?.[0]; if (f) uploadGoalPhoto(goalText, f); e.target.value = '' }} />
-          </label>
-          <button onClick={() => sendProofNote(goalText)} disabled={!inputVal.trim()}
-            className="shrink-0 text-zinc-400 hover:text-emerald-500 disabled:opacity-30 transition-colors">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-          </button>
-        </div>}
+
+        {/* Input bar — owner only */}
+        {isOwner && (
+          <div className="flex items-center gap-2 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-2 bg-white dark:bg-zinc-900 focus-within:border-emerald-500 transition-colors">
+            <input
+              type="text"
+              value={inputVal}
+              placeholder={saved.note ? 'Update note…' : 'Add a note…'}
+              onChange={e => setProofNoteInputs(p => ({ ...p, [goalText]: e.target.value }))}
+              onKeyDown={e => e.key === 'Enter' && sendProofNote(goalText)}
+              style={{ fontSize: 16 }}
+              className="flex-1 bg-transparent text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 focus:outline-none"
+            />
+            <label className="cursor-pointer text-zinc-400 hover:text-emerald-500 transition-colors shrink-0">
+              {uploading
+                ? <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                : <Camera size={15} />
+              }
+              <input type="file" accept="image/*" capture="environment" className="hidden"
+                onChange={e => { const f = e.target.files?.[0]; if (f) uploadGoalPhoto(goalText, f); e.target.value = '' }} />
+            </label>
+            <button onClick={() => sendProofNote(goalText)} disabled={!inputVal.trim()}
+              className="shrink-0 text-zinc-400 hover:text-emerald-500 disabled:opacity-20 transition-colors">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            </button>
+          </div>
+        )}
       </div>
     )
   }
