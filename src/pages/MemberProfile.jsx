@@ -838,26 +838,72 @@ export default function MemberProfile() {
                 const isFutureDay = selectedDay > todayKey
                 const proof = getGoalProof(goal.text)
                 const hasProof = !!(proof.note || proof.photoUrl)
+                const reactions = Array.isArray(proof.reactions) ? proof.reactions : []
+
+                const proofBlock = (
+                  <div className="pl-3 space-y-1.5">
+                    {proof.photoUrl && <img src={proof.photoUrl} alt="proof" className="w-full rounded-xl object-cover max-h-48" />}
+                    {proof.note && (
+                      <div className="flex items-start gap-2">
+                        <p className="flex-1 text-xs text-zinc-500 dark:text-zinc-400 leading-snug">{proof.note}</p>
+                        {isOwner && (
+                          <button onClick={e => { e.stopPropagation(); setActiveGoalSheet(goal); setEditingProof(p => ({ ...p, [goal.text]: true })); setProofNoteInputs(p => ({ ...p, [goal.text]: proof.note })) }}
+                            className="text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 transition-colors shrink-0"><Pencil size={11} /></button>
+                        )}
+                      </div>
+                    )}
+                    {(reactions.length > 0 || hasProof) && (
+                      <div className="flex flex-wrap items-center gap-1">
+                        {reactions.map(({ e, users: us = [] }) => {
+                          const reacted = us.includes(user?.uid)
+                          return (
+                            <button key={e} onClick={ev => { ev.stopPropagation(); toggleReaction(goal.text, e) }}
+                              className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border transition-all ${
+                                reacted ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-400 text-emerald-700 dark:text-emerald-300' : 'bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-600 text-zinc-500 hover:border-emerald-400'
+                              }`}>
+                              {e}<span className="font-semibold ml-0.5">{us.length}</span>
+                            </button>
+                          )
+                        })}
+                        <div className="relative">
+                          <button onClick={ev => { ev.stopPropagation(); setReactionPickerOpen(reactionPickerOpen === goal.text ? null : goal.text) }}
+                            className="flex items-center gap-0.5 px-2 py-0.5 rounded-full text-xs border border-dashed border-zinc-300 dark:border-zinc-600 text-zinc-400 hover:text-emerald-500 hover:border-emerald-400 transition-all">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                            +
+                          </button>
+                          {reactionPickerOpen === goal.text && (
+                            <div className="absolute bottom-7 left-0 flex items-center gap-0.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full px-2 py-1.5 shadow-xl z-20">
+                              {QUICK_REACTIONS.map(emoji => (
+                                <button key={emoji} onClick={ev => { ev.stopPropagation(); toggleReaction(goal.text, emoji); setReactionPickerOpen(null) }}
+                                  className="text-lg hover:scale-125 active:scale-125 transition-transform px-0.5">{emoji}</button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
 
                 if (goal.type === 'habit') {
                   const checked = !!logs[selectedDay]?.habits?.[goal.text]
                   const daysLogged = weeklyHabitDays(goal.text)
                   return (
-                    <button key={gi} onClick={() => setActiveGoalSheet(goal)}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all active:scale-[0.99] ${
-                        checked ? 'bg-emerald-500/10' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
-                      }`}>
-                      <span className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-all ${
-                        checked ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-600'
-                      }`}>
-                        {checked && <svg width="8" height="6" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-                      </span>
-                      <span className={`flex-1 text-sm font-medium text-left truncate ${checked ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>
-                        {goal.text}
-                      </span>
-                      <span className="text-[11px] text-zinc-400 shrink-0">{daysLogged}/7</span>
-                      {hasProof && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />}
-                    </button>
+                    <div key={gi} className="space-y-1.5">
+                      <button onClick={() => setActiveGoalSheet(goal)}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all active:scale-[0.99] ${
+                          checked ? 'bg-emerald-500/10' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
+                        }`}>
+                        <span className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-all ${
+                          checked ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-600'
+                        }`}>
+                          {checked && <svg width="8" height="6" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                        </span>
+                        <span className={`flex-1 text-sm font-medium text-left truncate ${checked ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</span>
+                        <span className="text-[11px] text-zinc-400 shrink-0">{daysLogged}/7</span>
+                      </button>
+                      {hasProof && proofBlock}
+                    </div>
                   )
                 }
 
@@ -867,18 +913,18 @@ export default function MemberProfile() {
                     return (Number(sg.target) || 0) > 0 && weeklyCount(k) >= Number(sg.target)
                   })
                   return (
-                    <button key={gi} onClick={() => setActiveGoalSheet(goal)}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all active:scale-[0.99] ${
-                        allDone ? 'bg-emerald-500/10' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
-                      }`}>
-                      <span className={`flex-1 text-sm font-medium text-left truncate ${allDone ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>
-                        {goal.text}
-                      </span>
-                      <span className="text-[11px] text-zinc-400 shrink-0">
-                        {goal.subGoals.filter(sg => weeklyCount(`${goal.text}::${sg.text}`) >= (Number(sg.target) || 0)).length}/{goal.subGoals.length}
-                      </span>
-                      {hasProof && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />}
-                    </button>
+                    <div key={gi} className="space-y-1.5">
+                      <button onClick={() => setActiveGoalSheet(goal)}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all active:scale-[0.99] ${
+                          allDone ? 'bg-emerald-500/10' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
+                        }`}>
+                        <span className={`flex-1 text-sm font-medium text-left truncate ${allDone ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</span>
+                        <span className="text-[11px] text-zinc-400 shrink-0">
+                          {goal.subGoals.filter(sg => weeklyCount(`${goal.text}::${sg.text}`) >= (Number(sg.target) || 0)).length}/{goal.subGoals.length}
+                        </span>
+                      </button>
+                      {hasProof && proofBlock}
+                    </div>
                   )
                 }
 
@@ -886,10 +932,11 @@ export default function MemberProfile() {
                 const tgt = Number(goal.target) || 0
                 const done = tgt > 0 && weekVal >= tgt
                 return (
-                  <button key={gi} onClick={() => setActiveGoalSheet(goal)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all active:scale-[0.99] ${
-                      done ? 'bg-emerald-500/10' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
-                    }`}>
+                  <div key={gi} className="space-y-1.5">
+                    <button onClick={() => setActiveGoalSheet(goal)}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all active:scale-[0.99] ${
+                        done ? 'bg-emerald-500/10' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
+                      }`}>
                     <span className={`flex-1 text-sm font-medium text-left truncate ${done ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>
                       {goal.text}
                     </span>
@@ -901,8 +948,9 @@ export default function MemberProfile() {
                     <span className={`text-[11px] shrink-0 font-medium ${done ? 'text-emerald-400' : 'text-zinc-400'}`}>
                       {weekVal}{tgt ? `/${tgt}` : ''}{goal.unit ? ` ${goal.unit}` : ''}
                     </span>
-                    {hasProof && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />}
-                  </button>
+                    </button>
+                    {hasProof && proofBlock}
+                  </div>
                 )
               })}
             </div>
@@ -987,108 +1035,41 @@ export default function MemberProfile() {
                       </div>
                     )}
 
-                    {/* Divider */}
-                    <div className="h-px bg-zinc-100 dark:bg-zinc-800" />
-
-                    {/* Proof section */}
-                    <div className="space-y-3">
-                      <p className="text-xs text-zinc-400 uppercase tracking-wider font-semibold">Proof</p>
-
-                      {/* Posted photo */}
-                      {proof.photoUrl && (
-                        <div className="relative rounded-xl overflow-hidden">
-                          <img src={proof.photoUrl} alt="proof" className="w-full object-cover max-h-56" />
-                          {isOwner && (
-                            <label className="absolute top-2 right-2 bg-black/40 hover:bg-black/60 text-white rounded-lg p-1.5 cursor-pointer transition-colors">
-                              {uploading ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Camera size={13} />}
-                              <input type="file" accept="image/*" capture="environment" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadGoalPhoto(goal.text, f); e.target.value = '' }} />
-                            </label>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Note */}
-                      {proof.note && !isEditing && (
-                        <div className="flex items-start gap-2">
-                          <p className="flex-1 text-sm text-zinc-600 dark:text-zinc-400 leading-snug">{proof.note}</p>
-                          {isOwner && (
-                            <button onClick={() => { setEditingProof(p => ({ ...p, [goal.text]: true })); setProofNoteInputs(p => ({ ...p, [goal.text]: proof.note })) }}
-                              className="text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 transition-colors shrink-0"><Pencil size={12} /></button>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Edit / add note */}
-                      {isOwner && isEditing && (
-                        <div className="border border-emerald-500 rounded-xl overflow-hidden">
-                          <textarea autoFocus value={proofNoteInputs[goal.text] ?? ''} onChange={e => setProofNoteInputs(p => ({ ...p, [goal.text]: e.target.value }))}
-                            placeholder="What did you do?" rows={3} style={{ fontSize: 16 }}
-                            className="w-full bg-white dark:bg-zinc-900 px-3 py-2.5 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-300 dark:placeholder-zinc-600 focus:outline-none resize-none" />
-                          <div className="flex items-center justify-end gap-2 px-3 py-2 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/80">
-                            <button onClick={() => setEditingProof(p => ({ ...p, [goal.text]: false }))} className="text-xs text-zinc-400 hover:text-zinc-600 transition-colors">Cancel</button>
-                            <button onClick={() => { sendProofNote(goal.text); setEditingProof(p => ({ ...p, [goal.text]: false })) }}
-                              disabled={!(proofNoteInputs[goal.text] ?? '').trim()}
-                              className="text-xs font-bold text-white bg-emerald-500 hover:bg-emerald-400 disabled:opacity-30 px-3 py-1 rounded-lg transition-colors">Save</button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Empty state buttons */}
-                      {isOwner && !isFutureDay && !hasProof && !isEditing && (
-                        <div className="flex items-center gap-3">
-                          <button onClick={() => { setEditingProof(p => ({ ...p, [goal.text]: true })); setProofNoteInputs(p => ({ ...p, [goal.text]: '' })) }}
-                            className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors">
-                            <Pencil size={12} /> Add note
-                          </button>
-                          <span className="text-zinc-200 dark:text-zinc-700">·</span>
-                          <label className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors cursor-pointer">
-                            {uploading ? <div className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /> : <Camera size={12} />}
-                            Add photo
-                            <input type="file" accept="image/*" capture="environment" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadGoalPhoto(goal.text, f); e.target.value = '' }} />
-                          </label>
-                        </div>
-                      )}
-
-                      {/* Add note button when only photo exists */}
-                      {isOwner && !isFutureDay && proof.photoUrl && !proof.note && !isEditing && (
-                        <button onClick={() => { setEditingProof(p => ({ ...p, [goal.text]: true })); setProofNoteInputs(p => ({ ...p, [goal.text]: '' })) }}
-                          className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors">
-                          <Pencil size={12} /> Add note
-                        </button>
-                      )}
-
-                      {/* Reactions */}
-                      {(hasProof || reactions.length > 0) && (
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {reactions.map(({ e, users: us = [] }) => {
-                            const reacted = us.includes(user?.uid)
-                            return (
-                              <button key={e} onClick={() => toggleReaction(goal.text, e)}
-                                className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border transition-all ${
-                                  reacted ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-400 text-emerald-700 dark:text-emerald-300' : 'bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-600 text-zinc-500 hover:border-emerald-400'
-                                }`}>
-                                {e}<span className="font-semibold ml-0.5">{us.length}</span>
-                              </button>
-                            )
-                          })}
-                          <div className="relative">
-                            <button onClick={() => setReactionPickerOpen(reactionPickerOpen === goal.text ? null : goal.text)}
-                              className="flex items-center gap-0.5 px-2 py-0.5 rounded-full text-xs border border-dashed border-zinc-300 dark:border-zinc-600 text-zinc-400 hover:text-emerald-500 hover:border-emerald-400 transition-all">
-                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
-                              +
-                            </button>
-                            {reactionPickerOpen === goal.text && (
-                              <div className="absolute bottom-7 left-0 flex items-center gap-0.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full px-2 py-1.5 shadow-xl z-20">
-                                {QUICK_REACTIONS.map(emoji => (
-                                  <button key={emoji} onClick={() => { toggleReaction(goal.text, emoji); setReactionPickerOpen(null) }}
-                                    className="text-lg hover:scale-125 active:scale-125 transition-transform px-0.5">{emoji}</button>
-                                ))}
+                    {/* Proof actions — owner only */}
+                    {isOwner && !isFutureDay && (
+                      <>
+                        <div className="h-px bg-zinc-100 dark:bg-zinc-800" />
+                        <div className="space-y-3">
+                          <p className="text-xs text-zinc-400 uppercase tracking-wider font-semibold">Proof</p>
+                          {isEditing ? (
+                            <div className="border border-emerald-500 rounded-xl overflow-hidden">
+                              <textarea autoFocus value={proofNoteInputs[goal.text] ?? ''} onChange={e => setProofNoteInputs(p => ({ ...p, [goal.text]: e.target.value }))}
+                                placeholder="What did you do?" rows={3} style={{ fontSize: 16 }}
+                                className="w-full bg-white dark:bg-zinc-900 px-3 py-2.5 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-300 dark:placeholder-zinc-600 focus:outline-none resize-none" />
+                              <div className="flex items-center justify-end gap-2 px-3 py-2 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/80">
+                                <button onClick={() => setEditingProof(p => ({ ...p, [goal.text]: false }))} className="text-xs text-zinc-400 hover:text-zinc-600 transition-colors">Cancel</button>
+                                <button onClick={() => { sendProofNote(goal.text); setEditingProof(p => ({ ...p, [goal.text]: false })) }}
+                                  disabled={!(proofNoteInputs[goal.text] ?? '').trim()}
+                                  className="text-xs font-bold text-white bg-emerald-500 hover:bg-emerald-400 disabled:opacity-30 px-3 py-1 rounded-lg transition-colors">Save</button>
                               </div>
-                            )}
-                          </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-3">
+                              <button onClick={() => { setEditingProof(p => ({ ...p, [goal.text]: true })); setProofNoteInputs(p => ({ ...p, [goal.text]: proof.note || '' })) }}
+                                className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors">
+                                <Pencil size={12} /> {proof.note ? 'Edit note' : 'Add note'}
+                              </button>
+                              <span className="text-zinc-200 dark:text-zinc-700">·</span>
+                              <label className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors cursor-pointer">
+                                {uploading ? <div className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /> : <Camera size={12} />}
+                                {proof.photoUrl ? 'Replace photo' : 'Add photo'}
+                                <input type="file" accept="image/*" capture="environment" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadGoalPhoto(goal.text, f); e.target.value = '' }} />
+                              </label>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
