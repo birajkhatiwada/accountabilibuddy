@@ -420,15 +420,33 @@ export default function MemberProfile() {
         {/* Posted proof card */}
         {hasProof && !isEditing && (
           <div className="rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-700">
-            {saved.photoUrl && <img src={saved.photoUrl} alt="proof" className="w-full object-cover max-h-52" />}
+            {saved.photoUrl && (
+              <div className="relative">
+                <img src={saved.photoUrl} alt="proof" className="w-full object-cover max-h-52" />
+                {isOwner && (
+                  <label className="absolute top-2 right-2 bg-black/40 hover:bg-black/60 text-white rounded-lg p-1.5 cursor-pointer transition-colors">
+                    {uploading ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Camera size={13} />}
+                    <input type="file" accept="image/*" capture="environment" className="hidden"
+                      onChange={e => { const f = e.target.files?.[0]; if (f) uploadGoalPhoto(goalText, f); e.target.value = '' }} />
+                  </label>
+                )}
+              </div>
+            )}
             {saved.note && (
               <div className="flex items-start gap-2 px-3 py-2.5">
                 <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-snug flex-1">{saved.note}</p>
                 {isOwner && (
-                  <button onClick={() => { setEditingProof(p => ({ ...p, [goalText]: true })); setProofNoteInputs(p => ({ ...p, [goalText]: saved.note || '' })) }}
-                    className="text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400 transition-colors shrink-0 mt-0.5">
-                    <Pencil size={12} />
-                  </button>
+                  <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+                    <button onClick={() => { setEditingProof(p => ({ ...p, [goalText]: true })); setProofNoteInputs(p => ({ ...p, [goalText]: saved.note || '' })) }}
+                      className="text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400 transition-colors">
+                      <Pencil size={12} />
+                    </button>
+                    <label className="text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400 transition-colors cursor-pointer">
+                      {uploading ? <div className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /> : <Camera size={12} />}
+                      <input type="file" accept="image/*" capture="environment" className="hidden"
+                        onChange={e => { const f = e.target.files?.[0]; if (f) uploadGoalPhoto(goalText, f); e.target.value = '' }} />
+                    </label>
+                  </div>
                 )}
               </div>
             )}
