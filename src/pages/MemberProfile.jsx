@@ -470,7 +470,7 @@ export default function MemberProfile() {
               onChange={e => setProofNoteInputs(p => ({ ...p, [goalText]: e.target.value }))}
               onKeyDown={e => e.key === 'Enter' && sendProofNote(goalText)}
               style={{ fontSize: 16 }}
-              className="flex-1 bg-transparent text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 focus:outline-none"
+              className="flex-1 bg-transparent text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-300 dark:placeholder-zinc-600 focus:outline-none"
             />
             <label className="cursor-pointer text-zinc-400 hover:text-emerald-500 transition-colors shrink-0">
               {uploading
