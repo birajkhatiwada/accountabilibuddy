@@ -148,13 +148,13 @@ export default function Layout() {
             </>
           )}
         </NavLink>
-        <NavLink to={`/${sessionId}/members`} className={linkClass}>
+        <NavLink to={user ? `/${sessionId}/member/${encodeURIComponent(user.displayName)}` : `/${sessionId}/members`} className={linkClass}>
           {({ isActive }) => (
             <>
               <div className={`p-1.5 rounded-xl transition-all ${isActive ? 'bg-zinc-100 dark:bg-zinc-800' : ''}`}>
                 <Users size={18} />
               </div>
-              Members
+              My Page
             </>
           )}
         </NavLink>
