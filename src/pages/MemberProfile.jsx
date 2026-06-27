@@ -295,7 +295,6 @@ export default function MemberProfile() {
   const completedWeeks = allEntries.filter(e => (e.nameLower || e.name?.toLowerCase()) === name.toLowerCase() && e.status === 'completed').length
   const daysThisWeek = weekDays.filter(d => dateKey(d) <= todayKey && dayHasActivity(dateKey(d))).length
   if (daysThisWeek >= 7) badges.push({ emoji: '💯', label: 'Perfect week' })
-  if (daysThisWeek >= 3 && daysThisWeek < 7) badges.push({ emoji: '🔥', label: 'On fire' })
   if (streak >= 5) badges.push({ emoji: '👑', label: 'Streak king' })
   if (completedWeeks >= 4) badges.push({ emoji: '🏆', label: 'Veteran' })
   if (completedWeeks >= 1 && entry?.status === 'active' && allEntries.find(e => (e.nameLower || e.name?.toLowerCase()) === name.toLowerCase() && e.status === 'failed')) badges.push({ emoji: '💪', label: 'Comeback' })
