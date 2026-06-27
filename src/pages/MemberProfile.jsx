@@ -419,9 +419,9 @@ export default function MemberProfile() {
       <div className="mt-3 space-y-2">
         {/* Posted proof card */}
         {hasProof && !isEditing && (
-          <div className="rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-700">
+          <div>
             {saved.photoUrl && (
-              <div className="relative">
+              <div className="relative rounded-xl overflow-hidden mb-2">
                 <img src={saved.photoUrl} alt="proof" className="w-full object-cover max-h-52" />
                 {isOwner && (
                   <label className="absolute top-2 right-2 bg-black/40 hover:bg-black/60 text-white rounded-lg p-1.5 cursor-pointer transition-colors">
@@ -433,8 +433,8 @@ export default function MemberProfile() {
               </div>
             )}
             {saved.note && (
-              <div className="flex items-start gap-2 px-3 py-2.5">
-                <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-snug flex-1">{saved.note}</p>
+              <div className="flex items-start gap-2">
+                <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-snug flex-1">{saved.note}</p>
                 {isOwner && (
                   <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
                     <button onClick={() => { setEditingProof(p => ({ ...p, [goalText]: true })); setProofNoteInputs(p => ({ ...p, [goalText]: saved.note || '' })) }}
@@ -451,7 +451,7 @@ export default function MemberProfile() {
               </div>
             )}
             {/* Reactions */}
-            <div className="flex flex-wrap items-center gap-1 px-3 pb-2.5">
+            <div className="flex flex-wrap items-center gap-1 mt-1.5">
               {reactions.map(({ e, users: us = [] }) => {
                 const reacted = us.includes(user?.uid)
                 return (
