@@ -49,6 +49,7 @@ export default function Home() {
   const [bannerDismissed, setBannerDismissed] = useState(false)
   const [memberLogs, setMemberLogs] = useState({})
   const [avatars, setAvatars] = useState({})
+  const [nicknames, setNicknames] = useState({})
   const [penalty, setPenalty] = useState(15)
   const [closeWeekOpen, setCloseWeekOpen] = useState(false)
   const [closeStatuses, setCloseStatuses] = useState({})
@@ -66,6 +67,7 @@ export default function Home() {
       if (snap.exists()) {
         setMembers(snap.data().names || [])
         setAvatars(snap.data().avatars || {})
+        setNicknames(snap.data().nicknames || {})
         setPenalty(snap.data().penalty ?? 15)
       }
       setLoading(false)
@@ -480,7 +482,7 @@ export default function Home() {
                   <div className="flex-1 min-w-0 space-y-1.5">
                     {/* Name + streak */}
                     <div className="flex items-baseline gap-2">
-                      <p className={`font-bold text-sm leading-tight ${!e ? 'text-zinc-400' : 'text-zinc-900 dark:text-white'}`}>{name}</p>
+                      <p className={`font-bold text-sm leading-tight ${!e ? 'text-zinc-400' : 'text-zinc-900 dark:text-white'}`}>{nicknames[name] || name}</p>
                       {streak >= 2 && <span className="text-[10px] text-zinc-400 dark:text-zinc-500">🔥 {streak}w</span>}
                       {!e && <span className="text-[10px] text-zinc-400 italic">no goals yet</span>}
                     </div>

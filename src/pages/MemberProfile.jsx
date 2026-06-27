@@ -107,6 +107,7 @@ export default function MemberProfile() {
   const longPressTimer = useRef(null)
   const [bio, setBio] = useState('')
   const [status, setStatus] = useState('')
+  const [nickname, setNickname] = useState('')
   const [editingBio, setEditingBio] = useState(false)
   const [editingStatus, setEditingStatus] = useState(false)
   const [bioInput, setBioInput] = useState('')
@@ -152,6 +153,7 @@ export default function MemberProfile() {
         setStatus(d.statuses?.[name] || '')
         setBannerColorIdx(d.bannerColors?.[name] ?? null)
         setBannerVibe(d.bannerVibes?.[name] || '')
+        setNickname(d.nicknames?.[name] || '')
       }
     })
   }, [sessionId])
@@ -598,7 +600,8 @@ export default function MemberProfile() {
             </span>
           </button>
           <div className="pb-1 flex-1 min-w-0">
-            <h2 className="text-3xl font-black text-white leading-none tracking-tight">{name}</h2>
+            <h2 className="text-3xl font-black text-white leading-none tracking-tight">{nickname || name}</h2>
+            {nickname && <p className="text-xs text-white/50 leading-none mt-0.5">@{name}</p>}
 
             {/* Editable status */}
             {editingStatus ? (
