@@ -744,10 +744,13 @@ export default function MemberProfile() {
                     className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition-all disabled:opacity-30 ${
                       isSelected ? 'bg-zinc-900 dark:bg-white' : isToday ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800'
                     }`}>
-                    <span className={`text-[11px] font-bold uppercase ${isSelected ? 'text-white dark:text-zinc-900' : 'text-zinc-500 dark:text-zinc-400'}`}>
+                    <span className={`text-[10px] font-bold uppercase leading-none ${isSelected ? 'text-white dark:text-zinc-900' : 'text-zinc-400 dark:text-zinc-500'}`}>
                       {DAY_LABELS[i][0]}
                     </span>
-                    <span className={`w-1 h-1 rounded-full ${hasActivity ? 'bg-emerald-400' : isSelected ? 'bg-white/30 dark:bg-zinc-700' : 'bg-transparent'}`} />
+                    <span className={`text-xs font-black leading-none ${isSelected ? 'text-white dark:text-zinc-900' : isToday ? 'text-emerald-500' : 'text-zinc-700 dark:text-zinc-300'}`}>
+                      {day.getDate()}
+                    </span>
+                    <span className={`w-1 h-1 rounded-full ${hasActivity ? 'bg-emerald-400' : 'bg-transparent'}`} />
                   </button>
                 )
               })}
