@@ -840,7 +840,7 @@ export default function MemberProfile() {
                 {selectedDay === todayKey ? 'Today' : selectedDayLabel}
               </p>
 
-              <div className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+              <div className="space-y-2">
               {myGoals.map((goal) => {
                 const isFutureDay = selectedDay > todayKey
                 const proof = getGoalProof(goal.text)
@@ -896,7 +896,7 @@ export default function MemberProfile() {
                   const checked = !!logs[selectedDay]?.habits?.[goal.text]
                   const daysLogged = weeklyHabitDays(goal.text)
                   return (
-                    <div key={goal.text} className="py-3">
+                    <div key={goal.text} className={`rounded-2xl border px-4 py-3 transition-colors ${checked ? 'border-emerald-200 dark:border-emerald-800/50' : 'border-zinc-200 dark:border-zinc-800'}`}>
                       <div className="flex items-center gap-3">
                         <button
                           onClick={() => { if (!isOwner || isFutureDay) return; toggleHabit(goal.text) }}
@@ -934,7 +934,7 @@ export default function MemberProfile() {
                     return (Number(sg.target) || 0) > 0 && weeklyCount(k) >= Number(sg.target)
                   })
                   return (
-                    <div key={goal.text} className="py-3">
+                    <div key={goal.text} className={`rounded-2xl border px-4 py-3 transition-colors ${allDone ? 'border-emerald-200 dark:border-emerald-800/50' : 'border-zinc-200 dark:border-zinc-800'}`}>
                       <div className="flex items-center justify-between mb-2">
                         <p className={`text-sm font-semibold ${allDone ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</p>
                         {isOwner && !isFutureDay && (
@@ -974,7 +974,7 @@ export default function MemberProfile() {
                 const pct = tgt ? Math.min(1, weekVal / tgt) : 0
                 const done = tgt > 0 && weekVal >= tgt
                 return (
-                  <div key={goal.text} className="py-3">
+                  <div key={goal.text} className={`rounded-2xl border px-4 py-3 transition-colors ${done ? 'border-emerald-200 dark:border-emerald-800/50' : 'border-zinc-200 dark:border-zinc-800'}`}>
                     <div className="flex items-center gap-3 mb-2">
                       <p className={`flex-1 text-sm font-medium truncate ${done ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</p>
                       {isOwner && !isFutureDay && <Counter value={getCountVal(goal.text)} unit={goal.unit} onChange={v => setDayCount(goal.text, v)} />}
