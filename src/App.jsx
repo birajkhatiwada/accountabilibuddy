@@ -8,6 +8,7 @@ import Members from './pages/Members'
 import MemberProfile from './pages/MemberProfile'
 import Feed from './pages/Feed'
 import Recap from './pages/Recap'
+import EditGoals from './pages/EditGoals'
 import Auth from './pages/Auth'
 import { ThemeProvider } from './ThemeContext'
 import { AuthProvider, useAuth } from './AuthContext'
@@ -29,6 +30,7 @@ function AppRoutes() {
       <Route path="/:sessionId" element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="member/:name" element={<MemberProfile />} />
+        <Route path="member/:name/goals" element={<EditGoals />} />
         <Route path="feed" element={<Feed />} />
         <Route path="history" element={<History />} />
         <Route path="pot" element={<Pot />} />

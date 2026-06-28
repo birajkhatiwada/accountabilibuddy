@@ -138,7 +138,6 @@ export default function MemberProfile() {
   const [penalty, setPenalty] = useState(15)
   const [goalsInput, setGoalsInput] = useState([])
   const [submitting, setSubmitting] = useState(false)
-  const [editingGoals, setEditingGoals] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [pickingAvatar, setPickingAvatar] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -236,15 +235,6 @@ export default function MemberProfile() {
       setLogs(data)
     })
   }, [entry?.id])
-
-  useEffect(() => {
-    if (editingGoals) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
-    return () => { document.body.style.overflow = '' }
-  }, [editingGoals])
 
   useEffect(() => {
     if (entry?.status !== 'completed' || confettiFired.current) return
@@ -436,13 +426,6 @@ export default function MemberProfile() {
     setSubmitting(false)
   }
 
-  const updateGoals = async () => {
-    const valid = goalsInput.filter(g => g.text.trim())
-    if (!valid.length) return
-    setSubmitting(true)
-    await persistGoals(valid)
-    setEditingGoals(false); setSubmitting(false)
-  }
 
   const reorderGoals = async (newItems) => {
     await persistGoals(newItems)
@@ -820,7 +803,7 @@ export default function MemberProfile() {
 
         {isOwner && myGoals.length > 0 && (
           <div className="mt-3">
-            <button onClick={() => { setGoalsInput(myGoals); setEditingGoals(true) }}
+            <button onClick={() => navigate(`/${sessionId}/member/${encodeURIComponent(name)}/goals`)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 hover:bg-white/25 text-white/70 hover:text-white text-xs font-semibold transition-all">
               <Pencil size={10} /> Edit this week's goals
             </button>
@@ -851,55 +834,6 @@ export default function MemberProfile() {
         </div>
       )}
 
-      {/* Edit goals bottom sheet */}
-      {editingGoals && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setEditingGoals(false)}>
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-          <div className="relative w-full max-w-lg flex flex-col bg-zinc-950 rounded-t-3xl shadow-2xl slide-up"
-            style={{ maxHeight: '90vh' }}
-            onClick={e => e.stopPropagation()}>
-
-            {/* Handle */}
-            <div className="flex justify-center pt-3 pb-0 shrink-0">
-              <div className="w-9 h-1 rounded-full bg-zinc-700" />
-            </div>
-
-            {/* Header */}
-            <div className="px-5 pt-3 pb-4 shrink-0 flex items-start justify-between">
-              <div>
-                <h2 className="text-xl font-black text-white tracking-tight">Your goals</h2>
-                <p className="text-xs text-zinc-500 mt-0.5">What are you locking in this week?</p>
-              </div>
-              <div className="flex items-center gap-2 mt-0.5">
-                <button onClick={() => setEditingGoals(false)}
-                  className="text-zinc-500 hover:text-zinc-300 transition-colors px-3 py-1.5 text-sm font-medium">
-                  Cancel
-                </button>
-                <button onClick={updateGoals} disabled={submitting || !goalsInput.some(g => g.text.trim())}
-                  className="bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 text-white font-bold text-sm px-4 py-1.5 rounded-full transition-all active:scale-95">
-                  {submitting ? 'Saving…' : 'Save'}
-                </button>
-              </div>
-            </div>
-
-            {/* Divider */}
-            <div className="h-px bg-zinc-800 shrink-0 mx-5" />
-
-            {/* Scrollable content — force dark mode so GoalBuilder renders dark */}
-            <div className="dark flex-1 overflow-y-auto overscroll-contain px-4 py-4 space-y-0">
-              <GoalBuilder initialGoals={myGoals} onChange={setGoalsInput} />
-            </div>
-
-            {/* Bottom save */}
-            <div className="shrink-0 px-4 pt-3 pb-8 border-t border-zinc-800/60">
-              <button onClick={updateGoals} disabled={submitting || !goalsInput.some(g => g.text.trim())}
-                className="w-full bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] disabled:opacity-40 text-white font-black rounded-2xl py-3.5 text-base transition-all">
-                {submitting ? 'Saving…' : 'Lock in 🔒'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {(entry || myGoals.length > 0) && (
         <>
