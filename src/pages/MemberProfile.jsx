@@ -58,6 +58,29 @@ function dateKey(d) {
   return `${y}-${m}-${dd}`
 }
 
+function RingProgress({ value, target, size = 62, strokeWidth = 5 }) {
+  const r = (size - strokeWidth * 2) / 2
+  const circ = 2 * Math.PI * r
+  const pct = target > 0 ? Math.min(1, value / target) : 0
+  const done = target > 0 && value >= target
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+        <circle cx={size/2} cy={size/2} r={r} fill="none" strokeWidth={strokeWidth} className="stroke-zinc-100 dark:stroke-zinc-800" />
+        <circle cx={size/2} cy={size/2} r={r} fill="none" strokeWidth={strokeWidth}
+          strokeDasharray={circ} strokeDashoffset={circ * (1 - pct)}
+          strokeLinecap="round"
+          style={{ transition: 'stroke-dashoffset 0.5s cubic-bezier(0.4,0,0.2,1)' }}
+          className={done ? 'stroke-emerald-400' : 'stroke-emerald-500'} />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
+        <span className={`text-base font-black tabular-nums ${done ? 'text-emerald-500' : 'text-zinc-800 dark:text-zinc-100'}`}>{value}</span>
+        {target > 0 && <span className="text-[9px] text-zinc-400 mt-0.5">/{target}</span>}
+      </div>
+    </div>
+  )
+}
+
 function Counter({ value, onChange, unit }) {
   return (
     <div className="flex items-center gap-1.5 shrink-0">
@@ -107,6 +130,8 @@ export default function MemberProfile() {
   const [uploadingPhoto, setUploadingPhoto] = useState({})
   const [reactionPickerOpen, setReactionPickerOpen] = useState(null)
   const longPressTimer = useRef(null)
+  const swipeTouchStart = useRef({})
+  const [swipeOffset, setSwipeOffset] = useState({})
   const [bio, setBio] = useState('')
   const [status, setStatus] = useState('')
   const [nickname, setNickname] = useState('')
@@ -888,29 +913,58 @@ export default function MemberProfile() {
                 if (goal.type === 'habit') {
                   const checked = !!logs[selectedDay]?.habits?.[goal.text]
                   const daysLogged = weeklyHabitDays(goal.text)
+                  const offset = (isOwner && !isFutureDay) ? (swipeOffset[goal.text] || 0) : 0
+                  const revealPct = Math.min(1, Math.abs(offset) / 72)
                   return (
-                    <div key={gi} className={`rounded-2xl border transition-all ${checked ? 'bg-emerald-500/8 border-emerald-200 dark:border-emerald-900' : 'bg-white dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800'}`}>
-                      <div className="flex items-center gap-3 px-4 py-3">
-                        <button onClick={() => isOwner && !isFutureDay && toggleHabit(goal.text)}
-                          disabled={isFutureDay || !isOwner}
-                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all active:scale-90 ${checked ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-600'}`}>
-                          {checked && <svg width="8" height="6" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-                        </button>
-                        <span className={`flex-1 text-sm font-medium truncate ${checked ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</span>
-                        <div className="flex gap-0.5 shrink-0">
-                          {weekDays.map((d, i) => {
-                            const k = dateKey(d)
-                            const hit = !!logs[k]?.habits?.[goal.text]
-                            const isSel = k === selectedDay
-                            return <span key={i} className={`w-2 h-2 rounded-full transition-all ${hit ? 'bg-emerald-400' : isSel ? 'bg-zinc-300 dark:bg-zinc-600' : k > todayKey ? 'bg-zinc-100 dark:bg-zinc-800' : 'bg-zinc-200 dark:bg-zinc-700'}`} />
-                          })}
-                        </div>
-                        <span className="text-[11px] text-zinc-400 tabular-nums w-5 text-right">{daysLogged}/7</span>
+                    <div key={gi} className="space-y-1.5">
+                      <div
+                        className={`relative rounded-2xl overflow-hidden border transition-colors ${checked ? 'border-emerald-200 dark:border-emerald-900' : 'border-zinc-100 dark:border-zinc-800'}`}
+                        onTouchStart={isOwner && !isFutureDay ? e => { swipeTouchStart.current[goal.text] = e.touches[0].clientX } : undefined}
+                        onTouchMove={isOwner && !isFutureDay ? e => {
+                          const dx = e.touches[0].clientX - (swipeTouchStart.current[goal.text] || 0)
+                          if ((!checked && dx > 0) || (checked && dx < 0)) {
+                            setSwipeOffset(p => ({ ...p, [goal.text]: Math.min(Math.abs(dx), 110) * Math.sign(dx) }))
+                          }
+                        } : undefined}
+                        onTouchEnd={isOwner && !isFutureDay ? () => {
+                          if (Math.abs(swipeOffset[goal.text] || 0) > 72) toggleHabit(goal.text)
+                          setSwipeOffset(p => ({ ...p, [goal.text]: 0 }))
+                        } : undefined}
+                      >
+                        {/* Swipe reveal layer */}
                         {isOwner && !isFutureDay && (
-                          <button onClick={() => setActiveGoalSheet(goal)} className="text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 transition-colors shrink-0"><Camera size={13} /></button>
+                          <div className={`absolute inset-0 flex items-center ${checked ? 'justify-end pr-5 bg-zinc-100 dark:bg-zinc-800' : 'justify-start pl-5 bg-emerald-500'}`}
+                            style={{ opacity: revealPct }}>
+                            {checked
+                              ? <X size={18} className="text-zinc-500" />
+                              : <svg width="18" height="14" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                            }
+                          </div>
                         )}
+                        {/* Card content */}
+                        <div
+                          className={`flex items-center gap-3 px-4 py-3 ${checked ? 'bg-emerald-500/8' : 'bg-white dark:bg-zinc-900'}`}
+                          style={{ transform: `translateX(${offset}px)`, transition: offset === 0 ? 'transform 0.4s cubic-bezier(0.34,1.56,0.64,1)' : 'none' }}
+                        >
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${checked ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-600'}`}>
+                            {checked && <svg width="8" height="6" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                          </div>
+                          <span className={`flex-1 text-sm font-medium truncate ${checked ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</span>
+                          <div className="flex gap-0.5 shrink-0">
+                            {weekDays.map((d, i) => {
+                              const k = dateKey(d)
+                              const hit = !!logs[k]?.habits?.[goal.text]
+                              const isSel = k === selectedDay
+                              return <span key={i} className={`w-2 h-2 rounded-full transition-all ${hit ? 'bg-emerald-400' : isSel ? 'bg-zinc-300 dark:bg-zinc-600' : k > todayKey ? 'bg-zinc-100 dark:bg-zinc-800' : 'bg-zinc-200 dark:bg-zinc-700'}`} />
+                            })}
+                          </div>
+                          <span className="text-[11px] text-zinc-400 tabular-nums w-5 text-right">{daysLogged}/7</span>
+                          {isOwner && !isFutureDay && (
+                            <button onClick={() => setActiveGoalSheet(goal)} className="text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 transition-colors shrink-0"><Camera size={13} /></button>
+                          )}
+                        </div>
                       </div>
-                      {hasProof && <div className="px-4 pb-3 border-t border-zinc-50 dark:border-zinc-800 pt-2">{proofBlock}</div>}
+                      {hasProof && <div className="px-4 pb-3 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl pt-2">{proofBlock}</div>}
                     </div>
                   )
                 }
@@ -952,17 +1006,22 @@ export default function MemberProfile() {
 
                 const weekVal = weeklyCount(goal.text)
                 const tgt = Number(goal.target) || 0
-                const pct = tgt ? Math.min(1, weekVal / tgt) : 0
                 const done = tgt > 0 && weekVal >= tgt
                 return (
                   <div key={gi} className={`rounded-2xl border transition-all ${done ? 'bg-emerald-500/8 border-emerald-200 dark:border-emerald-900' : 'bg-white dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800'}`}>
-                    <div className="flex items-center gap-3 px-4 py-3">
-                      <span className={`flex-1 text-sm font-medium truncate ${done ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</span>
-                      {tgt > 0 && <div className="w-16 bg-zinc-100 dark:bg-zinc-800 rounded-full h-1.5 overflow-hidden shrink-0"><div className={`h-full rounded-full transition-all ${done ? 'bg-emerald-400' : 'bg-emerald-500'}`} style={{ width: `${pct * 100}%` }} /></div>}
-                      <span className={`text-[11px] font-medium shrink-0 ${done ? 'text-emerald-400' : 'text-zinc-400'}`}>{weekVal}{tgt ? `/${tgt}` : ''}{goal.unit ? ` ${goal.unit}` : ''}</span>
-                      {isOwner && !isFutureDay && <Counter value={getCountVal(goal.text)} unit={goal.unit} onChange={v => setDayCount(goal.text, v)} />}
+                    <div className="flex items-center gap-4 px-4 py-3">
+                      <RingProgress value={weekVal} target={tgt} />
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-semibold truncate ${done ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</p>
+                        <p className="text-xs text-zinc-400 mt-0.5">{goal.unit ? `${goal.unit} this week` : 'this week'}</p>
+                        {isOwner && !isFutureDay && (
+                          <div className="mt-2.5">
+                            <Counter value={getCountVal(goal.text)} unit={goal.unit} onChange={v => setDayCount(goal.text, v)} />
+                          </div>
+                        )}
+                      </div>
                       {isOwner && !isFutureDay && (
-                        <button onClick={() => setActiveGoalSheet(goal)} className="text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 transition-colors shrink-0"><Camera size={13} /></button>
+                        <button onClick={() => setActiveGoalSheet(goal)} className="text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 transition-colors shrink-0 self-start mt-1"><Camera size={13} /></button>
                       )}
                     </div>
                     {hasProof && <div className="px-4 pb-3 border-t border-zinc-50 dark:border-zinc-800 pt-2">{proofBlock}</div>}
