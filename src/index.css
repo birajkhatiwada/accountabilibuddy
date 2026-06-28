@@ -28,3 +28,15 @@
 .glow-pop {
   animation: glow-pop 0.7s ease-out forwards;
 }
+
+@keyframes check-pop {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.45); }
+  55%  { transform: scale(0.88); }
+  75%  { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+.check-pop {
+  animation: check-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}

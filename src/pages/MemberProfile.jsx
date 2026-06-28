@@ -153,8 +153,7 @@ export default function MemberProfile() {
   const [uploadingPhoto, setUploadingPhoto] = useState({})
   const [reactionPickerOpen, setReactionPickerOpen] = useState(null)
   const longPressTimer = useRef(null)
-  const swipeTouchStart = useRef({})
-  const [swipeOffset, setSwipeOffset] = useState({})
+  const [justChecked, setJustChecked] = useState({})
   const dndSensors = useSensors(
     useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -664,9 +663,9 @@ export default function MemberProfile() {
       {/* Hero */}
       <div className={`-mx-4 bg-gradient-to-br ${color} relative overflow-hidden px-6 pt-5 pb-0`}>
         {/* Background texture */}
-        <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: `radial-gradient(circle, white 1px, transparent 1px)`, backgroundSize: '22px 22px' }} />
-        <div className="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-white/10" />
-        <div className="absolute -left-8 bottom-0 w-40 h-40 rounded-full bg-black/10" />
+        <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: `radial-gradient(circle, white 1px, transparent 1px)`, backgroundSize: '22px 22px' }} />
+        <div className="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-white/10 pointer-events-none" />
+        <div className="absolute -left-8 bottom-0 w-40 h-40 rounded-full bg-black/10 pointer-events-none" />
         {/* Vibe emoji watermark */}
         {bannerVibe && <div className="absolute right-4 bottom-6 text-7xl opacity-20 select-none pointer-events-none">{bannerVibe}</div>}
 
@@ -963,42 +962,31 @@ export default function MemberProfile() {
                 if (goal.type === 'habit') {
                   const checked = !!logs[selectedDay]?.habits?.[goal.text]
                   const daysLogged = weeklyHabitDays(goal.text)
-                  const offset = (isOwner && !isFutureDay) ? (swipeOffset[goal.text] || 0) : 0
-                  const revealPct = Math.min(1, Math.abs(offset) / 72)
+                  const isAnimating = !!justChecked[goal.text]
                   return (
                     <SortableGoalRow key={goal.text} id={goal.text} isOwner={isOwner}>
                       {handle => (
                       <div className="space-y-1.5">
-                        <div
-                          className={`relative rounded-2xl overflow-hidden border transition-colors ${checked ? 'border-emerald-200 dark:border-emerald-900' : 'border-zinc-100 dark:border-zinc-800'}`}
-                          onTouchStart={isOwner && !isFutureDay ? e => { swipeTouchStart.current[goal.text] = e.touches[0].clientX } : undefined}
-                          onTouchMove={isOwner && !isFutureDay ? e => {
-                            const dx = e.touches[0].clientX - (swipeTouchStart.current[goal.text] || 0)
-                            if ((!checked && dx > 0) || (checked && dx < 0)) {
-                              setSwipeOffset(p => ({ ...p, [goal.text]: Math.min(Math.abs(dx), 110) * Math.sign(dx) }))
-                            }
-                          } : undefined}
-                          onTouchEnd={isOwner && !isFutureDay ? () => {
-                            if (Math.abs(swipeOffset[goal.text] || 0) > 72) toggleHabit(goal.text)
-                            setSwipeOffset(p => ({ ...p, [goal.text]: 0 }))
-                          } : undefined}
-                        >
-                          {isOwner && !isFutureDay && (
-                            <div className={`absolute inset-0 flex items-center ${checked ? 'justify-end pr-5 bg-zinc-100 dark:bg-zinc-800' : 'justify-start pl-5 bg-emerald-500'}`}
-                              style={{ opacity: revealPct }}>
-                              {checked
-                                ? <X size={18} className="text-zinc-500" />
-                                : <svg width="18" height="14" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                              }
-                            </div>
-                          )}
-                          <div
-                            className={`flex items-center gap-3 px-4 py-3 ${checked ? 'bg-emerald-500/8' : 'bg-white dark:bg-zinc-900'}`}
-                            style={{ transform: `translateX(${offset}px)`, transition: offset === 0 ? 'transform 0.4s cubic-bezier(0.34,1.56,0.64,1)' : 'none' }}
-                          >
-                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${checked ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-600'}`}>
-                              {checked && <svg width="8" height="6" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-                            </div>
+                        <div className={`rounded-2xl border transition-colors ${checked ? 'bg-emerald-500/8 border-emerald-200 dark:border-emerald-900' : 'bg-white dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800'}`}>
+                          <div className="flex items-center gap-3 px-4 py-3">
+                            <button
+                              onClick={() => {
+                                if (!isOwner || isFutureDay) return
+                                if (!checked) {
+                                  setJustChecked(p => ({ ...p, [goal.text]: true }))
+                                  setTimeout(() => setJustChecked(p => ({ ...p, [goal.text]: false })), 400)
+                                }
+                                toggleHabit(goal.text)
+                              }}
+                              disabled={isFutureDay || !isOwner}
+                              className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${checked ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-600 hover:border-emerald-400'} ${isAnimating ? 'check-pop' : ''}`}
+                            >
+                              {checked && (
+                                <svg width="9" height="7" viewBox="0 0 10 8" fill="none">
+                                  <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                              )}
+                            </button>
                             <span className={`flex-1 text-sm font-medium truncate ${checked ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</span>
                             <div className="flex gap-0.5 shrink-0">
                               {weekDays.map((d, i) => {
