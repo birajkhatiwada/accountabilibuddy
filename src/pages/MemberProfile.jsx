@@ -623,153 +623,121 @@ export default function MemberProfile() {
   return (
     <div className="flex flex-col space-y-4 min-h-screen -mx-4 px-4 -mt-3">
 
-      {/* Hero */}
-      <div className={`-mx-4 bg-gradient-to-br ${color} relative overflow-hidden px-6 pt-5 pb-0`}>
-        {/* Background texture */}
-        <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: `radial-gradient(circle, white 1px, transparent 1px)`, backgroundSize: '22px 22px' }} />
-        <div className="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-white/10 pointer-events-none" />
-        <div className="absolute -left-8 bottom-0 w-40 h-40 rounded-full bg-black/10 pointer-events-none" />
-        {/* Vibe emoji watermark */}
-        {bannerVibe && <div className="absolute right-4 bottom-6 text-7xl opacity-20 select-none pointer-events-none">{bannerVibe}</div>}
+      {/* Banner */}
+      <div className={`-mx-4 bg-gradient-to-br ${color} relative overflow-hidden px-5 pt-4 pb-3`}>
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `radial-gradient(circle, white 1px, transparent 1px)`, backgroundSize: '20px 20px' }} />
+        {bannerVibe && <div className="absolute right-4 top-1/2 -translate-y-1/2 text-6xl opacity-15 select-none pointer-events-none">{bannerVibe}</div>}
 
-        {/* Week label + actions */}
-        <div className="relative flex items-center justify-between mb-5">
-          <div className="flex items-center gap-2">
-            <p className="text-white/50 text-[11px] font-semibold uppercase tracking-widest">{formatWeekLabel(weekId)}</p>
-            <button onClick={() => setShowCustomize(v => !v)}
-              className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold transition-all ${showCustomize ? 'bg-white/25 text-white' : 'bg-white/10 text-white/50 hover:bg-white/20 hover:text-white/80'}`}>
-              🎨 Customize
-            </button>
+        {/* Main row: avatar + info + actions */}
+        <div className="relative flex items-center gap-3">
+          <button onClick={() => setPickingAvatar(v => !v)}
+            className="w-12 h-12 rounded-xl bg-white/20 border border-white/25 flex items-center justify-center relative group transition-all hover:scale-105 active:scale-95 shrink-0">
+            {avatars[name]
+              ? <span className="text-2xl">{avatars[name]}</span>
+              : <span className="text-white font-black text-2xl leading-none">{name[0].toUpperCase()}</span>}
+            <span className="absolute inset-0 rounded-xl bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <Pencil size={9} className="text-white" />
+            </span>
+          </button>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <h2 className="text-lg font-black text-white leading-none">{nickname || name}</h2>
+              {entry?.status === 'completed' && <span className="text-[10px] font-bold text-emerald-200 bg-emerald-500/25 px-1.5 py-0.5 rounded-full">✅ Done!</span>}
+              {entry?.status === 'failed'    && <span className="text-[10px] font-bold text-red-200 bg-red-500/25 px-1.5 py-0.5 rounded-full">❌ Failed</span>}
+              {streak >= 2 && <span className="text-[10px] font-bold text-amber-200 bg-amber-500/20 px-1.5 py-0.5 rounded-full">🔥{streak}w</span>}
+              {badges.map((b, i) => <span key={i} title={b.label} className="text-sm cursor-default">{b.emoji}</span>)}
+            </div>
+
+            {editingStatus ? (
+              <input autoFocus value={statusInput}
+                onChange={e => setStatusInput(e.target.value)}
+                onBlur={() => saveStatus(statusInput)}
+                onKeyDown={e => { if (e.key === 'Enter') saveStatus(statusInput); if (e.key === 'Escape') setEditingStatus(false) }}
+                maxLength={40} placeholder="status…"
+                className="mt-1 w-full bg-white/10 border border-white/20 rounded-lg px-2 py-0.5 text-xs text-white placeholder-white/30 focus:outline-none"
+                style={{ fontSize: 16 }}
+              />
+            ) : (
+              <button onClick={() => { setStatusInput(status); setEditingStatus(true) }}
+                className="mt-0.5 flex items-center gap-1 group">
+                <span className="text-xs text-white/55 group-hover:text-white/80 transition-colors leading-none">
+                  {status || (isOwner ? '+ status' : '')}
+                </span>
+                {isOwner && <Pencil size={8} className="text-white/20 group-hover:text-white/50 transition-colors shrink-0" />}
+              </button>
+            )}
+            <p className="text-[10px] text-white/35 mt-0.5 leading-none">{formatWeekLabel(weekId)}</p>
           </div>
-          <div className="flex items-center gap-1">
+
+          <div className="flex items-center gap-0.5 shrink-0">
+            <button onClick={() => setShowCustomize(v => !v)}
+              className={`p-1.5 rounded-full text-base transition-all ${showCustomize ? 'bg-white/25' : 'opacity-50 hover:opacity-90'}`}>🎨</button>
             <button onClick={handleShare}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/15 hover:bg-white/25 text-white/80 text-[11px] font-semibold transition-all">
-              <Link2 size={10} /> {copied ? 'Copied!' : 'Share'}
+              className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/15 hover:bg-white/25 text-white/70 text-[11px] font-semibold transition-all">
+              <Link2 size={11} />{copied ? 'Copied!' : 'Share'}
             </button>
             {confirmDelete ? (
-              <div className="flex items-center gap-1.5">
-                <button onClick={deleteMember} className="text-[11px] font-bold text-red-300 px-2 py-1 bg-red-900/50 rounded-full">Remove</button>
-                <button onClick={() => setConfirmDelete(false)} className="text-[11px] text-white/50 px-2 py-1">Cancel</button>
-              </div>
+              <>
+                <button onClick={deleteMember} className="text-[11px] font-bold text-red-300 px-2 py-0.5 bg-red-900/50 rounded-full">Remove</button>
+                <button onClick={() => setConfirmDelete(false)} className="text-[11px] text-white/50 px-1.5 py-0.5">No</button>
+              </>
             ) : (
-              <button onClick={() => setConfirmDelete(true)} className="p-1.5 rounded-full bg-white/10 hover:bg-red-500/30 text-white/40 hover:text-red-300 transition-all">
+              <button onClick={() => setConfirmDelete(true)} className="p-1.5 rounded-full hover:bg-red-500/30 text-white/35 hover:text-red-300 transition-all">
                 <Trash2 size={13} />
               </button>
             )}
           </div>
         </div>
 
-        {/* Avatar + name */}
-        <div className="relative flex items-end gap-4 mb-5">
-          <button onClick={() => setPickingAvatar(v => !v)}
-            className="w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center shadow-2xl relative group transition-all hover:scale-105 active:scale-95 shrink-0">
-            {avatars[name]
-              ? <span className="text-4xl">{avatars[name]}</span>
-              : <span className="text-white font-black text-4xl leading-none">{name[0].toUpperCase()}</span>}
-            <span className="absolute bottom-1.5 right-1.5 w-5 h-5 rounded-full bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <Pencil size={9} className="text-white" />
-            </span>
+        {/* Bio — only shown if set or being edited */}
+        {editingBio ? (
+          <textarea autoFocus value={bioInput}
+            onChange={e => setBioInput(e.target.value)}
+            onBlur={() => saveBio(bioInput)}
+            onKeyDown={e => { if (e.key === 'Escape') saveBio(bioInput) }}
+            maxLength={120} rows={2} placeholder="Short bio…"
+            className="relative mt-2 w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/40 resize-none"
+            style={{ fontSize: 16 }}
+          />
+        ) : bio ? (
+          <button onClick={() => { setBioInput(bio); setEditingBio(true) }}
+            className="relative mt-1.5 flex items-start gap-1 group text-left">
+            <span className="text-xs text-white/55 group-hover:text-white/80 transition-colors leading-snug">{bio}</span>
+            {isOwner && <Pencil size={8} className="text-white/20 group-hover:text-white/50 transition-colors mt-0.5 shrink-0" />}
           </button>
-          <div className="pb-1 flex-1 min-w-0">
-            <h2 className="text-3xl font-black text-white leading-none tracking-tight">{nickname || name}</h2>
-            {nickname && <p className="text-xs text-white/50 leading-none mt-0.5">@{name}</p>}
-
-            {/* Editable status */}
-            {editingStatus ? (
-              <input autoFocus value={statusInput}
-                onChange={e => setStatusInput(e.target.value)}
-                onBlur={() => saveStatus(statusInput)}
-                onKeyDown={e => { if (e.key === 'Enter') saveStatus(statusInput); if (e.key === 'Escape') setEditingStatus(false) }}
-                maxLength={40}
-                placeholder="What's your vibe? e.g. 💪 locked in"
-                className="mt-2 w-full bg-white/10 border border-white/20 rounded-lg px-2.5 py-1 text-white placeholder-white/30 focus:outline-none focus:border-white/40"
-                style={{ fontSize: 16 }}
-              />
-            ) : (
-              <button onClick={() => { setStatusInput(status); setEditingStatus(true) }}
-                className="mt-1.5 flex items-center gap-1 group">
-                <span className="text-xs text-white/60 group-hover:text-white/80 transition-colors">
-                  {status || '+ add status'}
-                </span>
-                <Pencil size={9} className="text-white/20 group-hover:text-white/50 transition-colors" />
-              </button>
-            )}
-
-            <div className="flex items-center gap-1.5 flex-wrap mt-2">
-              {entry?.status === 'completed' && <span className="text-[11px] font-bold text-emerald-200 bg-emerald-500/25 px-2.5 py-0.5 rounded-full">✅ Week done!</span>}
-              {entry?.status === 'failed'    && <span className="text-[11px] font-bold text-red-200 bg-red-500/25 px-2.5 py-0.5 rounded-full">❌ Week failed</span>}
-              {!entry                        && <span className="text-[11px] text-white/40 bg-white/10 px-2.5 py-0.5 rounded-full">No goals set</span>}
-              {streak >= 2 && <span className="text-[11px] font-bold text-amber-200 bg-amber-500/20 px-2.5 py-0.5 rounded-full">🔥 {streak}-week streak</span>}
-            </div>
-          </div>
-        </div>
-
-
-        {/* Bio inside banner */}
-        <div className="relative mb-4">
-          {editingBio ? (
-            <textarea autoFocus value={bioInput}
-              onChange={e => setBioInput(e.target.value)}
-              onBlur={() => saveBio(bioInput)}
-              onKeyDown={e => { if (e.key === 'Escape') saveBio(bioInput) }}
-              maxLength={120}
-              rows={2}
-              placeholder="Write a short bio…"
-              className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white placeholder-white/30 focus:outline-none focus:border-white/40 resize-none"
-              style={{ fontSize: 16 }}
-            />
-          ) : (
-            <button onClick={() => { setBioInput(bio); setEditingBio(true) }}
-              className="flex items-start gap-1.5 group text-left w-full">
-              <span className="text-sm text-white/60 group-hover:text-white/80 transition-colors leading-snug">
-                {bio || '+ add bio'}
-              </span>
-              <Pencil size={9} className="text-white/20 group-hover:text-white/50 transition-colors mt-1 shrink-0" />
-            </button>
-          )}
-        </div>
-
-        {/* Badges */}
-        {badges.length > 0 && (
-          <div className="relative flex items-center gap-1.5 mb-4">
-            {badges.map((b, i) => (
-              <span key={i} title={b.label} className="text-xl cursor-default">{b.emoji}</span>
-            ))}
-          </div>
-        )}
+        ) : isOwner ? (
+          <button onClick={() => { setBioInput(''); setEditingBio(true) }}
+            className="relative mt-1 text-[11px] text-white/25 hover:text-white/60 transition-colors">+ bio</button>
+        ) : null}
 
         {/* Customize panel */}
         {showCustomize && (
-          <div className="relative bg-black/20 backdrop-blur-sm rounded-2xl p-3 mb-3 space-y-3">
-            <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest">Customize banner</p>
+          <div className="relative mt-3 bg-black/20 backdrop-blur-sm rounded-2xl p-3 space-y-2.5">
             <div className="flex flex-wrap gap-2">
               {BANNER_COLORS.map((_, i) => (
                 <button key={i} onClick={() => saveBannerColor(i)}
-                  className={`w-6 h-6 rounded-full transition-all ${bannerColorIdx === i ? 'ring-2 ring-white ring-offset-1 ring-offset-transparent scale-110' : 'opacity-70 hover:opacity-100'}`}
+                  className={`w-5 h-5 rounded-full transition-all ${bannerColorIdx === i ? 'ring-2 ring-white scale-110' : 'opacity-70 hover:opacity-100'}`}
                   style={{ background: BANNER_COLOR_PREVIEWS[i] }} />
               ))}
             </div>
             <div className="flex flex-wrap gap-1.5">
               {VIBE_EMOJIS.map(e => (
                 <button key={e} onClick={() => saveBannerVibe(bannerVibe === e ? '' : e)}
-                  className={`text-xl transition-all ${bannerVibe === e ? 'scale-125' : 'opacity-50 hover:opacity-100'}`}>
-                  {e}
-                </button>
+                  className={`text-lg transition-all ${bannerVibe === e ? 'scale-125' : 'opacity-50 hover:opacity-100'}`}>{e}</button>
               ))}
             </div>
           </div>
         )}
 
         {isOwner && myGoals.length > 0 && (
-          <div className="mt-3">
-            <button onClick={() => navigate(`/${sessionId}/member/${encodeURIComponent(name)}/goals`)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 hover:bg-white/25 text-white/70 hover:text-white text-xs font-semibold transition-all">
-              <Pencil size={10} /> Edit this week's goals
-            </button>
-          </div>
+          <button onClick={() => navigate(`/${sessionId}/member/${encodeURIComponent(name)}/goals`)}
+            className="relative mt-2 flex items-center gap-1 text-[11px] text-white/40 hover:text-white/70 transition-colors">
+            <Pencil size={9} /> edit goals
+          </button>
         )}
 
-        <div className="h-1 -mx-6 bg-black/10 mt-4" />
+        <div className="h-px -mx-5 bg-black/10 mt-3" />
       </div>
 
 
@@ -898,6 +866,23 @@ export default function MemberProfile() {
                         })}
                       </div>
                     )}
+                    {/* Saved note / photo for this day */}
+                    {(() => {
+                      const proof = getGoalProof(goal.text)
+                      if (!proof.note && !proof.photoUrl) return null
+                      return (
+                        <div className="ml-7 mt-1.5 space-y-1.5">
+                          {proof.note && (
+                            <p className="text-xs text-zinc-500 dark:text-zinc-400 italic leading-snug line-clamp-3">
+                              "{proof.note}"
+                            </p>
+                          )}
+                          {proof.photoUrl && (
+                            <img src={proof.photoUrl} alt="" className="h-20 rounded-xl object-cover" />
+                          )}
+                        </div>
+                      )
+                    })()}
                   </div>
                 )
               })}
@@ -1103,11 +1088,7 @@ export default function MemberProfile() {
           {/* Goal bottom sheet */}
           {activeGoalSheet && (() => {
             const goal = activeGoalSheet
-            const isFutureDay = selectedDay > todayKey
             const proof = getGoalProof(goal.text)
-            const hasProof = !!(proof.note || proof.photoUrl)
-            const reactions = Array.isArray(proof.reactions) ? proof.reactions : []
-            const inputVal = proofNoteInputs[goal.text] ?? ''
             const uploading = uploadingPhoto[goal.text]
             const isEditing = !!editingProof[goal.text]
 
