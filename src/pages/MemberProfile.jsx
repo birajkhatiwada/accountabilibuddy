@@ -864,20 +864,21 @@ export default function MemberProfile() {
                           })}
                         </div>
                       )}
-                      {(() => {
-                        const proof = getGoalProof(goal.text)
-                        if (!proof.note && !proof.photoUrl) return null
-                        return (
-                          <div className="ml-6 mb-2 space-y-1">
-                            {proof.note && <p className="text-xs text-zinc-400 dark:text-zinc-500 italic line-clamp-2">"{proof.note}"</p>}
-                            {proof.photoUrl && <img src={proof.photoUrl} alt="" className="h-16 rounded-lg object-cover" />}
-                          </div>
-                        )
-                      })()}
                     </div>
                   )
                 })}
               </div>
+              {/* Daily note / photo — one per day, shown below all goals */}
+              {(() => {
+                const daily = getGoalProof('__daily__')
+                if (!daily.note && !daily.photoUrl) return null
+                return (
+                  <div className="mt-2 pt-2 border-t border-zinc-100 dark:border-zinc-800 space-y-1.5">
+                    {daily.photoUrl && <img src={daily.photoUrl} alt="" className="w-full max-h-40 rounded-xl object-cover" />}
+                    {daily.note && <p className="text-xs text-zinc-400 dark:text-zinc-500 italic">"{daily.note}"</p>}
+                  </div>
+                )
+              })()}
             </div>
           )}
 
@@ -886,8 +887,8 @@ export default function MemberProfile() {
             const goal = loggingSheet
             const isFutureDay = selectedDay > todayKey
             const close = () => setLoggingSheet(null)
-            const noteVal = proofNoteInputs[goal.text] ?? ''
-            const existingNote = getGoalProof(goal.text).note ?? ''
+            const noteVal = proofNoteInputs['__daily__'] ?? ''
+            const existingNote = getGoalProof('__daily__').note ?? ''
 
             const sheetHeader = (label) => (
               <div className="flex items-center justify-between pt-1 pb-3">
@@ -905,18 +906,21 @@ export default function MemberProfile() {
               <div className="mt-4 border-t border-zinc-100 dark:border-zinc-800 pt-3 pb-3 flex items-center gap-2">
                 <input
                   type="text"
-                  placeholder={existingNote || 'Add a note…'}
+                  placeholder={existingNote || 'Note for today…'}
                   value={noteVal}
-                  onChange={e => setProofNoteInputs(p => ({ ...p, [goal.text]: e.target.value }))}
-                  onBlur={() => { if (noteVal.trim() && noteVal.trim() !== existingNote) sendProofNote(goal.text) }}
-                  onKeyDown={e => { if (e.key === 'Enter' && noteVal.trim()) sendProofNote(goal.text) }}
+                  onChange={e => setProofNoteInputs(p => ({ ...p, '__daily__': e.target.value }))}
+                  onBlur={() => { if (noteVal.trim() && noteVal.trim() !== existingNote) sendProofNote('__daily__') }}
+                  onKeyDown={e => { if (e.key === 'Enter' && noteVal.trim()) sendProofNote('__daily__') }}
                   style={{ fontSize: 16 }}
                   className="flex-1 min-w-0 bg-transparent border-b border-zinc-200 dark:border-zinc-700 py-1 text-sm text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-emerald-400 dark:focus:border-emerald-500 transition-colors"
                 />
-                <button onClick={() => { close(); setActiveGoalSheet(goal) }}
-                  className="shrink-0 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors p-1">
-                  <Camera size={16} />
-                </button>
+                <label className="shrink-0 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors p-1 cursor-pointer">
+                  {uploadingPhoto['__daily__']
+                    ? <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                    : <Camera size={16} />}
+                  <input type="file" accept="image/*" capture="environment" className="hidden"
+                    onChange={e => { const f = e.target.files?.[0]; if (f) uploadGoalPhoto('__daily__', f); e.target.value = '' }} />
+                </label>
               </div>
             )
 
