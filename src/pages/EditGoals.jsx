@@ -154,7 +154,6 @@ function GoalPopup({ goal, onSave, onClose }) {
                           update({ unit: unitQuery.trim() }); setUnitQuery(''); setUnitOpen(false)
                         }
                       }}
-                      style={{ fontSize: 16 }}
                       className="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-2xl text-sm font-semibold text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-600 transition-colors"
                     />
                   )}
@@ -181,21 +180,21 @@ function GoalPopup({ goal, onSave, onClose }) {
               <p className="text-xs font-semibold text-zinc-500 mb-2">Breakdowns <span className="font-normal text-zinc-600">(optional)</span></p>
               <div className="space-y-2">
                 {draft.subGoals.map((sg, si) => (
-                  <div key={si} className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3">
+                  <div key={si} className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-2xl px-4" style={{ height: 44 }}>
                     <input type="text" placeholder="e.g. Hard problems"
                       value={sg.text}
                       onChange={e => updateSub(si, { text: e.target.value })}
-                      className="flex-1 min-w-0 bg-transparent text-sm font-semibold text-white placeholder-zinc-600 focus:outline-none"
+                      className="flex-1 min-w-0 h-full bg-transparent text-sm font-semibold text-white placeholder-zinc-600 focus:outline-none"
                     />
                     <div className="flex items-center bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden shrink-0">
                       <button type="button" onClick={() => updateSub(si, { target: String(Math.max(1, (Number(sg.target) || 0) - 1)) })}
-                        className="w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-white active:scale-90 transition-all select-none text-lg">−</button>
+                        className="w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-white active:scale-90 transition-all select-none text-sm">−</button>
                       <span className="w-7 text-center text-sm font-semibold text-white tabular-nums">{sg.target || '0'}</span>
                       <button type="button" onClick={() => updateSub(si, { target: String((Number(sg.target) || 0) + 1) })}
-                        className="w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-white active:scale-90 transition-all select-none text-lg">+</button>
+                        className="w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-white active:scale-90 transition-all select-none text-sm">+</button>
                     </div>
-                    <button onClick={() => removeSub(si)} className="text-zinc-700 hover:text-red-400 transition-colors shrink-0 p-0.5">
-                      <Trash2 size={13} />
+                    <button onClick={() => removeSub(si)} className="text-zinc-700 hover:text-red-400 transition-colors shrink-0">
+                      <Trash2 size={12} />
                     </button>
                   </div>
                 ))}
