@@ -621,7 +621,7 @@ export default function MemberProfile() {
     : ''
 
   return (
-    <div className="flex flex-col space-y-4 min-h-screen -mx-4 px-4 -mt-3">
+    <div className="flex flex-col space-y-4 -mx-4 px-4 -mt-3 pb-4">
 
       {/* Banner */}
       <div className={`-mx-4 bg-gradient-to-br ${color} relative overflow-hidden px-5 pt-4 pb-3`}>
