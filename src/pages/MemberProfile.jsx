@@ -889,20 +889,28 @@ export default function MemberProfile() {
                   const checked = !!logs[selectedDay]?.habits?.[goal.text]
                   const daysLogged = weeklyHabitDays(goal.text)
                   return (
-                    <div key={gi} className="space-y-1.5">
-                      <button onClick={() => setActiveGoalSheet(goal)}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all active:scale-[0.99] ${
-                          checked ? 'bg-emerald-500/10' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
-                        }`}>
-                        <span className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-all ${
-                          checked ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-600'
-                        }`}>
-                          {checked && <svg width="8" height="6" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-                        </span>
-                        <span className={`flex-1 text-sm font-medium text-left truncate ${checked ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</span>
-                        <span className="text-[11px] text-zinc-400 shrink-0">{daysLogged}/7</span>
-                      </button>
-                      {hasProof && proofBlock}
+                    <div key={gi} className={`rounded-2xl border transition-all ${checked ? 'bg-emerald-500/8 border-emerald-200 dark:border-emerald-900' : 'bg-white dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800'}`}>
+                      <div className="flex items-center gap-3 px-4 py-3">
+                        <button onClick={() => isOwner && !isFutureDay && toggleHabit(goal.text)}
+                          disabled={isFutureDay || !isOwner}
+                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all active:scale-90 ${checked ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-600'}`}>
+                          {checked && <svg width="8" height="6" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                        </button>
+                        <span className={`flex-1 text-sm font-medium truncate ${checked ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</span>
+                        <div className="flex gap-0.5 shrink-0">
+                          {weekDays.map((d, i) => {
+                            const k = dateKey(d)
+                            const hit = !!logs[k]?.habits?.[goal.text]
+                            const isSel = k === selectedDay
+                            return <span key={i} className={`w-2 h-2 rounded-full transition-all ${hit ? 'bg-emerald-400' : isSel ? 'bg-zinc-300 dark:bg-zinc-600' : k > todayKey ? 'bg-zinc-100 dark:bg-zinc-800' : 'bg-zinc-200 dark:bg-zinc-700'}`} />
+                          })}
+                        </div>
+                        <span className="text-[11px] text-zinc-400 tabular-nums w-5 text-right">{daysLogged}/7</span>
+                        {isOwner && !isFutureDay && (
+                          <button onClick={() => setActiveGoalSheet(goal)} className="text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 transition-colors shrink-0"><Camera size={13} /></button>
+                        )}
+                      </div>
+                      {hasProof && <div className="px-4 pb-3 border-t border-zinc-50 dark:border-zinc-800 pt-2">{proofBlock}</div>}
                     </div>
                   )
                 }
@@ -913,43 +921,51 @@ export default function MemberProfile() {
                     return (Number(sg.target) || 0) > 0 && weeklyCount(k) >= Number(sg.target)
                   })
                   return (
-                    <div key={gi} className="space-y-1.5">
-                      <button onClick={() => setActiveGoalSheet(goal)}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all active:scale-[0.99] ${
-                          allDone ? 'bg-emerald-500/10' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
-                        }`}>
-                        <span className={`flex-1 text-sm font-medium text-left truncate ${allDone ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</span>
-                        <span className="text-[11px] text-zinc-400 shrink-0">
-                          {goal.subGoals.filter(sg => weeklyCount(`${goal.text}::${sg.text}`) >= (Number(sg.target) || 0)).length}/{goal.subGoals.length}
-                        </span>
-                      </button>
-                      {hasProof && proofBlock}
+                    <div key={gi} className={`rounded-2xl border transition-all ${allDone ? 'bg-emerald-500/8 border-emerald-200 dark:border-emerald-900' : 'bg-white dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800'}`}>
+                      <div className="px-4 pt-3 pb-2 flex items-center justify-between">
+                        <span className={`text-sm font-semibold ${allDone ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</span>
+                        {isOwner && !isFutureDay && (
+                          <button onClick={() => setActiveGoalSheet(goal)} className="text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 transition-colors"><Camera size={13} /></button>
+                        )}
+                      </div>
+                      <div className="px-4 pb-3 space-y-2">
+                        {goal.subGoals.map((sg, si) => {
+                          const k = `${goal.text}::${sg.text}`
+                          const weekVal = weeklyCount(k)
+                          const tgt = Number(sg.target) || 0
+                          const pct = tgt ? Math.min(1, weekVal / tgt) : 0
+                          const done = tgt > 0 && weekVal >= tgt
+                          return (
+                            <div key={si} className="flex items-center gap-2">
+                              <span className="text-xs text-zinc-500 dark:text-zinc-400 flex-1 truncate">{sg.text}</span>
+                              {tgt > 0 && <div className="w-14 bg-zinc-100 dark:bg-zinc-800 rounded-full h-1 overflow-hidden shrink-0"><div className={`h-full rounded-full ${done ? 'bg-emerald-400' : 'bg-emerald-500'}`} style={{ width: `${pct * 100}%` }} /></div>}
+                              <span className={`text-[11px] font-medium w-10 text-right shrink-0 ${done ? 'text-emerald-400' : 'text-zinc-400'}`}>{weekVal}{tgt ? `/${tgt}` : ''}</span>
+                              {isOwner && !isFutureDay && <Counter value={getCountVal(k)} unit={sg.unit} onChange={v => setDayCount(k, v)} />}
+                            </div>
+                          )
+                        })}
+                      </div>
+                      {hasProof && <div className="px-4 pb-3 border-t border-zinc-50 dark:border-zinc-800 pt-2">{proofBlock}</div>}
                     </div>
                   )
                 }
 
                 const weekVal = weeklyCount(goal.text)
                 const tgt = Number(goal.target) || 0
+                const pct = tgt ? Math.min(1, weekVal / tgt) : 0
                 const done = tgt > 0 && weekVal >= tgt
                 return (
-                  <div key={gi} className="space-y-1.5">
-                    <button onClick={() => setActiveGoalSheet(goal)}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all active:scale-[0.99] ${
-                        done ? 'bg-emerald-500/10' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
-                      }`}>
-                    <span className={`flex-1 text-sm font-medium text-left truncate ${done ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>
-                      {goal.text}
-                    </span>
-                    {tgt > 0 && (
-                      <div className="w-16 bg-zinc-200 dark:bg-zinc-700 rounded-full h-1 overflow-hidden shrink-0">
-                        <div className={`h-full rounded-full transition-all ${done ? 'bg-emerald-400' : 'bg-emerald-600'}`} style={{ width: `${Math.min(1, weekVal / tgt) * 100}%` }} />
-                      </div>
-                    )}
-                    <span className={`text-[11px] shrink-0 font-medium ${done ? 'text-emerald-400' : 'text-zinc-400'}`}>
-                      {weekVal}{tgt ? `/${tgt}` : ''}{goal.unit ? ` ${goal.unit}` : ''}
-                    </span>
-                    </button>
-                    {hasProof && proofBlock}
+                  <div key={gi} className={`rounded-2xl border transition-all ${done ? 'bg-emerald-500/8 border-emerald-200 dark:border-emerald-900' : 'bg-white dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800'}`}>
+                    <div className="flex items-center gap-3 px-4 py-3">
+                      <span className={`flex-1 text-sm font-medium truncate ${done ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</span>
+                      {tgt > 0 && <div className="w-16 bg-zinc-100 dark:bg-zinc-800 rounded-full h-1.5 overflow-hidden shrink-0"><div className={`h-full rounded-full transition-all ${done ? 'bg-emerald-400' : 'bg-emerald-500'}`} style={{ width: `${pct * 100}%` }} /></div>}
+                      <span className={`text-[11px] font-medium shrink-0 ${done ? 'text-emerald-400' : 'text-zinc-400'}`}>{weekVal}{tgt ? `/${tgt}` : ''}{goal.unit ? ` ${goal.unit}` : ''}</span>
+                      {isOwner && !isFutureDay && <Counter value={getCountVal(goal.text)} unit={goal.unit} onChange={v => setDayCount(goal.text, v)} />}
+                      {isOwner && !isFutureDay && (
+                        <button onClick={() => setActiveGoalSheet(goal)} className="text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 transition-colors shrink-0"><Camera size={13} /></button>
+                      )}
+                    </div>
+                    {hasProof && <div className="px-4 pb-3 border-t border-zinc-50 dark:border-zinc-800 pt-2">{proofBlock}</div>}
                   </div>
                 )
               })}
@@ -974,101 +990,37 @@ export default function MemberProfile() {
                   {/* Handle */}
                   <div className="flex justify-center pt-3 pb-1"><div className="w-10 h-1 rounded-full bg-zinc-200 dark:bg-zinc-700" /></div>
 
-                  <div className="px-5 pb-8 space-y-5">
-                    {/* Header */}
+                  <div className="px-5 pb-8 space-y-4">
                     <div className="flex items-center justify-between">
-                      <p className="font-bold text-zinc-900 dark:text-white text-base">{goal.text}</p>
+                      <p className="font-bold text-zinc-900 dark:text-white">{goal.text}</p>
                       <button onClick={() => { setActiveGoalSheet(null); setEditingProof({}) }} className="text-zinc-400 hover:text-zinc-600 transition-colors"><X size={18} /></button>
                     </div>
 
-                    {/* Log action */}
-                    {!isFutureDay && isOwner && (
-                      <div>
-                        {goal.type === 'habit' && (() => {
-                          const checked = !!logs[selectedDay]?.habits?.[goal.text]
-                          return (
-                            <button onClick={() => toggleHabit(goal.text)}
-                              className={`w-full py-3 rounded-2xl font-bold text-sm transition-all ${
-                                checked ? 'bg-emerald-500 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
-                              }`}>
-                              {checked ? '✓ Logged for today' : 'Mark as done'}
-                            </button>
-                          )
-                        })()}
-
-                        {goal.subGoals?.length > 0 && (
-                          <div className="space-y-3">
-                            {goal.subGoals.map((sg, si) => {
-                              const k = `${goal.text}::${sg.text}`
-                              const weekVal = weeklyCount(k)
-                              const tgt = Number(sg.target) || 0
-                              const pct = tgt ? Math.min(1, weekVal / tgt) : 0
-                              return (
-                                <div key={si} className="space-y-1.5">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-sm text-zinc-700 dark:text-zinc-300">{sg.text}</span>
-                                    <span className="text-xs text-zinc-400 font-medium">{weekVal}{tgt ? `/${tgt}` : ''}{sg.unit ? ` ${sg.unit}` : ''} this week</span>
-                                  </div>
-                                  {tgt > 0 && <div className="bg-zinc-100 dark:bg-zinc-800 rounded-full h-1.5 overflow-hidden"><div className={`h-full rounded-full transition-all ${pct >= 1 ? 'bg-emerald-400' : 'bg-emerald-600'}`} style={{ width: `${pct * 100}%` }} /></div>}
-                                  <div className="flex justify-end"><Counter value={getCountVal(k)} unit={sg.unit} onChange={v => setDayCount(k, v)} /></div>
-                                </div>
-                              )
-                            })}
-                          </div>
-                        )}
-
-                        {!goal.type && !goal.subGoals?.length && (() => {
-                          const weekVal = weeklyCount(goal.text)
-                          const tgt = Number(goal.target) || 0
-                          const pct = tgt ? Math.min(1, weekVal / tgt) : 0
-                          return (
-                            <div className="space-y-1.5">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs text-zinc-400">This week</span>
-                                <span className="text-xs text-zinc-400 font-medium">{weekVal}{tgt ? `/${tgt}` : ''}{goal.unit ? ` ${goal.unit}` : ''}</span>
-                              </div>
-                              {tgt > 0 && <div className="bg-zinc-100 dark:bg-zinc-800 rounded-full h-1.5 overflow-hidden"><div className={`h-full rounded-full transition-all ${pct >= 1 ? 'bg-emerald-400' : 'bg-emerald-600'}`} style={{ width: `${pct * 100}%` }} /></div>}
-                              <div className="flex justify-end"><Counter value={getCountVal(goal.text)} unit={goal.unit} onChange={v => setDayCount(goal.text, v)} /></div>
-                            </div>
-                          )
-                        })()}
-                      </div>
-                    )}
-
-                    {/* Proof actions — owner only */}
-                    {isOwner && !isFutureDay && (
-                      <>
-                        <div className="h-px bg-zinc-100 dark:bg-zinc-800" />
-                        <div className="space-y-3">
-                          <p className="text-xs text-zinc-400 uppercase tracking-wider font-semibold">Proof</p>
-                          {isEditing ? (
-                            <div className="border border-emerald-500 rounded-xl overflow-hidden">
-                              <textarea autoFocus value={proofNoteInputs[goal.text] ?? ''} onChange={e => setProofNoteInputs(p => ({ ...p, [goal.text]: e.target.value }))}
-                                placeholder="What did you do?" rows={3} style={{ fontSize: 16 }}
-                                className="w-full bg-white dark:bg-zinc-900 px-3 py-2.5 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-300 dark:placeholder-zinc-600 focus:outline-none resize-none" />
-                              <div className="flex items-center justify-end gap-2 px-3 py-2 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/80">
-                                <button onClick={() => setEditingProof(p => ({ ...p, [goal.text]: false }))} className="text-xs text-zinc-400 hover:text-zinc-600 transition-colors">Cancel</button>
-                                <button onClick={() => { sendProofNote(goal.text); setEditingProof(p => ({ ...p, [goal.text]: false })) }}
-                                  disabled={!(proofNoteInputs[goal.text] ?? '').trim()}
-                                  className="text-xs font-bold text-white bg-emerald-500 hover:bg-emerald-400 disabled:opacity-30 px-3 py-1 rounded-lg transition-colors">Save</button>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-3">
-                              <button onClick={() => { setEditingProof(p => ({ ...p, [goal.text]: true })); setProofNoteInputs(p => ({ ...p, [goal.text]: proof.note || '' })) }}
-                                className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors">
-                                <Pencil size={12} /> {proof.note ? 'Edit note' : 'Add note'}
-                              </button>
-                              <span className="text-zinc-200 dark:text-zinc-700">·</span>
-                              <label className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors cursor-pointer">
-                                {uploading ? <div className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /> : <Camera size={12} />}
-                                {proof.photoUrl ? 'Replace photo' : 'Add photo'}
-                                <input type="file" accept="image/*" capture="environment" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadGoalPhoto(goal.text, f); e.target.value = '' }} />
-                              </label>
-                            </div>
-                          )}
+                    {isEditing ? (
+                      <div className="border border-emerald-500 rounded-xl overflow-hidden">
+                        <textarea autoFocus value={proofNoteInputs[goal.text] ?? ''} onChange={e => setProofNoteInputs(p => ({ ...p, [goal.text]: e.target.value }))}
+                          placeholder="What did you do?" rows={4} style={{ fontSize: 16 }}
+                          className="w-full bg-white dark:bg-zinc-900 px-4 py-3 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-300 dark:placeholder-zinc-600 focus:outline-none resize-none" />
+                        <div className="flex items-center justify-end gap-2 px-4 py-2.5 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/80">
+                          <button onClick={() => setEditingProof(p => ({ ...p, [goal.text]: false }))} className="text-sm text-zinc-400 hover:text-zinc-600 transition-colors">Cancel</button>
+                          <button onClick={() => { sendProofNote(goal.text); setEditingProof(p => ({ ...p, [goal.text]: false })); setActiveGoalSheet(null) }}
+                            disabled={!(proofNoteInputs[goal.text] ?? '').trim()}
+                            className="text-sm font-bold text-white bg-emerald-500 hover:bg-emerald-400 disabled:opacity-30 px-4 py-1.5 rounded-lg transition-colors">Save</button>
                         </div>
-                      </>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-3">
+                        <button onClick={() => { setEditingProof(p => ({ ...p, [goal.text]: true })); setProofNoteInputs(p => ({ ...p, [goal.text]: proof.note || '' })) }}
+                          className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors text-left">
+                          <Pencil size={15} className="text-zinc-400 shrink-0" />
+                          <span className="text-sm text-zinc-600 dark:text-zinc-400">{proof.note || 'Add a note…'}</span>
+                        </button>
+                        <label className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer">
+                          {uploading ? <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin shrink-0" /> : <Camera size={15} className="text-zinc-400 shrink-0" />}
+                          <span className="text-sm text-zinc-600 dark:text-zinc-400">{proof.photoUrl ? 'Replace photo' : 'Add a photo…'}</span>
+                          <input type="file" accept="image/*" capture="environment" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) { uploadGoalPhoto(goal.text, f); setActiveGoalSheet(null) } e.target.value = '' }} />
+                        </label>
+                      </div>
                     )}
                   </div>
                 </div>
