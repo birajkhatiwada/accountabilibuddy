@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { useParams, useNavigate } from 'react-router-dom'
 import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, addDoc, setDoc, getDoc, Timestamp } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
@@ -924,7 +925,7 @@ export default function MemberProfile() {
 
             // ── breakdown ──────────────────────────────────────────────────
             if (goal.subGoals?.length > 0) {
-              return (
+              return createPortal(
                 <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={close}>
                   <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
                   <div className="relative bg-white dark:bg-zinc-900 rounded-t-2xl w-full max-w-lg slide-up flex flex-col"
@@ -965,7 +966,7 @@ export default function MemberProfile() {
                     </div>
                   </div>
                 </div>
-              )
+              , document.body)
             }
 
             // ── count ──────────────────────────────────────────────────────
@@ -973,7 +974,7 @@ export default function MemberProfile() {
             const tgt = Number(goal.target) || 0
             const pct = tgt ? Math.min(1, weekVal / tgt) : 0
             const done = tgt > 0 && weekVal >= tgt
-            return (
+            return createPortal(
               <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={close}>
                 <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
                 <div className="relative bg-white dark:bg-zinc-900 rounded-t-2xl w-full max-w-lg slide-up flex flex-col"
@@ -1007,7 +1008,7 @@ export default function MemberProfile() {
                   </div>
                 </div>
               </div>
-            )
+            , document.body)
           })()}
 
           {/* Goal bottom sheet */}
@@ -1017,7 +1018,7 @@ export default function MemberProfile() {
             const uploading = uploadingPhoto[goal.text]
             const isEditing = !!editingProof[goal.text]
 
-            return (
+            return createPortal(
               <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => { setActiveGoalSheet(null); setEditingProof({}); setReactionPickerOpen(null) }}>
                 <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
                 <div className="relative bg-white dark:bg-zinc-900 rounded-t-3xl w-full max-w-lg shadow-2xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
@@ -1059,7 +1060,7 @@ export default function MemberProfile() {
                   </div>
                 </div>
               </div>
-            )
+            , document.body)
           })()}
 
           {/* Proof log */}
@@ -1108,7 +1109,7 @@ export default function MemberProfile() {
       )}
 
       {/* Avatar picker */}
-      {pickingAvatar && (
+      {pickingAvatar && createPortal(
         <div className="fixed inset-0 z-50 flex items-end justify-center pb-8 px-4" onClick={() => setPickingAvatar(false)}>
           <div className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-3xl p-4 shadow-2xl w-full max-w-sm" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
@@ -1125,7 +1126,7 @@ export default function MemberProfile() {
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
     </div>
   )
 }
