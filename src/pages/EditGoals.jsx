@@ -188,12 +188,12 @@ function GoalPopup({ goal, onSave, onClose }) {
                       style={{ fontSize: 16 }}
                       className="flex-1 min-w-0 bg-transparent text-sm font-semibold text-white placeholder-zinc-600 focus:outline-none"
                     />
-                    <div className="flex items-center bg-zinc-800 rounded-xl overflow-hidden shrink-0">
+                    <div className="flex items-center bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden shrink-0">
                       <button type="button" onClick={() => updateSub(si, { target: String(Math.max(1, (Number(sg.target) || 0) - 1)) })}
-                        className="w-8 h-8 flex items-center justify-center text-zinc-500 text-base hover:text-white transition-colors select-none">−</button>
-                      <span className="w-7 text-center text-sm font-black text-white tabular-nums">{sg.target || '0'}</span>
+                        className="w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-white active:scale-90 transition-all select-none text-lg">−</button>
+                      <span className="w-7 text-center text-sm font-semibold text-white tabular-nums">{sg.target || '0'}</span>
                       <button type="button" onClick={() => updateSub(si, { target: String((Number(sg.target) || 0) + 1) })}
-                        className="w-8 h-8 flex items-center justify-center text-zinc-500 text-base hover:text-white transition-colors select-none">+</button>
+                        className="w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-white active:scale-90 transition-all select-none text-lg">+</button>
                     </div>
                     <button onClick={() => removeSub(si)} className="text-zinc-700 hover:text-red-400 transition-colors shrink-0 p-0.5">
                       <Trash2 size={13} />
