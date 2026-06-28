@@ -902,34 +902,25 @@ export default function MemberProfile() {
             )
 
             const notesJSX = (
-              <div className="mt-4 border-t border-zinc-100 dark:border-zinc-800 pt-4">
-                <textarea
+              <div className="mt-4 border-t border-zinc-100 dark:border-zinc-800 pt-3 pb-3 flex items-center gap-2">
+                <input
+                  type="text"
                   placeholder={existingNote || 'Add a note…'}
                   value={noteVal}
                   onChange={e => setProofNoteInputs(p => ({ ...p, [goal.text]: e.target.value }))}
-                  rows={2}
+                  onBlur={() => { if (noteVal.trim() && noteVal.trim() !== existingNote) sendProofNote(goal.text) }}
+                  onKeyDown={e => { if (e.key === 'Enter' && noteVal.trim()) sendProofNote(goal.text) }}
                   style={{ fontSize: 16 }}
-                  className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-2.5 text-xs text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-emerald-400 dark:focus:border-emerald-500 resize-none transition-colors"
+                  className="flex-1 min-w-0 bg-transparent border-b border-zinc-200 dark:border-zinc-700 py-1 text-sm text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-emerald-400 dark:focus:border-emerald-500 transition-colors"
                 />
-                {noteVal.trim() ? (
-                  <button onClick={() => sendProofNote(goal.text)}
-                    className="mt-2 w-full py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-semibold transition-colors active:scale-[0.98]">
-                    Save note
-                  </button>
-                ) : existingNote ? (
-                  <p className="mt-1.5 text-[11px] text-zinc-400 italic">"{existingNote}"</p>
-                ) : null}
-              </div>
-            )
-
-            const photoBtn = (
-              <div className="mt-3 flex items-center justify-between pb-2">
                 <button onClick={() => { close(); setActiveGoalSheet(goal) }}
-                  className="flex items-center gap-1 text-[11px] text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors">
-                  <Camera size={11} /> Add photo
+                  className="shrink-0 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors p-1">
+                  <Camera size={16} />
                 </button>
               </div>
             )
+
+            const photoBtn = null
 
             // ── habit ──────────────────────────────────────────────────────
             if (goal.type === 'habit') {
