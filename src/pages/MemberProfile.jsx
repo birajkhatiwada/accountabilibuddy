@@ -830,15 +830,16 @@ export default function MemberProfile() {
 
                   return (
                     <div key={goal.text}>
-                      <button onClick={() => !isFutureDay && setLoggingSheet(goal)}
-                        disabled={isFutureDay}
+                      <button
+                        onClick={() => !isFutureDay && (goal.type === 'habit' ? toggleHabit(goal.text) : setLoggingSheet(goal))}
+                        disabled={isFutureDay || (goal.type === 'habit' && !isOwner)}
                         className="w-full flex items-center gap-2.5 py-2.5 text-left disabled:opacity-40">
                         <div className={`w-3.5 h-3.5 rounded-sm border-2 shrink-0 flex items-center justify-center transition-colors ${done ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-600'}`}>
                           {done && <svg width="7" height="5" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
                         </div>
                         <span className={`flex-1 text-sm truncate ${done ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</span>
                         {rightLabel && <span className={`text-[11px] tabular-nums shrink-0 ${done ? 'text-emerald-500' : 'text-zinc-400 dark:text-zinc-500'}`}>{rightLabel}</span>}
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-300 dark:text-zinc-700 shrink-0"><path d="M9 18l6-6-6-6"/></svg>
+                        {goal.type !== 'habit' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-300 dark:text-zinc-700 shrink-0"><path d="M9 18l6-6-6-6"/></svg>}
                       </button>
                       {goal.subGoals?.length > 0 && (
                         <div className="ml-6 mb-2 space-y-1.5">
@@ -919,42 +920,7 @@ export default function MemberProfile() {
               </div>
             )
 
-            // ── habit ──────────────────────────────────────────────────────
-            if (goal.type === 'habit') {
-              const checked = !!logs[selectedDay]?.habits?.[goal.text]
-              return (
-                <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={close}>
-                  <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-                  <div className="relative bg-white dark:bg-zinc-900 rounded-t-2xl w-full max-w-lg slide-up flex flex-col"
-                    style={{ maxHeight: '88vh' }} onClick={e => e.stopPropagation()}>
-                    <div className="flex justify-center pt-2.5 pb-1 shrink-0"><div className="w-8 h-1 bg-zinc-200 dark:bg-zinc-700 rounded-full" /></div>
-                    <div className="px-5 flex-1 overflow-y-auto overscroll-contain">
-                      {sheetHeader('Daily habit')}
-                      <button onClick={() => toggleHabit(goal.text)} disabled={!isOwner || isFutureDay}
-                        className={`w-full py-3 rounded-xl text-sm font-semibold transition-all active:scale-[0.98] disabled:opacity-40 ${checked ? 'bg-emerald-500 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}>
-                        {checked ? '✓  Done today' : 'Mark as done'}
-                      </button>
-                      <div className="mt-4 flex items-center justify-between">
-                        {weekDays.map((d, i) => {
-                          const k = dateKey(d)
-                          const hit = !!logs[k]?.habits?.[goal.text]
-                          const isSel = k === selectedDay
-                          const isToday = k === todayKey
-                          return (
-                            <div key={i} className="flex flex-col items-center gap-1">
-                              <span className="text-[9px] font-bold text-zinc-400 uppercase">{DAY_LABELS[i][0]}</span>
-                              <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${hit ? 'bg-emerald-500' : isSel ? 'bg-zinc-300 dark:bg-zinc-600' : isToday ? 'ring-1 ring-zinc-300 dark:ring-zinc-600 bg-zinc-100 dark:bg-zinc-800' : 'bg-zinc-100 dark:bg-zinc-800'}`}>
-                                {hit && <svg width="9" height="7" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )
-            }
+
 
             // ── breakdown ──────────────────────────────────────────────────
             if (goal.subGoals?.length > 0) {
