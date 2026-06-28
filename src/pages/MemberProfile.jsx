@@ -73,9 +73,10 @@ function RingProgress({ value, target, size = 44, strokeWidth = 3.5 }) {
           style={{ transition: 'stroke-dashoffset 0.5s cubic-bezier(0.4,0,0.2,1)' }}
           className={done ? 'stroke-emerald-400' : 'stroke-emerald-500'} />
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
-        <span className={`text-xs font-black tabular-nums ${done ? 'text-emerald-500' : 'text-zinc-700 dark:text-zinc-200'}`}>{value}</span>
-        {target > 0 && <span className="text-[8px] text-zinc-400 mt-0.5">/{target}</span>}
+      <div className="absolute inset-0 flex items-center justify-center leading-none">
+        <span className={`text-[10px] font-bold tabular-nums tracking-tight ${done ? 'text-emerald-500' : 'text-zinc-700 dark:text-zinc-200'}`}>
+          {target > 0 ? `${value}/${target}` : value}
+        </span>
       </div>
     </div>
   )
@@ -839,6 +840,22 @@ export default function MemberProfile() {
             </div>
           )}
 
+          {/* Chart */}
+          {myGoals.length > 0 && (
+            <div className="bg-zinc-100/40 dark:bg-zinc-800/40 rounded-2xl p-4">
+              <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-2">Progress this week</p>
+              <HighchartsReact highcharts={Highcharts} options={chartOptions} />
+              <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
+                {myGoals.map((g, i) => (
+                  <div key={i} className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-sm" style={{ background: GOAL_COLORS[i % GOAL_COLORS.length] }} />
+                    <span className="text-[10px] text-zinc-500 dark:text-zinc-400">{g.text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Goal rows */}
           {myGoals.length > 0 && (
             <div className="space-y-1">
@@ -1059,22 +1076,6 @@ export default function MemberProfile() {
               </div>
             )
           })()}
-
-          {/* Chart */}
-          {myGoals.length > 0 && (
-            <div className="bg-zinc-100/40 dark:bg-zinc-800/40 rounded-2xl p-4">
-              <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-2">Progress this week</p>
-              <HighchartsReact highcharts={Highcharts} options={chartOptions} />
-              <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
-                {myGoals.map((g, i) => (
-                  <div key={i} className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-sm" style={{ background: GOAL_COLORS[i % GOAL_COLORS.length] }} />
-                    <span className="text-[10px] text-zinc-500 dark:text-zinc-400">{g.text}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Proof log */}
           {entry.updates?.length > 0 && (
