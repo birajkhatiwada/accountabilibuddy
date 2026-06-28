@@ -82,7 +82,7 @@ function GoalPopup({ goal, onSave, onClose }) {
 
           {/* Goal name */}
           <div>
-            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">Goal</label>
+            <p className="text-xs font-semibold text-zinc-500 mb-2">Goal</p>
             <input
               autoFocus
               type="text"
@@ -96,7 +96,7 @@ function GoalPopup({ goal, onSave, onClose }) {
 
           {/* Type */}
           <div>
-            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">Type</label>
+            <p className="text-xs font-semibold text-zinc-500 mb-2">Type</p>
             <div className="flex gap-2">
               {[
                 { value: 'habit', label: 'Daily habit', desc: 'Do it every day' },
@@ -106,11 +106,11 @@ function GoalPopup({ goal, onSave, onClose }) {
                   onClick={() => update({ type: opt.value, subGoals: [] })}
                   className={`flex-1 py-3 px-3 rounded-2xl border text-left transition-all ${
                     draft.type === opt.value
-                      ? 'bg-emerald-500/10 border-emerald-500 text-white'
-                      : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-600'
+                      ? 'bg-emerald-500/10 border-emerald-500'
+                      : 'bg-zinc-900 border-zinc-800 hover:border-zinc-600'
                   }`}>
-                  <p className="text-xs font-bold">{opt.label}</p>
-                  <p className="text-[10px] mt-0.5 opacity-60">{opt.desc}</p>
+                  <p className={`text-sm font-semibold ${draft.type === opt.value ? 'text-white' : 'text-zinc-400'}`}>{opt.label}</p>
+                  <p className="text-xs text-zinc-600 mt-0.5">{opt.desc}</p>
                 </button>
               ))}
             </div>
@@ -118,21 +118,19 @@ function GoalPopup({ goal, onSave, onClose }) {
 
           {/* Count goal: target + unit */}
           {draft.type === 'weekly' && draft.subGoals.length === 0 && (
-            <div className="space-y-3">
-              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block">Weekly target</label>
-
-              {/* Stepper + unit on one row */}
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-zinc-500">Weekly target</p>
               <div className="flex items-center gap-3">
                 <div className="flex items-center bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shrink-0">
                   <button type="button"
                     onClick={() => update({ target: String(Math.max(0, (Number(draft.target) || 0) - 1)) })}
-                    className="w-11 h-11 flex items-center justify-center text-zinc-500 hover:text-white active:scale-90 text-lg font-light transition-all select-none">−</button>
-                  <span className="w-10 text-center text-base font-bold text-white tabular-nums">
+                    className="w-11 h-11 flex items-center justify-center text-zinc-500 hover:text-white active:scale-90 transition-all select-none text-lg">−</button>
+                  <span className="w-10 text-center text-sm font-semibold text-white tabular-nums">
                     {draft.target || '0'}
                   </span>
                   <button type="button"
                     onClick={() => update({ target: String((Number(draft.target) || 0) + 1) })}
-                    className="w-11 h-11 flex items-center justify-center text-zinc-500 hover:text-white active:scale-90 text-lg font-light transition-all select-none">+</button>
+                    className="w-11 h-11 flex items-center justify-center text-zinc-500 hover:text-white active:scale-90 transition-all select-none text-lg">+</button>
                 </div>
 
                 {/* Unit picker */}
@@ -146,7 +144,7 @@ function GoalPopup({ goal, onSave, onClose }) {
                   ) : (
                     <input
                       type="text"
-                      placeholder="unit (e.g. reps)"
+                      placeholder="e.g. reps, km, hrs"
                       value={unitQuery}
                       onChange={e => setUnitQuery(e.target.value)}
                       onFocus={() => setUnitOpen(true)}
@@ -157,7 +155,7 @@ function GoalPopup({ goal, onSave, onClose }) {
                         }
                       }}
                       style={{ fontSize: 16 }}
-                      className="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-2xl text-sm font-medium text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-600 transition-colors"
+                      className="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-2xl text-sm font-semibold text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-600 transition-colors"
                     />
                   )}
                   {unitOpen && !draft.unit && (
@@ -180,7 +178,7 @@ function GoalPopup({ goal, onSave, onClose }) {
           {/* Sub-goals */}
           {draft.type === 'weekly' && (
             <div>
-              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">Breakdowns <span className="normal-case font-normal opacity-50">(optional)</span></label>
+              <p className="text-xs font-semibold text-zinc-500 mb-2">Breakdowns <span className="font-normal text-zinc-600">(optional)</span></p>
               <div className="space-y-2">
                 {draft.subGoals.map((sg, si) => (
                   <div key={si} className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3">
