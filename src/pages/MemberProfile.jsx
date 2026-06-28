@@ -621,7 +621,7 @@ export default function MemberProfile() {
     : ''
 
   return (
-    <div className="flex flex-col space-y-4 -mx-4 px-4 -mt-3 pb-4">
+    <div className="flex flex-col space-y-4 -mx-4 px-4 -mt-5 pb-4">
 
       {/* Banner */}
       <div className={`-mx-4 bg-gradient-to-br ${color} relative overflow-hidden px-5 pt-4 pb-3`}>
@@ -930,7 +930,7 @@ export default function MemberProfile() {
                   <div className="relative bg-white dark:bg-zinc-900 rounded-t-2xl w-full max-w-lg slide-up flex flex-col"
                     style={{ maxHeight: '88vh' }} onClick={e => e.stopPropagation()}>
                     <div className="flex justify-center pt-2.5 pb-1 shrink-0"><div className="w-8 h-1 bg-zinc-200 dark:bg-zinc-700 rounded-full" /></div>
-                    <div className="px-5 flex-1 overflow-y-auto overscroll-contain">
+                    <div className="px-5 pb-8 flex-1 overflow-y-auto overscroll-contain">
                       {sheetHeader('Breakdown')}
                       <div className="space-y-2">
                         {goal.subGoals.map((sg, si) => {
@@ -979,7 +979,7 @@ export default function MemberProfile() {
                 <div className="relative bg-white dark:bg-zinc-900 rounded-t-2xl w-full max-w-lg slide-up flex flex-col"
                   style={{ maxHeight: '88vh' }} onClick={e => e.stopPropagation()}>
                   <div className="flex justify-center pt-2.5 pb-1 shrink-0"><div className="w-8 h-1 bg-zinc-200 dark:bg-zinc-700 rounded-full" /></div>
-                  <div className="px-5 flex-1 overflow-y-auto overscroll-contain">
+                  <div className="px-5 pb-8 flex-1 overflow-y-auto overscroll-contain">
                     {sheetHeader('Count goal')}
                     {tgt > 0 && (
                       <div className="mb-4">
