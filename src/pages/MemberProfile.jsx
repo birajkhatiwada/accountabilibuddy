@@ -73,11 +73,6 @@ function RingProgress({ value, target, size = 44, strokeWidth = 3.5 }) {
           style={{ transition: 'stroke-dashoffset 0.5s cubic-bezier(0.4,0,0.2,1)' }}
           className={done ? 'stroke-emerald-400' : 'stroke-emerald-500'} />
       </svg>
-      <div className="absolute inset-0 flex items-center justify-center leading-none">
-        <span className={`text-[10px] font-bold tabular-nums tracking-tight ${done ? 'text-emerald-500' : 'text-zinc-700 dark:text-zinc-200'}`}>
-          {target > 0 ? `${value}/${target}` : value}
-        </span>
-      </div>
     </div>
   )
 }
@@ -934,7 +929,7 @@ export default function MemberProfile() {
                             toggleHabit(goal.text)
                           }}
                           disabled={isFutureDay || !isOwner}
-                          className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${checked ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-600 hover:border-emerald-400'} ${isAnimating ? 'check-pop' : ''}`}
+                          className={`w-6 h-6 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${checked ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-600 hover:border-emerald-400'} ${isAnimating ? 'check-pop' : ''}`}
                         >
                           {checked && (
                             <svg key={isAnimating ? 'anim' : 'static'} width="9" height="7" viewBox="0 0 10 8" fill="none">
@@ -1006,7 +1001,9 @@ export default function MemberProfile() {
                       <RingProgress value={weekVal} target={tgt} />
                       <div className="flex-1 min-w-0">
                         <p className={`text-sm font-medium truncate ${done ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</p>
-                        {goal.unit && <p className="text-xs text-zinc-400 mt-0.5">{goal.unit} / week</p>}
+                        <p className={`text-xs mt-0.5 tabular-nums ${done ? 'text-emerald-500' : 'text-zinc-400'}`}>
+                          {weekVal}{tgt > 0 ? `/${tgt}` : ''}{goal.unit ? ` ${goal.unit}` : ''}
+                        </p>
                       </div>
                       {isOwner && !isFutureDay && <Counter value={getCountVal(goal.text)} unit={goal.unit} onChange={v => setDayCount(goal.text, v)} />}
                       {isOwner && !isFutureDay && (
