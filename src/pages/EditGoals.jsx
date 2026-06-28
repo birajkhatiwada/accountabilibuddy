@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { collection, query, where, onSnapshot, doc, updateDoc, addDoc, setDoc, Timestamp } from 'firebase/firestore'
 import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core'
@@ -30,61 +30,6 @@ const EMPTY_SUB  = () => ({ text: '', target: '', unit: '' })
 const goalsSummary = (items) => items.map(g =>
   g.type === 'habit' ? `${g.text} (every day)` : g.target ? `${g.text} (${g.target} ${g.unit})` : g.text
 ).join(', ')
-
-// ── Animated stepper ──────────────────────────────────────────────────────
-function Stepper({ value, onChange }) {
-  const [animDir, setAnimDir] = useState(null)
-  const [numKey, setNumKey] = useState(0)
-  const holdRef = useRef(null)
-
-  const step = (dir) => {
-    const next = Math.max(0, (Number(value) || 0) + dir)
-    setAnimDir(dir > 0 ? 'up' : 'down')
-    setNumKey(k => k + 1)
-    onChange(String(next))
-  }
-
-  const startHold = (dir) => {
-    step(dir)
-    holdRef.current = setTimeout(() => {
-      holdRef.current = setInterval(() => step(dir), 80)
-    }, 400)
-  }
-
-  const stopHold = () => {
-    clearTimeout(holdRef.current)
-    clearInterval(holdRef.current)
-  }
-
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <button
-        type="button"
-        onPointerDown={() => startHold(-1)}
-        onPointerUp={stopHold}
-        onPointerLeave={stopHold}
-        className="w-14 h-14 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-3xl font-light flex items-center justify-center select-none stepper-btn transition-colors"
-      >−</button>
-
-      <div className="flex-1 flex justify-center overflow-hidden" style={{ height: 60 }}>
-        <span
-          key={numKey}
-          className={`text-5xl font-black text-white tabular-nums leading-none self-center stepper-num-${animDir}`}
-        >
-          {value || '0'}
-        </span>
-      </div>
-
-      <button
-        type="button"
-        onPointerDown={() => startHold(1)}
-        onPointerUp={stopHold}
-        onPointerLeave={stopHold}
-        className="w-14 h-14 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white text-3xl font-light flex items-center justify-center select-none stepper-btn transition-colors shadow-lg shadow-emerald-500/30"
-      >+</button>
-    </div>
-  )
-}
 
 // ── Single goal editor popup ───────────────────────────────────────────────
 function GoalPopup({ goal, onSave, onClose }) {
@@ -173,12 +118,23 @@ function GoalPopup({ goal, onSave, onClose }) {
 
           {/* Count goal: target + unit */}
           {draft.type === 'weekly' && draft.subGoals.length === 0 && (
-            <div className="space-y-4">
+            <div className="space-y-3">
               <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block">Weekly target</label>
-              <Stepper value={draft.target} onChange={v => update({ target: v })} />
+              <div className="flex items-center gap-3">
+                <div className="flex items-center bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 shrink-0">
+                  <button type="button"
+                    onClick={() => update({ target: String(Math.max(0, (Number(draft.target) || 0) - 1)) })}
+                    className="w-12 h-12 flex items-center justify-center text-zinc-400 hover:text-white active:scale-90 text-xl transition-all select-none">−</button>
+                  <span className="w-12 text-center text-xl font-black text-white tabular-nums">
+                    {draft.target || '0'}
+                  </span>
+                  <button type="button"
+                    onClick={() => update({ target: String((Number(draft.target) || 0) + 1) })}
+                    className="w-12 h-12 flex items-center justify-center text-zinc-400 hover:text-white active:scale-90 text-xl transition-all select-none">+</button>
+                </div>
 
               {/* Unit picker */}
-              <div className="relative">
+              <div className="flex-1 relative">
                   {draft.unit ? (
                     <div className="flex items-center gap-2 px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-2xl">
                       <span className="text-sm font-bold text-white flex-1">{draft.unit}</span>
@@ -215,6 +171,7 @@ function GoalPopup({ goal, onSave, onClose }) {
                     </div>
                   )}
                 </div>
+              </div>
             </div>
           )}
 
