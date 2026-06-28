@@ -4,7 +4,7 @@ import { Trash2, Plus } from 'lucide-react'
 const EMPTY_GOAL = () => ({ text: '', type: 'habit', target: '', unit: '', subGoals: [] })
 const EMPTY_SUB  = () => ({ text: '', target: '', unit: '' })
 
-const UNIT_SUGGESTIONS = ['reps','sets','miles','km','min','hrs','pages','times','steps','calories','lbs','kg','cups','meals','sessions']
+const UNIT_SUGGESTIONS = ['reps','sets','miles','km','min','hrs','pages','steps','calories','lbs','kg','cups','meals','sessions']
 
 const PLACEHOLDERS = [
   'Hit the gym',

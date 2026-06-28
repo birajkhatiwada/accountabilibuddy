@@ -22,7 +22,7 @@ const BANNER_COLORS = [
   'from-fuchsia-500 to-pink-500',  'from-slate-600 to-zinc-700',
 ]
 
-const UNIT_SUGGESTIONS = ['reps','sets','miles','km','min','hrs','pages','times','steps','calories','sessions']
+const UNIT_SUGGESTIONS = ['reps','sets','miles','km','min','hrs','pages','steps','calories','sessions']
 
 const EMPTY_GOAL = () => ({ text: '', type: 'habit', target: '', unit: '', subGoals: [] })
 const EMPTY_SUB  = () => ({ text: '', target: '', unit: '' })
