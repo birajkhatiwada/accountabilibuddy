@@ -40,3 +40,23 @@
 .check-pop {
   animation: check-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
+
+@keyframes draw-check {
+  from { stroke-dashoffset: 22; opacity: 0.4; }
+  to   { stroke-dashoffset: 0;  opacity: 1; }
+}
+
+.draw-check {
+  stroke-dasharray: 22;
+  stroke-dashoffset: 22;
+  animation: draw-check 0.28s ease-out 0.06s forwards;
+}
+
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+.slide-up {
+  animation: slide-up 0.32s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}

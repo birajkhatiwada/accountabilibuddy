@@ -842,25 +842,43 @@ export default function MemberProfile() {
         </div>
       )}
 
-      {(entry || myGoals.length > 0) && (
-        <>
-          {/* Edit goals panel */}
-          {editingGoals && (
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-bold text-zinc-700 dark:text-zinc-300">Edit goals</p>
-                <button onClick={() => setEditingGoals(false)} className="text-zinc-500 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400"><X size={16} /></button>
-              </div>
-              <GoalBuilder initialGoals={myGoals} onChange={setGoalsInput} />
+      {/* Full-screen edit goals modal */}
+      {editingGoals && (
+        <div className="fixed inset-0 z-50 flex flex-col slide-up" style={{ background: 'var(--bg)' }}>
+          <div className={`bg-gradient-to-br ${color} relative overflow-hidden px-5 pt-12 pb-6 shrink-0`}>
+            <div className="absolute inset-0 opacity-[0.06] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+            <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-white/10 pointer-events-none" />
+            <div className="relative flex items-center justify-between mb-4">
+              <button onClick={() => setEditingGoals(false)}
+                className="flex items-center gap-1.5 text-white/70 hover:text-white transition-colors text-sm font-semibold">
+                <X size={16} /> Cancel
+              </button>
               <button onClick={updateGoals} disabled={submitting || !goalsInput.some(g => g.text.trim())}
-                className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 text-white font-bold rounded-xl py-2.5 transition-all">
-                {submitting ? 'Saving...' : 'Save goals'}
+                className="bg-white/20 hover:bg-white/30 disabled:opacity-40 text-white font-bold text-sm px-4 py-1.5 rounded-full transition-all">
+                {submitting ? 'Saving…' : 'Save'}
               </button>
             </div>
-          )}
+            <div className="relative">
+              <p className="text-white/50 text-xs font-bold uppercase tracking-widest mb-1">Your goals</p>
+              <h2 className="text-2xl font-black text-white leading-tight">What are you<br/>committing to?</h2>
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto px-4 py-4 bg-zinc-50 dark:bg-zinc-950">
+            <GoalBuilder initialGoals={myGoals} onChange={setGoalsInput} />
+          </div>
+          <div className="shrink-0 px-4 pb-8 pt-3 bg-zinc-50 dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-800">
+            <button onClick={updateGoals} disabled={submitting || !goalsInput.some(g => g.text.trim())}
+              className="w-full bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] disabled:opacity-40 text-white font-bold rounded-2xl py-3.5 transition-all text-base">
+              {submitting ? 'Saving…' : 'Lock in goals'}
+            </button>
+          </div>
+        </div>
+      )}
 
+      {(entry || myGoals.length > 0) && (
+        <>
           {/* Day strip */}
-          {!editingGoals && (
+          {(
             <div className="flex items-stretch bg-zinc-100 dark:bg-zinc-800/60 rounded-xl overflow-hidden">
               {weekDays.map((day, i) => {
                 const key = dateKey(day)
@@ -888,7 +906,7 @@ export default function MemberProfile() {
           )}
 
           {/* Goal rows */}
-          {!editingGoals && myGoals.length > 0 && (
+          {myGoals.length > 0 && (
             <div className="space-y-1">
               <div className="px-1 mb-2">
                 <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">
@@ -982,8 +1000,9 @@ export default function MemberProfile() {
                               className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${checked ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-600 hover:border-emerald-400'} ${isAnimating ? 'check-pop' : ''}`}
                             >
                               {checked && (
-                                <svg width="9" height="7" viewBox="0 0 10 8" fill="none">
-                                  <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <svg key={isAnimating ? 'anim' : 'static'} width="9" height="7" viewBox="0 0 10 8" fill="none">
+                                  <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+                                    className={isAnimating ? 'draw-check' : ''} />
                                 </svg>
                               )}
                             </button>
