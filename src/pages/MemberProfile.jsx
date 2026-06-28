@@ -129,6 +129,7 @@ export default function MemberProfile() {
   const weekId = getCurrentWeekId()
   const todayKey = dateKey(new Date())
 
+  const [memberGoals, setMemberGoals] = useState(undefined) // undefined = loading, null = none set
   const [members, setMembers] = useState([])
   const [entry, setEntry] = useState(undefined)
   const [allEntries, setAllEntries] = useState([])
@@ -207,6 +208,8 @@ export default function MemberProfile() {
         setBannerColorIdx(d.bannerColors?.[name] ?? null)
         setBannerVibe(d.bannerVibes?.[name] || '')
         setNickname(d.nicknames?.[name] || '')
+        const mg = d.memberGoals?.[name]
+        setMemberGoals(mg?.length ? mg : null)
       }
     })
   }, [sessionId])
@@ -393,38 +396,47 @@ export default function MemberProfile() {
     setCopied(true); setTimeout(() => setCopied(false), 2000)
   }
 
+  // Goals source of truth lives on the session doc; entries are log containers only
+  const myGoals = memberGoals || entry?.goalItems || []
+
+  const goalsSummary = (items) => items.map(g =>
+    g.type === 'habit' ? `${g.text} (every day)` : g.target ? `${g.text} (${g.target} ${g.unit})` : g.text
+  ).join(', ')
+
+  const persistGoals = async (valid) => {
+    // Save to session as persistent goals
+    await setDoc(sessionDoc, { memberGoals: { [name]: valid } }, { merge: true })
+    // Keep entry's goalItems in sync for history / log context
+    if (entry) {
+      await updateDoc(doc(db, 'entries', entry.id), { goals: goalsSummary(valid), goalItems: valid })
+    } else {
+      // Create this week's entry so logging can start immediately
+      await addDoc(collection(db, 'entries'), {
+        name, nameLower: name.toLowerCase(), weekId, sessionId,
+        goals: goalsSummary(valid), goalItems: valid, status: 'active',
+        updates: [], createdAt: Timestamp.now(),
+      })
+    }
+  }
+
   const submitGoals = async () => {
     const valid = goalsInput.filter(g => g.text.trim())
     if (!valid.length) return
     setSubmitting(true)
-    const goalsSummary = valid.map(g =>
-      g.type === 'habit' ? `${g.text} (every day)` : g.target ? `${g.text} (${g.target} ${g.unit})` : g.text
-    ).join(', ')
-    await addDoc(collection(db, 'entries'), {
-      name, nameLower: name.toLowerCase(), weekId, sessionId,
-      goals: goalsSummary, goalItems: valid, status: 'active',
-      updates: [], createdAt: Timestamp.now(),
-    })
+    await persistGoals(valid)
     setSubmitting(false)
   }
 
   const updateGoals = async () => {
     const valid = goalsInput.filter(g => g.text.trim())
-    if (!valid.length || !entry) return
+    if (!valid.length) return
     setSubmitting(true)
-    const goalsSummary = valid.map(g =>
-      g.type === 'habit' ? `${g.text} (every day)` : g.target ? `${g.text} (${g.target} ${g.unit})` : g.text
-    ).join(', ')
-    await updateDoc(doc(db, 'entries', entry.id), { goals: goalsSummary, goalItems: valid })
+    await persistGoals(valid)
     setEditingGoals(false); setSubmitting(false)
   }
 
   const reorderGoals = async (newItems) => {
-    if (!entry) return
-    const goalsSummary = newItems.map(g =>
-      g.type === 'habit' ? `${g.text} (every day)` : g.target ? `${g.text} (${g.target} ${g.unit})` : g.text
-    ).join(', ')
-    await updateDoc(doc(db, 'entries', entry.id), { goals: goalsSummary, goalItems: newItems })
+    await persistGoals(newItems)
   }
 
   const QUICK_REACTIONS = ['💪','🔥','👏','❤️','🎉','😤']
@@ -632,8 +644,8 @@ export default function MemberProfile() {
     yAxis: { min: 0, max: 100, title: { text: null }, labels: { format: '{value}%', style: { color: '#71717a', fontSize: '10px' } }, gridLineColor: '#27272a', tickPositions: [0, 50, 100] },
     tooltip: { shared: true, backgroundColor: '#18181b', borderColor: '#3f3f46', borderRadius: 12, style: { color: '#e4e4e7', fontSize: '11px' }, pointFormat: '<span style="color:{series.color}">●</span> {series.name}: <b>{point.y}%</b><br/>' },
     plotOptions: { areaspline: { fillOpacity: 0.12, lineWidth: 2, marker: { enabled: true, radius: 3, lineWidth: 0 } } },
-    series: entry?.goalItems?.map((g, i) => ({ name: g.text, color: GOAL_COLORS[i % GOAL_COLORS.length], data: getGoalDailyPct(g) })) || [],
-  }), [logs, entry?.goalItems])
+    series: myGoals.map((g, i) => ({ name: g.text, color: GOAL_COLORS[i % GOAL_COLORS.length], data: getGoalDailyPct(g) })),
+  }), [logs, myGoals])
 
   // ── loading skeleton ──────────────────────────────────────────────────────
 
@@ -797,9 +809,9 @@ export default function MemberProfile() {
           </div>
         )}
 
-        {isOwner && entry && (
+        {isOwner && myGoals.length > 0 && (
           <div className="mt-3">
-            <button onClick={() => { setGoalsInput(entry.goalItems); setEditingGoals(true) }}
+            <button onClick={() => { setGoalsInput(myGoals); setEditingGoals(true) }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 hover:bg-white/25 text-white/70 hover:text-white text-xs font-semibold transition-all">
               <Pencil size={10} /> Edit this week's goals
             </button>
@@ -812,7 +824,7 @@ export default function MemberProfile() {
 
 
       {/* No goals yet */}
-      {!entry && (
+      {!myGoals.length && isOwner && (
         <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">Lock in your goals for this week 🔒</p>
@@ -830,7 +842,7 @@ export default function MemberProfile() {
         </div>
       )}
 
-      {entry && (
+      {(entry || myGoals.length > 0) && (
         <>
           {/* Edit goals panel */}
           {editingGoals && (
@@ -839,9 +851,9 @@ export default function MemberProfile() {
                 <p className="text-sm font-bold text-zinc-700 dark:text-zinc-300">Edit goals</p>
                 <button onClick={() => setEditingGoals(false)} className="text-zinc-500 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400"><X size={16} /></button>
               </div>
-              <GoalBuilder initialGoals={entry.goalItems} onChange={setGoalsInput} />
+              <GoalBuilder initialGoals={myGoals} onChange={setGoalsInput} />
               <button onClick={updateGoals} disabled={submitting || !goalsInput.some(g => g.text.trim())}
-                className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 disabled:opacity-40 text-white font-bold rounded-xl py-2.5 transition-all">
+                className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 text-white font-bold rounded-xl py-2.5 transition-all">
                 {submitting ? 'Saving...' : 'Save goals'}
               </button>
             </div>
@@ -875,20 +887,8 @@ export default function MemberProfile() {
             </div>
           )}
 
-          {/* Re-enter goals if old entry has no goalItems */}
-          {!editingGoals && !entry.goalItems?.length && (
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 space-y-4">
-              <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">Re-enter your goals to unlock logging & proof 🔒</p>
-              <GoalBuilder key="re-enter" initialGoals={[]} onChange={setGoalsInput} />
-              <button onClick={updateGoals} disabled={submitting || !goalsInput.some(g => g.text.trim())}
-                className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 disabled:opacity-40 text-white font-bold rounded-xl py-2.5 transition-all">
-                {submitting ? 'Saving...' : 'Save goals'}
-              </button>
-            </div>
-          )}
-
           {/* Goal rows */}
-          {!editingGoals && entry.goalItems?.length > 0 && (
+          {!editingGoals && myGoals.length > 0 && (
             <div className="space-y-1">
               <div className="px-1 mb-2">
                 <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">
@@ -901,14 +901,14 @@ export default function MemberProfile() {
                 collisionDetection={closestCenter}
                 onDragEnd={({ active, over }) => {
                   if (!over || active.id === over.id || !isOwner) return
-                  const oldIdx = entry.goalItems.findIndex(g => g.text === active.id)
-                  const newIdx = entry.goalItems.findIndex(g => g.text === over.id)
-                  if (oldIdx !== -1 && newIdx !== -1) reorderGoals(arrayMove(entry.goalItems, oldIdx, newIdx))
+                  const oldIdx = myGoals.findIndex(g => g.text === active.id)
+                  const newIdx = myGoals.findIndex(g => g.text === over.id)
+                  if (oldIdx !== -1 && newIdx !== -1) reorderGoals(arrayMove(myGoals, oldIdx, newIdx))
                 }}
               >
-                <SortableContext items={entry.goalItems.map(g => g.text)} strategy={verticalListSortingStrategy}>
+                <SortableContext items={myGoals.map(g => g.text)} strategy={verticalListSortingStrategy}>
                   <div className="space-y-2">
-              {entry.goalItems.map((goal, gi) => {
+              {myGoals.map((goal, gi) => {
                 const isFutureDay = selectedDay > todayKey
                 const proof = getGoalProof(goal.text)
                 const hasProof = !!(proof.note || proof.photoUrl)
@@ -1144,15 +1144,12 @@ export default function MemberProfile() {
           })()}
 
           {/* Chart */}
-          {entry.goalItems?.length > 0 && (
+          {myGoals.length > 0 && (
             <div className="bg-zinc-100/40 dark:bg-zinc-800/40 rounded-2xl p-4">
               <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-2">Progress this week</p>
-              <HighchartsReact
-                highcharts={Highcharts}
-                options={chartOptions}
-              />
+              <HighchartsReact highcharts={Highcharts} options={chartOptions} />
               <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
-                {entry.goalItems.map((g, i) => (
+                {myGoals.map((g, i) => (
                   <div key={i} className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-sm" style={{ background: GOAL_COLORS[i % GOAL_COLORS.length] }} />
                     <span className="text-[10px] text-zinc-500 dark:text-zinc-400">{g.text}</span>
