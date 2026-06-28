@@ -919,19 +919,14 @@ export default function MemberProfile() {
                           <button
                             onClick={() => {
                               if (!isOwner || isFutureDay) return
-                              if (!checked) {
-                                setJustChecked(p => ({ ...p, [goal.text]: true }))
-                                setTimeout(() => setJustChecked(p => ({ ...p, [goal.text]: false })), 400)
-                              }
                               toggleHabit(goal.text)
                             }}
                             disabled={isFutureDay || !isOwner}
-                            className={`w-9 h-9 rounded-xl border-2 flex items-center justify-center transition-all ${checked ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-200 dark:border-zinc-700 hover:border-emerald-400 dark:hover:border-emerald-500'} ${isAnimating ? 'check-pop' : ''}`}
+                            className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${checked ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-600 hover:border-emerald-400 dark:hover:border-emerald-500'}`}
                           >
                             {checked && (
-                              <svg key={isAnimating ? 'anim' : 'static'} width="11" height="8" viewBox="0 0 11 9" fill="none">
-                                <path d="M1 4.5L4 7.5L10 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
-                                  className={isAnimating ? 'draw-check' : ''} />
+                              <svg width="9" height="7" viewBox="0 0 10 8" fill="none">
+                                <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
                               </svg>
                             )}
                           </button>
