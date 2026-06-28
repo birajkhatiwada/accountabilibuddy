@@ -744,19 +744,19 @@ export default function MemberProfile() {
 
       {/* No goals yet */}
       {!myGoals.length && isOwner && (
-        <div className="space-y-3 pt-1">
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">Set your goals for this week</p>
+            <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">Lock in your goals for this week 🔒</p>
             {prevEntry?.goalItems?.length > 0 && (
               <button onClick={handleCarryOver} className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 transition-colors">
-                ↩ carry over last week
+                ↩ Last week's
               </button>
             )}
           </div>
           <GoalBuilder key={goalBuilderKey} initialGoals={carryOverGoals} onChange={setGoalsInput} />
           <button onClick={submitGoals} disabled={submitting || !goalsInput.some(g => g.text.trim())}
-            className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white text-sm font-bold rounded-xl py-2.5 transition-all">
-            {submitting ? 'Saving…' : 'Lock in goals 🔒'}
+            className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-40 text-white font-bold rounded-xl py-3 transition-all">
+            {submitting ? 'Locking in...' : 'Lock in goals 🔒'}
           </button>
         </div>
       )}
@@ -791,14 +791,14 @@ export default function MemberProfile() {
 
           {/* Chart */}
           {myGoals.length > 0 && (
-            <div className="px-1">
-              <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold uppercase tracking-wide mb-1.5">This week</p>
+            <div className="bg-zinc-100/40 dark:bg-zinc-800/40 rounded-2xl p-4">
+              <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-2">Progress this week</p>
               <HighchartsReact highcharts={Highcharts} options={chartOptions} />
-              <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5">
+              <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
                 {myGoals.map((g, i) => (
-                  <div key={i} className="flex items-center gap-1">
-                    <div className="w-2 h-2 rounded-sm" style={{ background: GOAL_COLORS[i % GOAL_COLORS.length] }} />
-                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500">{g.text}</span>
+                  <div key={i} className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-sm" style={{ background: GOAL_COLORS[i % GOAL_COLORS.length] }} />
+                    <span className="text-[10px] text-zinc-500 dark:text-zinc-400">{g.text}</span>
                   </div>
                 ))}
               </div>
