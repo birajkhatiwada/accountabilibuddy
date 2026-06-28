@@ -185,7 +185,6 @@ function GoalPopup({ goal, onSave, onClose }) {
                     <input type="text" placeholder="e.g. Hard problems"
                       value={sg.text}
                       onChange={e => updateSub(si, { text: e.target.value })}
-                      style={{ fontSize: 16 }}
                       className="flex-1 min-w-0 bg-transparent text-sm font-semibold text-white placeholder-zinc-600 focus:outline-none"
                     />
                     <div className="flex items-center bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden shrink-0">
