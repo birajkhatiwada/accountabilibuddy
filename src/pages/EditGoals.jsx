@@ -215,8 +215,14 @@ function GoalPopup({ goal, onSave, onClose }) {
 }
 
 // ── Sortable goal row ──────────────────────────────────────────────────────
-function SortableGoalRow({ id, text, type, target, unit, onEdit, onDelete }) {
+function SortableGoalRow({ id, text, type, target, unit, subGoals = [], onEdit, onDelete }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
+
+  const subtitle = type === 'habit'
+    ? 'Daily habit'
+    : subGoals.length > 0
+      ? null
+      : target ? `${target}${unit ? ` ${unit}` : ''} / week` : 'Count goal'
 
   return (
     <div ref={setNodeRef}
@@ -234,9 +240,16 @@ function SortableGoalRow({ id, text, type, target, unit, onEdit, onDelete }) {
       {/* Info */}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-zinc-100 truncate">{text}</p>
-        <p className="text-[10px] text-zinc-500 mt-0.5">
-          {type === 'habit' ? 'Daily habit' : target ? `${target}${unit ? ` ${unit}` : ''} / week` : 'Count goal'}
-        </p>
+        {subtitle && <p className="text-[10px] text-zinc-500 mt-0.5">{subtitle}</p>}
+        {subGoals.length > 0 && (
+          <div className="mt-1 space-y-0.5">
+            {subGoals.map((sg, i) => (
+              <p key={i} className="text-[10px] text-zinc-600 truncate">
+                ↳ {sg.text}{sg.target ? ` · ${sg.target}${sg.unit ? ` ${sg.unit}` : ''}` : ''}
+              </p>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Actions */}
@@ -379,7 +392,7 @@ export default function EditGoals() {
               <div className="divide-y divide-zinc-800/60">
                 {goals.map((g, i) => (
                   <SortableGoalRow key={g.text} id={g.text}
-                    text={g.text} type={g.type} target={g.target} unit={g.unit}
+                    text={g.text} type={g.type} target={g.target} unit={g.unit} subGoals={g.subGoals || []}
                     onEdit={() => setEditingGoal({ index: i, goal: g })}
                     onDelete={() => deleteGoal(i)}
                   />
