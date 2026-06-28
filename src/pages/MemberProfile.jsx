@@ -103,22 +103,20 @@ function Counter({ value, onChange, unit }) {
 
 function SortableGoalRow({ id, isOwner, children }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
+  const handle = isOwner ? (
+    <div {...listeners} {...attributes}
+      className="touch-none cursor-grab active:cursor-grabbing p-1.5 shrink-0 self-center">
+      <svg width="10" height="14" viewBox="0 0 10 14" fill="none">
+        {[2,6,10].flatMap(y => [2,6].map(x => (
+          <circle key={`${x}-${y}`} cx={x} cy={y} r="1.3" fill="currentColor" className="text-zinc-300 dark:text-zinc-600" />
+        )))}
+      </svg>
+    </div>
+  ) : null
   return (
-    <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 10 : undefined, opacity: isDragging ? 0.85 : 1 }}
-      className={`relative ${isDragging ? 'shadow-2xl scale-[1.02]' : ''} transition-shadow`}>
-      {isOwner && (
-        <div {...attributes} {...listeners}
-          className="absolute left-0 top-0 bottom-0 w-8 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none z-10">
-          <div className="flex flex-col gap-[3px]">
-            <div className="w-3.5 h-0.5 rounded-full bg-zinc-300 dark:bg-zinc-600" />
-            <div className="w-3.5 h-0.5 rounded-full bg-zinc-300 dark:bg-zinc-600" />
-            <div className="w-3.5 h-0.5 rounded-full bg-zinc-300 dark:bg-zinc-600" />
-          </div>
-        </div>
-      )}
-      <div className={isOwner ? 'pl-6' : ''}>
-        {children}
-      </div>
+    <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 10 : undefined }}
+      className={`transition-all ${isDragging ? 'shadow-xl opacity-90 scale-[1.01]' : ''}`}>
+      {children(handle)}
     </div>
   )
 }
@@ -966,6 +964,7 @@ export default function MemberProfile() {
                   const revealPct = Math.min(1, Math.abs(offset) / 72)
                   return (
                     <SortableGoalRow key={goal.text} id={goal.text} isOwner={isOwner}>
+                      {handle => (
                       <div className="space-y-1.5">
                         <div
                           className={`relative rounded-2xl overflow-hidden border transition-colors ${checked ? 'border-emerald-200 dark:border-emerald-900' : 'border-zinc-100 dark:border-zinc-800'}`}
@@ -1010,10 +1009,12 @@ export default function MemberProfile() {
                             {isOwner && !isFutureDay && (
                               <button onClick={() => setActiveGoalSheet(goal)} className="text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 transition-colors shrink-0"><Camera size={13} /></button>
                             )}
+                            {handle}
                           </div>
                         </div>
                         {hasProof && <div className="px-4 pb-3 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl pt-2">{proofBlock}</div>}
                       </div>
+                      )}
                     </SortableGoalRow>
                   )
                 }
@@ -1025,12 +1026,14 @@ export default function MemberProfile() {
                   })
                   return (
                     <SortableGoalRow key={goal.text} id={goal.text} isOwner={isOwner}>
+                      {handle => (
                       <div className={`rounded-2xl border transition-all ${allDone ? 'bg-emerald-500/8 border-emerald-200 dark:border-emerald-900' : 'bg-white dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800'}`}>
-                        <div className="px-4 pt-3 pb-2 flex items-center justify-between">
-                          <span className={`text-sm font-semibold ${allDone ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</span>
+                        <div className="px-4 pt-3 pb-2 flex items-center gap-2">
+                          <span className={`flex-1 text-sm font-semibold ${allDone ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</span>
                           {isOwner && !isFutureDay && (
                             <button onClick={() => setActiveGoalSheet(goal)} className="text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 transition-colors"><Camera size={13} /></button>
                           )}
+                          {handle}
                         </div>
                         <div className="px-4 pb-3 space-y-2">
                           {goal.subGoals.map((sg, si) => {
@@ -1051,6 +1054,7 @@ export default function MemberProfile() {
                         </div>
                         {hasProof && <div className="px-4 pb-3 border-t border-zinc-50 dark:border-zinc-800 pt-2">{proofBlock}</div>}
                       </div>
+                      )}
                     </SortableGoalRow>
                   )
                 }
@@ -1060,6 +1064,7 @@ export default function MemberProfile() {
                 const done = tgt > 0 && weekVal >= tgt
                 return (
                   <SortableGoalRow key={goal.text} id={goal.text} isOwner={isOwner}>
+                    {handle => (
                     <div className={`rounded-2xl border transition-all ${done ? 'bg-emerald-500/8 border-emerald-200 dark:border-emerald-900' : 'bg-white dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800'}`}>
                       <div className="flex items-center gap-4 px-4 py-3">
                         <RingProgress value={weekVal} target={tgt} />
@@ -1072,12 +1077,16 @@ export default function MemberProfile() {
                             </div>
                           )}
                         </div>
-                        {isOwner && !isFutureDay && (
-                          <button onClick={() => setActiveGoalSheet(goal)} className="text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 transition-colors shrink-0 self-start mt-1"><Camera size={13} /></button>
-                        )}
+                        <div className="flex flex-col items-end gap-1 self-start mt-1 shrink-0">
+                          {isOwner && !isFutureDay && (
+                            <button onClick={() => setActiveGoalSheet(goal)} className="text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 transition-colors"><Camera size={13} /></button>
+                          )}
+                          {handle}
+                        </div>
                       </div>
                       {hasProof && <div className="px-4 pb-3 border-t border-zinc-50 dark:border-zinc-800 pt-2">{proofBlock}</div>}
                     </div>
+                    )}
                   </SortableGoalRow>
                 )
               })}
