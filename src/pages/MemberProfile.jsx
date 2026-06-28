@@ -868,14 +868,33 @@ export default function MemberProfile() {
                   )
                 })}
               </div>
-              {/* Daily note / photo — one per day, shown below all goals */}
+              {/* Daily note + photo — one per day, editable below all goals */}
               {(() => {
                 const daily = getGoalProof('__daily__')
-                if (!daily.note && !daily.photoUrl) return null
+                const noteVal = proofNoteInputs['__daily__'] ?? ''
+                const existingNote = daily.note ?? ''
                 return (
-                  <div className="mt-2 pt-2 border-t border-zinc-100 dark:border-zinc-800 space-y-1.5">
+                  <div className="mt-2 pt-2 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
                     {daily.photoUrl && <img src={daily.photoUrl} alt="" className="w-full max-h-40 rounded-xl object-cover" />}
-                    {daily.note && <p className="text-xs text-zinc-400 dark:text-zinc-500 italic">"{daily.note}"</p>}
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder={existingNote || 'Note for today…'}
+                        value={noteVal}
+                        onChange={e => setProofNoteInputs(p => ({ ...p, '__daily__': e.target.value }))}
+                        onBlur={() => { if (noteVal.trim() && noteVal.trim() !== existingNote) sendProofNote('__daily__') }}
+                        onKeyDown={e => { if (e.key === 'Enter' && noteVal.trim()) sendProofNote('__daily__') }}
+                        style={{ fontSize: 16 }}
+                        className="flex-1 min-w-0 bg-transparent border-b border-zinc-200 dark:border-zinc-700 py-1 text-sm text-zinc-600 dark:text-zinc-400 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-emerald-400 dark:focus:border-emerald-500 transition-colors"
+                      />
+                      <label className="shrink-0 text-zinc-400 hover:text-zinc-500 dark:hover:text-zinc-300 transition-colors p-1 cursor-pointer">
+                        {uploadingPhoto['__daily__']
+                          ? <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                          : <Camera size={15} />}
+                        <input type="file" accept="image/*" capture="environment" className="hidden"
+                          onChange={e => { const f = e.target.files?.[0]; if (f) uploadGoalPhoto('__daily__', f); e.target.value = '' }} />
+                      </label>
+                    </div>
                   </div>
                 )
               })()}
@@ -887,8 +906,6 @@ export default function MemberProfile() {
             const goal = loggingSheet
             const isFutureDay = selectedDay > todayKey
             const close = () => setLoggingSheet(null)
-            const noteVal = proofNoteInputs['__daily__'] ?? ''
-            const existingNote = getGoalProof('__daily__').note ?? ''
 
             const sheetHeader = (label) => (
               <div className="flex items-center justify-between pt-1 pb-3">
@@ -901,30 +918,6 @@ export default function MemberProfile() {
                 </button>
               </div>
             )
-
-            const notesJSX = (
-              <div className="mt-4 border-t border-zinc-100 dark:border-zinc-800 pt-3 pb-3 flex items-center gap-2">
-                <input
-                  type="text"
-                  placeholder={existingNote || 'Note for today…'}
-                  value={noteVal}
-                  onChange={e => setProofNoteInputs(p => ({ ...p, '__daily__': e.target.value }))}
-                  onBlur={() => { if (noteVal.trim() && noteVal.trim() !== existingNote) sendProofNote('__daily__') }}
-                  onKeyDown={e => { if (e.key === 'Enter' && noteVal.trim()) sendProofNote('__daily__') }}
-                  style={{ fontSize: 16 }}
-                  className="flex-1 min-w-0 bg-transparent border-b border-zinc-200 dark:border-zinc-700 py-1 text-sm text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:border-emerald-400 dark:focus:border-emerald-500 transition-colors"
-                />
-                <label className="shrink-0 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors p-1 cursor-pointer">
-                  {uploadingPhoto['__daily__']
-                    ? <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-                    : <Camera size={16} />}
-                  <input type="file" accept="image/*" capture="environment" className="hidden"
-                    onChange={e => { const f = e.target.files?.[0]; if (f) uploadGoalPhoto('__daily__', f); e.target.value = '' }} />
-                </label>
-              </div>
-            )
-
-            const photoBtn = null
 
             // ── habit ──────────────────────────────────────────────────────
             if (goal.type === 'habit') {
@@ -957,8 +950,6 @@ export default function MemberProfile() {
                           )
                         })}
                       </div>
-                      {notesJSX}
-                      {photoBtn}
                     </div>
                   </div>
                 </div>
@@ -1005,8 +996,6 @@ export default function MemberProfile() {
                           )
                         })}
                       </div>
-                      {notesJSX}
-                      {photoBtn}
                     </div>
                   </div>
                 </div>
@@ -1049,8 +1038,6 @@ export default function MemberProfile() {
                           className="w-11 h-11 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xl font-bold flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-95 transition-all">+</button>
                       </div>
                     )}
-                    {notesJSX}
-                    {photoBtn}
                   </div>
                 </div>
               </div>
