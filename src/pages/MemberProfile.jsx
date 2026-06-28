@@ -982,16 +982,16 @@ export default function MemberProfile() {
                         <button onClick={() => setActiveGoalSheet(goal)} className="text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 transition-colors shrink-0"><Camera size={13} /></button>
                       )}
                     </div>
-                    {isOwner && !isFutureDay && (
-                      <div className="mt-2">
-                        <Counter value={getCountVal(goal.text)} unit={goal.unit} onChange={v => setDayCount(goal.text, v)} />
-                      </div>
-                    )}
                     {tgt > 0 && (
                       <div className="mt-2">
                         <div className="h-1 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
                           <div className={`h-full rounded-full transition-all ${done ? 'bg-emerald-400' : 'bg-emerald-500'}`} style={{ width: `${pct * 100}%` }} />
                         </div>
+                      </div>
+                    )}
+                    {isOwner && !isFutureDay && (
+                      <div className="mt-2">
+                        <Counter value={getCountVal(goal.text)} unit={goal.unit} onChange={v => setDayCount(goal.text, v)} />
                       </div>
                     )}
                     {hasProof && proofBlock}
