@@ -120,24 +120,26 @@ function GoalPopup({ goal, onSave, onClose }) {
           {draft.type === 'weekly' && draft.subGoals.length === 0 && (
             <div className="space-y-3">
               <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block">Weekly target</label>
+
+              {/* Stepper + unit on one row */}
               <div className="flex items-center gap-3">
-                <div className="flex items-center bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 shrink-0">
+                <div className="flex items-center bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shrink-0">
                   <button type="button"
                     onClick={() => update({ target: String(Math.max(0, (Number(draft.target) || 0) - 1)) })}
-                    className="w-12 h-12 flex items-center justify-center text-zinc-400 hover:text-white active:scale-90 text-xl transition-all select-none">−</button>
-                  <span className="w-12 text-center text-xl font-black text-white tabular-nums">
+                    className="w-11 h-11 flex items-center justify-center text-zinc-500 hover:text-white active:scale-90 text-lg font-light transition-all select-none">−</button>
+                  <span className="w-10 text-center text-base font-bold text-white tabular-nums">
                     {draft.target || '0'}
                   </span>
                   <button type="button"
                     onClick={() => update({ target: String((Number(draft.target) || 0) + 1) })}
-                    className="w-12 h-12 flex items-center justify-center text-zinc-400 hover:text-white active:scale-90 text-xl transition-all select-none">+</button>
+                    className="w-11 h-11 flex items-center justify-center text-zinc-500 hover:text-white active:scale-90 text-lg font-light transition-all select-none">+</button>
                 </div>
 
-              {/* Unit picker */}
-              <div className="flex-1 relative">
+                {/* Unit picker */}
+                <div className="flex-1 relative">
                   {draft.unit ? (
                     <div className="flex items-center gap-2 px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-2xl">
-                      <span className="text-sm font-bold text-white flex-1">{draft.unit}</span>
+                      <span className="text-sm font-semibold text-white flex-1">{draft.unit}</span>
                       <button type="button" onClick={() => update({ unit: '' })}
                         className="text-zinc-600 hover:text-red-400 transition-colors text-xs">✕</button>
                     </div>
@@ -155,7 +157,7 @@ function GoalPopup({ goal, onSave, onClose }) {
                         }
                       }}
                       style={{ fontSize: 16 }}
-                      className="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-2xl text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-600"
+                      className="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-2xl text-sm font-medium text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-600 transition-colors"
                     />
                   )}
                   {unitOpen && !draft.unit && (
