@@ -975,21 +975,23 @@ export default function MemberProfile() {
                 const done = tgt > 0 && weekVal >= tgt
                 return (
                   <div key={goal.text} className={`rounded-2xl border px-4 py-3 transition-colors ${done ? 'border-emerald-200 dark:border-emerald-800/50' : 'border-zinc-200 dark:border-zinc-800'}`}>
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="flex items-center gap-3">
                       <p className={`flex-1 text-sm font-medium truncate ${done ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</p>
-                      {isOwner && !isFutureDay && <Counter value={getCountVal(goal.text)} unit={goal.unit} onChange={v => setDayCount(goal.text, v)} />}
+                      {tgt > 0 && <span className={`text-[11px] tabular-nums shrink-0 ${done ? 'text-emerald-500 font-medium' : 'text-zinc-400'}`}>{weekVal}/{tgt}{goal.unit ? ` ${goal.unit}` : ''}</span>}
                       {isOwner && !isFutureDay && (
                         <button onClick={() => setActiveGoalSheet(goal)} className="text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 transition-colors shrink-0"><Camera size={13} /></button>
                       )}
                     </div>
+                    {isOwner && !isFutureDay && (
+                      <div className="mt-2">
+                        <Counter value={getCountVal(goal.text)} unit={goal.unit} onChange={v => setDayCount(goal.text, v)} />
+                      </div>
+                    )}
                     {tgt > 0 && (
-                      <div>
+                      <div className="mt-2">
                         <div className="h-1 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
                           <div className={`h-full rounded-full transition-all ${done ? 'bg-emerald-400' : 'bg-emerald-500'}`} style={{ width: `${pct * 100}%` }} />
                         </div>
-                        <p className={`text-xs mt-1 tabular-nums ${done ? 'text-emerald-500 font-medium' : 'text-zinc-400'}`}>
-                          {weekVal} / {tgt}{goal.unit ? ` ${goal.unit}` : ''} this week
-                        </p>
                       </div>
                     )}
                     {hasProof && proofBlock}
