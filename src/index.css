@@ -60,3 +60,51 @@
 .slide-up {
   animation: slide-up 0.32s cubic-bezier(0.32, 0.72, 0, 1) forwards;
 }
+
+/* Add goal button */
+@keyframes add-goal-border {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes add-goal-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+  50%       { box-shadow: 0 0 18px 3px rgba(16,185,129,0.18); }
+}
+
+.add-goal-btn {
+  color: #10b981;
+  background:
+    linear-gradient(#09090b, #09090b) padding-box,
+    linear-gradient(90deg, #10b981, #6366f1, #ec4899, #10b981) border-box;
+  background-size: 300% 100%;
+  border: 1.5px solid transparent;
+  border-radius: 1rem;
+  animation:
+    add-goal-border 4s ease infinite,
+    add-goal-pulse 3s ease-in-out infinite;
+  transition: color 0.2s;
+}
+
+.add-goal-btn:hover {
+  color: #fff;
+  background:
+    linear-gradient(rgba(16,185,129,0.1), rgba(16,185,129,0.1)) padding-box,
+    linear-gradient(90deg, #10b981, #6366f1, #ec4899, #10b981) border-box;
+  background-size: 300% 100%;
+  animation:
+    add-goal-border 1.5s ease infinite,
+    add-goal-pulse 1s ease-in-out infinite;
+}
+
+.add-goal-plus-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.add-goal-btn:hover .add-goal-plus-wrap {
+  transform: rotate(90deg) scale(1.2);
+}

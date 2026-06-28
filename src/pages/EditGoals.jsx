@@ -404,8 +404,11 @@ export default function EditGoals() {
 
         {/* Add goal */}
         <button onClick={() => setEditingGoal({ index: -1, goal: null })}
-          className="mt-4 w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-dashed border-zinc-800 text-zinc-600 hover:border-emerald-500/50 hover:text-emerald-500 transition-all text-sm font-semibold">
-          <Plus size={14} /> Add goal
+          className="group add-goal-btn mt-4 w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold active:scale-95 transition-transform">
+          <span className="add-goal-plus-wrap">
+            <Plus size={15} strokeWidth={2.5} />
+          </span>
+          Add goal
         </button>
 
         {goals.some(g => g.text.trim()) && (
