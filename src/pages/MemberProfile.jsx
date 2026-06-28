@@ -1,7 +1,4 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core'
-import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
 import { useParams, useNavigate } from 'react-router-dom'
 import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, addDoc, setDoc, getDoc, Timestamp } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
@@ -101,25 +98,6 @@ function Counter({ value, onChange, unit }) {
   )
 }
 
-function SortableGoalRow({ id, isOwner, children }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
-  const handle = isOwner ? (
-    <div {...listeners} {...attributes}
-      className="touch-none cursor-grab active:cursor-grabbing p-1.5 shrink-0 self-center">
-      <svg width="10" height="14" viewBox="0 0 10 14" fill="none">
-        {[2,6,10].flatMap(y => [2,6].map(x => (
-          <circle key={`${x}-${y}`} cx={x} cy={y} r="1.3" fill="currentColor" className="text-zinc-300 dark:text-zinc-600" />
-        )))}
-      </svg>
-    </div>
-  ) : null
-  return (
-    <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 10 : undefined }}
-      className={`transition-all ${isDragging ? 'shadow-xl opacity-90 scale-[1.01]' : ''}`}>
-      {children(handle)}
-    </div>
-  )
-}
 
 export default function MemberProfile() {
   const { name, sessionId } = useParams()
@@ -154,10 +132,6 @@ export default function MemberProfile() {
   const [reactionPickerOpen, setReactionPickerOpen] = useState(null)
   const longPressTimer = useRef(null)
   const [justChecked, setJustChecked] = useState({})
-  const dndSensors = useSensors(
-    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
-  )
   const [bio, setBio] = useState('')
   const [status, setStatus] = useState('')
   const [nickname, setNickname] = useState('')
@@ -874,26 +848,15 @@ export default function MemberProfile() {
                 </p>
               </div>
 
-              <DndContext
-                sensors={dndSensors}
-                collisionDetection={closestCenter}
-                onDragEnd={({ active, over }) => {
-                  if (!over || active.id === over.id || !isOwner) return
-                  const oldIdx = myGoals.findIndex(g => g.text === active.id)
-                  const newIdx = myGoals.findIndex(g => g.text === over.id)
-                  if (oldIdx !== -1 && newIdx !== -1) reorderGoals(arrayMove(myGoals, oldIdx, newIdx))
-                }}
-              >
-                <SortableContext items={myGoals.map(g => g.text)} strategy={verticalListSortingStrategy}>
-                  <div className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
-              {myGoals.map((goal, gi) => {
+              <div className="space-y-1">
+              {myGoals.map((goal) => {
                 const isFutureDay = selectedDay > todayKey
                 const proof = getGoalProof(goal.text)
                 const hasProof = !!(proof.note || proof.photoUrl)
                 const reactions = Array.isArray(proof.reactions) ? proof.reactions : []
 
                 const proofBlock = (
-                  <div className="pl-3 space-y-1.5">
+                  <div className="space-y-1.5 mt-1">
                     {proof.photoUrl && <img src={proof.photoUrl} alt="proof" className="w-full rounded-xl object-cover max-h-48" />}
                     {proof.note && (
                       <div className="flex items-start gap-2">
@@ -942,48 +905,43 @@ export default function MemberProfile() {
                   const daysLogged = weeklyHabitDays(goal.text)
                   const isAnimating = !!justChecked[goal.text]
                   return (
-                    <SortableGoalRow key={goal.text} id={goal.text} isOwner={isOwner}>
-                      {handle => (
-                      <div>
-                        <div className={`flex items-center gap-2.5 px-2 py-2 rounded-xl transition-colors ${checked ? 'bg-emerald-500/8' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}`}>
-                          <button
-                            onClick={() => {
-                              if (!isOwner || isFutureDay) return
-                              if (!checked) {
-                                setJustChecked(p => ({ ...p, [goal.text]: true }))
-                                setTimeout(() => setJustChecked(p => ({ ...p, [goal.text]: false })), 400)
-                              }
-                              toggleHabit(goal.text)
-                            }}
-                            disabled={isFutureDay || !isOwner}
-                            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${checked ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-600 hover:border-emerald-400'} ${isAnimating ? 'check-pop' : ''}`}
-                          >
-                            {checked && (
-                              <svg key={isAnimating ? 'anim' : 'static'} width="8" height="6" viewBox="0 0 10 8" fill="none">
-                                <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
-                                  className={isAnimating ? 'draw-check' : ''} />
-                              </svg>
-                            )}
-                          </button>
-                          <span className={`flex-1 text-sm truncate ${checked ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-zinc-700 dark:text-zinc-300'}`}>{goal.text}</span>
-                          <div className="flex gap-[3px] shrink-0">
-                            {weekDays.map((d, i) => {
-                              const k = dateKey(d)
-                              const hit = !!logs[k]?.habits?.[goal.text]
-                              const isSel = k === selectedDay
-                              return <span key={i} className={`w-1.5 h-1.5 rounded-full transition-all ${hit ? 'bg-emerald-400' : isSel ? 'bg-zinc-300 dark:bg-zinc-600' : k > todayKey ? 'bg-zinc-100 dark:bg-zinc-800' : 'bg-zinc-200 dark:bg-zinc-700'}`} />
-                            })}
-                          </div>
-                          <span className="text-[10px] text-zinc-400 tabular-nums w-4 text-right shrink-0">{daysLogged}/7</span>
-                          {isOwner && !isFutureDay && (
-                            <button onClick={() => setActiveGoalSheet(goal)} className="text-zinc-300 dark:text-zinc-600 hover:text-zinc-400 transition-colors shrink-0"><Camera size={12} /></button>
+                    <div key={goal.text} className={`rounded-2xl px-4 py-3 transition-colors ${checked ? 'bg-emerald-500/8 dark:bg-emerald-500/10' : 'bg-zinc-50 dark:bg-zinc-800/40'}`}>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => {
+                            if (!isOwner || isFutureDay) return
+                            if (!checked) {
+                              setJustChecked(p => ({ ...p, [goal.text]: true }))
+                              setTimeout(() => setJustChecked(p => ({ ...p, [goal.text]: false })), 400)
+                            }
+                            toggleHabit(goal.text)
+                          }}
+                          disabled={isFutureDay || !isOwner}
+                          className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${checked ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-600 hover:border-emerald-400'} ${isAnimating ? 'check-pop' : ''}`}
+                        >
+                          {checked && (
+                            <svg key={isAnimating ? 'anim' : 'static'} width="9" height="7" viewBox="0 0 10 8" fill="none">
+                              <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+                                className={isAnimating ? 'draw-check' : ''} />
+                            </svg>
                           )}
-                          {handle}
+                        </button>
+                        <span className={`flex-1 text-sm font-medium truncate ${checked ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</span>
+                        <div className="flex gap-1 shrink-0">
+                          {weekDays.map((d, i) => {
+                            const k = dateKey(d)
+                            const hit = !!logs[k]?.habits?.[goal.text]
+                            const isSel = k === selectedDay
+                            return <span key={i} className={`w-2 h-2 rounded-full transition-all ${hit ? 'bg-emerald-400' : isSel ? 'bg-zinc-300 dark:bg-zinc-600' : k > todayKey ? 'bg-zinc-100 dark:bg-zinc-800' : 'bg-zinc-200 dark:bg-zinc-700'}`} />
+                          })}
                         </div>
-                        {hasProof && <div className="ml-8 mt-1 mb-1">{proofBlock}</div>}
+                        <span className="text-xs text-zinc-400 tabular-nums shrink-0">{daysLogged}/7</span>
+                        {isOwner && !isFutureDay && (
+                          <button onClick={() => setActiveGoalSheet(goal)} className="text-zinc-300 dark:text-zinc-500 hover:text-zinc-500 dark:hover:text-zinc-300 transition-colors shrink-0"><Camera size={13} /></button>
+                        )}
                       </div>
-                      )}
-                    </SortableGoalRow>
+                      {hasProof && <div className="mt-2 pl-9">{proofBlock}</div>}
+                    </div>
                   )
                 }
 
@@ -993,37 +951,32 @@ export default function MemberProfile() {
                     return (Number(sg.target) || 0) > 0 && weeklyCount(k) >= Number(sg.target)
                   })
                   return (
-                    <SortableGoalRow key={goal.text} id={goal.text} isOwner={isOwner}>
-                      {handle => (
-                      <div className={`px-2 py-2 rounded-xl transition-colors ${allDone ? 'bg-emerald-500/8' : ''}`}>
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <span className={`flex-1 text-sm font-medium truncate ${allDone ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-700 dark:text-zinc-300'}`}>{goal.text}</span>
-                          {isOwner && !isFutureDay && (
-                            <button onClick={() => setActiveGoalSheet(goal)} className="text-zinc-300 dark:text-zinc-600 hover:text-zinc-400 transition-colors"><Camera size={12} /></button>
-                          )}
-                          {handle}
-                        </div>
-                        <div className="space-y-1.5 pl-1">
-                          {goal.subGoals.map((sg, si) => {
-                            const k = `${goal.text}::${sg.text}`
-                            const weekVal = weeklyCount(k)
-                            const tgt = Number(sg.target) || 0
-                            const pct = tgt ? Math.min(1, weekVal / tgt) : 0
-                            const done = tgt > 0 && weekVal >= tgt
-                            return (
-                              <div key={si} className="flex items-center gap-2">
-                                <span className="text-xs text-zinc-400 dark:text-zinc-500 flex-1 truncate">{sg.text}</span>
-                                {tgt > 0 && <div className="w-12 bg-zinc-100 dark:bg-zinc-800 rounded-full h-0.5 overflow-hidden shrink-0"><div className={`h-full rounded-full transition-all ${done ? 'bg-emerald-400' : 'bg-emerald-500'}`} style={{ width: `${pct * 100}%` }} /></div>}
-                                <span className={`text-[10px] font-medium w-8 text-right shrink-0 tabular-nums ${done ? 'text-emerald-400' : 'text-zinc-400'}`}>{weekVal}{tgt ? `/${tgt}` : ''}</span>
-                                {isOwner && !isFutureDay && <Counter value={getCountVal(k)} unit={sg.unit} onChange={v => setDayCount(k, v)} />}
-                              </div>
-                            )
-                          })}
-                        </div>
-                        {hasProof && <div className="mt-1.5 pl-1">{proofBlock}</div>}
+                    <div key={goal.text} className={`rounded-2xl px-4 py-3 transition-colors ${allDone ? 'bg-emerald-500/8 dark:bg-emerald-500/10' : 'bg-zinc-50 dark:bg-zinc-800/40'}`}>
+                      <div className="flex items-center gap-2 mb-2.5">
+                        <span className={`flex-1 text-sm font-semibold truncate ${allDone ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</span>
+                        {isOwner && !isFutureDay && (
+                          <button onClick={() => setActiveGoalSheet(goal)} className="text-zinc-300 dark:text-zinc-500 hover:text-zinc-500 dark:hover:text-zinc-300 transition-colors shrink-0"><Camera size={13} /></button>
+                        )}
                       </div>
-                      )}
-                    </SortableGoalRow>
+                      <div className="space-y-2">
+                        {goal.subGoals.map((sg, si) => {
+                          const k = `${goal.text}::${sg.text}`
+                          const weekVal = weeklyCount(k)
+                          const tgt = Number(sg.target) || 0
+                          const pct = tgt ? Math.min(1, weekVal / tgt) : 0
+                          const done = tgt > 0 && weekVal >= tgt
+                          return (
+                            <div key={si} className="flex items-center gap-2.5">
+                              <span className="text-xs text-zinc-500 dark:text-zinc-400 flex-1 truncate">{sg.text}</span>
+                              {tgt > 0 && <div className="w-14 bg-zinc-200 dark:bg-zinc-700 rounded-full h-1 overflow-hidden shrink-0"><div className={`h-full rounded-full transition-all ${done ? 'bg-emerald-400' : 'bg-emerald-500'}`} style={{ width: `${pct * 100}%` }} /></div>}
+                              <span className={`text-xs tabular-nums w-10 text-right shrink-0 ${done ? 'text-emerald-500 font-semibold' : 'text-zinc-400'}`}>{weekVal}{tgt ? `/${tgt}` : ''}</span>
+                              {isOwner && !isFutureDay && <Counter value={getCountVal(k)} unit={sg.unit} onChange={v => setDayCount(k, v)} />}
+                            </div>
+                          )
+                        })}
+                      </div>
+                      {hasProof && <div className="mt-2">{proofBlock}</div>}
+                    </div>
                   )
                 }
 
@@ -1031,27 +984,23 @@ export default function MemberProfile() {
                 const tgt = Number(goal.target) || 0
                 const done = tgt > 0 && weekVal >= tgt
                 return (
-                  <SortableGoalRow key={goal.text} id={goal.text} isOwner={isOwner}>
-                    {handle => (
-                    <div className={`flex items-center gap-2.5 px-2 py-2 rounded-xl transition-colors ${done ? 'bg-emerald-500/8' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}`}>
+                  <div key={goal.text} className={`rounded-2xl px-4 py-3 transition-colors ${done ? 'bg-emerald-500/8 dark:bg-emerald-500/10' : 'bg-zinc-50 dark:bg-zinc-800/40'}`}>
+                    <div className="flex items-center gap-3">
                       <RingProgress value={weekVal} target={tgt} />
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm truncate ${done ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-zinc-700 dark:text-zinc-300'}`}>{goal.text}</p>
-                        {goal.unit && <p className="text-[10px] text-zinc-400 mt-0.5">{goal.unit} / week</p>}
+                        <p className={`text-sm font-medium truncate ${done ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</p>
+                        {goal.unit && <p className="text-xs text-zinc-400 mt-0.5">{goal.unit} / week</p>}
                       </div>
                       {isOwner && !isFutureDay && <Counter value={getCountVal(goal.text)} unit={goal.unit} onChange={v => setDayCount(goal.text, v)} />}
                       {isOwner && !isFutureDay && (
-                        <button onClick={() => setActiveGoalSheet(goal)} className="text-zinc-300 dark:text-zinc-600 hover:text-zinc-400 transition-colors shrink-0"><Camera size={12} /></button>
+                        <button onClick={() => setActiveGoalSheet(goal)} className="text-zinc-300 dark:text-zinc-500 hover:text-zinc-500 dark:hover:text-zinc-300 transition-colors shrink-0"><Camera size={13} /></button>
                       )}
-                      {handle}
                     </div>
-                    )}
-                  </SortableGoalRow>
+                    {hasProof && <div className="mt-2 pl-14">{proofBlock}</div>}
+                  </div>
                 )
               })}
-                  </div>
-                </SortableContext>
-              </DndContext>
+              </div>
             </div>
           )}
 
