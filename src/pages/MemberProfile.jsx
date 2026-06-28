@@ -798,7 +798,16 @@ export default function MemberProfile() {
           </div>
         )}
 
-        <div className="h-1 -mx-6 bg-black/10" />
+        {isOwner && entry && (
+          <div className="mt-3">
+            <button onClick={() => { setGoalsInput(entry.goalItems); setEditingGoals(true) }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 hover:bg-white/25 text-white/70 hover:text-white text-xs font-semibold transition-all">
+              <Pencil size={10} /> Edit this week's goals
+            </button>
+          </div>
+        )}
+
+        <div className="h-1 -mx-6 bg-black/10 mt-4" />
       </div>
 
 
@@ -882,16 +891,10 @@ export default function MemberProfile() {
           {/* Goal rows */}
           {!editingGoals && entry.goalItems?.length > 0 && (
             <div className="space-y-1">
-              <div className="flex items-center justify-between px-1 mb-2">
+              <div className="px-1 mb-2">
                 <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">
                   {selectedDay === todayKey ? 'Today' : selectedDayLabel}
                 </p>
-                {isOwner && (
-                  <button onClick={() => { setGoalsInput(entry.goalItems); setEditingGoals(true) }}
-                    className="flex items-center gap-1 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors text-xs">
-                    <Pencil size={11} /> Edit goals
-                  </button>
-                )}
               </div>
 
               <DndContext
