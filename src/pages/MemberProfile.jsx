@@ -238,6 +238,15 @@ export default function MemberProfile() {
   }, [entry?.id])
 
   useEffect(() => {
+    if (editingGoals) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [editingGoals])
+
+  useEffect(() => {
     if (entry?.status !== 'completed' || confettiFired.current) return
     confettiFired.current = true
     const colors = ['#10b981','#3b82f6','#8b5cf6','#f97316','#ec4899','#fbbf24']
@@ -877,7 +886,7 @@ export default function MemberProfile() {
             <div className="h-px bg-zinc-800 shrink-0 mx-5" />
 
             {/* Scrollable content — force dark mode so GoalBuilder renders dark */}
-            <div className="dark flex-1 overflow-y-auto px-4 py-4 space-y-0">
+            <div className="dark flex-1 overflow-y-auto overscroll-contain px-4 py-4 space-y-0">
               <GoalBuilder initialGoals={myGoals} onChange={setGoalsInput} />
             </div>
 
