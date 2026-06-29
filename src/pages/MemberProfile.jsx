@@ -941,7 +941,6 @@ export default function MemberProfile() {
                               <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${c.todayPill}`}>+{todayVal} today</span>
                             )}
                             {rightLabel && <span className={`text-[11px] tabular-nums shrink-0 ${c.label}`}>{rightLabel}</span>}
-                            {goal.type !== 'habit' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`shrink-0 ${c.chevron}`}><path d="M9 18l6-6-6-6"/></svg>}
                           </button>
                         </div>
 
