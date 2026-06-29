@@ -110,11 +110,15 @@ export default function MemberProfile() {
   const [activeGoalSheet, setActiveGoalSheet] = useState(null)
   const [loggingSheet, setLoggingSheet] = useState(null)
   const [uploadingPhoto, setUploadingPhoto] = useState({})
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [uploadingBanner, setUploadingBanner] = useState(false)
   const [reactionPickerOpen, setReactionPickerOpen] = useState(null)
   const longPressTimer = useRef(null)
   const [justChecked, setJustChecked] = useState({})
   const [bio, setBio] = useState('')
   const [status, setStatus] = useState('')
+  const [avatarPhotoUrl, setAvatarPhotoUrl] = useState('')
+  const [bannerImageUrl, setBannerImageUrl] = useState('')
   const [nickname, setNickname] = useState('')
   const [bioInput, setBioInput] = useState('')
   const [statusInput, setStatusInput] = useState('')
@@ -159,6 +163,8 @@ export default function MemberProfile() {
         setStatus(d.statuses?.[name] || '')
         setBannerColorIdx(d.bannerColors?.[name] ?? null)
         setBannerVibe(d.bannerVibes?.[name] || '')
+        setAvatarPhotoUrl(d.avatarPhotos?.[name] || '')
+        setBannerImageUrl(d.bannerImages?.[name] || '')
         setNickname(d.nicknames?.[name] || '')
         const mg = d.memberGoals?.[name]
         setMemberGoals(mg?.length ? mg : null)
@@ -589,6 +595,26 @@ export default function MemberProfile() {
   const saveBannerColor = async (idx) => { setBannerColorIdx(idx); await setDoc(sessionDoc, { bannerColors: { [name]: idx } }, { merge: true }) }
   const saveBannerVibe = async (emoji) => { setBannerVibe(emoji); await setDoc(sessionDoc, { bannerVibes: { [name]: emoji } }, { merge: true }) }
 
+  const uploadAvatarPhoto = async (file) => {
+    setUploadingAvatar(true)
+    const storageRef = ref(storage, `avatars/${sessionId}/${name}`)
+    await uploadBytes(storageRef, file)
+    const url = await getDownloadURL(storageRef)
+    setAvatarPhotoUrl(url)
+    await setDoc(sessionDoc, { avatarPhotos: { [name]: url } }, { merge: true })
+    setUploadingAvatar(false)
+  }
+
+  const uploadBannerImage = async (file) => {
+    setUploadingBanner(true)
+    const storageRef = ref(storage, `banners/${sessionId}/${name}`)
+    await uploadBytes(storageRef, file)
+    const url = await getDownloadURL(storageRef)
+    setBannerImageUrl(url)
+    await setDoc(sessionDoc, { bannerImages: { [name]: url } }, { merge: true })
+    setUploadingBanner(false)
+  }
+
   // ── chart ─────────────────────────────────────────────────────────────────
 
   const today = new Date(); today.setHours(23, 59, 59, 0)
@@ -653,8 +679,9 @@ export default function MemberProfile() {
       <div className="-mx-4">
         {/* Cover image */}
         <div className={`bg-gradient-to-br ${color} h-28 relative overflow-hidden`}>
+          {bannerImageUrl && <img src={bannerImageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />}
           <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: `radial-gradient(circle, white 1px, transparent 1px)`, backgroundSize: '20px 20px' }} />
-          {bannerVibe && <div className="absolute right-5 bottom-3 text-7xl opacity-20 select-none pointer-events-none leading-none">{bannerVibe}</div>}
+          {bannerVibe && !bannerImageUrl && <div className="absolute right-5 bottom-3 text-7xl opacity-20 select-none pointer-events-none leading-none">{bannerVibe}</div>}
 
           {/* Top-right actions */}
           <div className="absolute top-2.5 right-2.5 flex items-center gap-1">
@@ -686,11 +713,13 @@ export default function MemberProfile() {
           <div className="flex items-end justify-between -mt-7 mb-3">
             {/* Avatar */}
             <button onClick={() => setPickingAvatar(v => !v)}
-              className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${color} ring-4 ring-zinc-50 dark:ring-zinc-950 flex items-center justify-center relative group transition-all hover:scale-105 active:scale-95 shrink-0 shadow-lg`}>
-              {avatars[name]
-                ? <span className="text-3xl">{avatars[name]}</span>
-                : <span className="text-white font-black text-3xl leading-none">{name[0].toUpperCase()}</span>}
-              <span className="absolute inset-0 rounded-2xl bg-black/25 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${color} ring-4 ring-zinc-50 dark:ring-zinc-950 flex items-center justify-center relative group transition-all hover:scale-105 active:scale-95 shrink-0 shadow-lg overflow-hidden`}>
+              {avatarPhotoUrl
+                ? <img src={avatarPhotoUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                : avatars[name]
+                  ? <span className="text-3xl">{avatars[name]}</span>
+                  : <span className="text-white font-black text-3xl leading-none">{name[0].toUpperCase()}</span>}
+              <span className="absolute inset-0 rounded-2xl bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
                 <Pencil size={11} className="text-white" />
               </span>
             </button>
@@ -1196,9 +1225,23 @@ export default function MemberProfile() {
                   className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-emerald-400 dark:focus:border-emerald-500 transition-colors resize-none" />
               </div>
 
+              {/* Banner image */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">Banner Image</label>
+                <label className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border cursor-pointer transition-colors ${bannerImageUrl ? 'border-emerald-400 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-950/30' : 'border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-600'}`}>
+                  {uploadingBanner
+                    ? <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin shrink-0" />
+                    : <Camera size={15} className="text-zinc-400 shrink-0" />}
+                  <span className="text-sm text-zinc-600 dark:text-zinc-400 flex-1">{bannerImageUrl ? 'Change banner photo' : 'Upload a banner photo'}</span>
+                  {bannerImageUrl && <button type="button" onClick={e => { e.preventDefault(); setBannerImageUrl(''); setDoc(sessionDoc, { bannerImages: { [name]: '' } }, { merge: true }) }} className="text-xs text-zinc-400 hover:text-red-400 transition-colors">Remove</button>}
+                  <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadBannerImage(f); e.target.value = '' }} />
+                </label>
+                {bannerImageUrl && <img src={bannerImageUrl} alt="" className="w-full h-16 object-cover rounded-xl" />}
+              </div>
+
               {/* Banner color */}
               <div className="space-y-2">
-                <label className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">Banner Color</label>
+                <label className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">Banner Color {bannerImageUrl && <span className="font-normal text-zinc-500">(hidden when photo set)</span>}</label>
                 <div className="flex flex-wrap gap-2">
                   {BANNER_COLORS.map((_, i) => (
                     <button key={i} onClick={() => saveBannerColor(i)}
@@ -1239,6 +1282,18 @@ export default function MemberProfile() {
               <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200">Pick your avatar</p>
               <button onClick={() => setPickingAvatar(false)} className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"><X size={16} /></button>
             </div>
+
+            {/* Photo upload */}
+            <label className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border cursor-pointer transition-colors mb-3 ${avatarPhotoUrl ? 'border-emerald-400 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-950/30' : 'border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-600'}`}>
+              {uploadingAvatar
+                ? <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin shrink-0" />
+                : <Camera size={15} className="text-zinc-400 shrink-0" />}
+              <span className="text-sm text-zinc-600 dark:text-zinc-400 flex-1">{avatarPhotoUrl ? 'Change photo' : 'Upload a photo'}</span>
+              {avatarPhotoUrl && <button type="button" onClick={e => { e.preventDefault(); setAvatarPhotoUrl(''); setDoc(sessionDoc, { avatarPhotos: { [name]: '' } }, { merge: true }) }} className="text-xs text-zinc-400 hover:text-red-400 transition-colors">Remove</button>}
+              <input type="file" accept="image/*" capture="environment" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) { uploadAvatarPhoto(f); setPickingAvatar(false) } e.target.value = '' }} />
+            </label>
+
+            <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-600 uppercase tracking-wide mb-2">Or pick an emoji</p>
             <div className="grid grid-cols-8 gap-1.5">
               {AVATAR_EMOJIS.map(emoji => (
                 <button key={emoji} onClick={() => saveAvatar(emoji)}
