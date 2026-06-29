@@ -704,18 +704,17 @@ export default function MemberProfile() {
 
         {bio && <p className="relative mt-1.5 text-xs text-white/55 leading-snug">{bio}</p>}
 
-        {/* Bottom row: edit goals button */}
-        <div className="relative mt-3 flex items-center gap-2">
-          {isOwner && myGoals.length > 0 && (
-            <button onClick={() => navigate(`/${sessionId}/member/${encodeURIComponent(name)}/goals`)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 hover:bg-white/25 border border-white/20 hover:border-white/40 text-white text-xs font-bold transition-all hover:scale-105 active:scale-95 backdrop-blur-sm">
-              ✏️ Edit Goals
-            </button>
-          )}
-        </div>
-
         <div className="h-px -mx-5 bg-black/10 mt-3" />
       </div>
+
+      {/* Edit Goals — full-width below banner */}
+      {isOwner && myGoals.length > 0 && (
+        <button onClick={() => navigate(`/${sessionId}/member/${encodeURIComponent(name)}/goals`)}
+          className="add-goal-btn w-full py-3 flex items-center justify-center gap-2 font-bold text-sm rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]">
+          <span className="add-goal-plus-wrap">✏️</span>
+          Edit Goals
+        </button>
+      )}
 
 
 
