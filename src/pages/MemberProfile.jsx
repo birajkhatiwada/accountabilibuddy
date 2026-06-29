@@ -6,7 +6,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { db, storage } from '../firebase'
 import { useAuth } from '../AuthContext'
 import { getCurrentWeekId, formatWeekLabel, formatTimestamp } from '../utils'
-import { Pencil, X, Trash2, Camera, Link2 } from 'lucide-react'
+import { Pencil, X, Camera } from 'lucide-react'
 import GoalBuilder from '../components/GoalBuilder'
 import DailyNote from '../components/DailyNote'
 import Highcharts from 'highcharts'
@@ -96,9 +96,7 @@ export default function MemberProfile() {
   const [penalty, setPenalty] = useState(15)
   const [goalsInput, setGoalsInput] = useState([])
   const [submitting, setSubmitting] = useState(false)
-  const [confirmDelete, setConfirmDelete] = useState(false)
   const [pickingAvatar, setPickingAvatar] = useState(false)
-  const [copied, setCopied] = useState(false)
   const [goalBuilderKey, setGoalBuilderKey] = useState(0)
   const [carryOverGoals, setCarryOverGoals] = useState(null)
   const [selectedDay, setSelectedDay] = useState(todayKey)
@@ -364,7 +362,6 @@ export default function MemberProfile() {
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href)
-    setCopied(true); setTimeout(() => setCopied(false), 2000)
   }
 
   // Goals source of truth lives on the session doc; entries are log containers only
@@ -588,7 +585,7 @@ export default function MemberProfile() {
     )
   }
 
-  const deleteMember = async () => { await setDoc(sessionDoc, { names: members.filter(m => m !== name) }, { merge: true }); navigate(`/${sessionId}`) }
+
   const saveAvatar = async (emoji) => { await setDoc(sessionDoc, { avatars: { ...avatars, [name]: emoji } }, { merge: true }); setPickingAvatar(false) }
   const saveBio = async (val) => { await setDoc(sessionDoc, { bios: { [name]: val.trim() } }, { merge: true }) }
   const saveStatus = async (val) => { await setDoc(sessionDoc, { statuses: { [name]: val.trim() } }, { merge: true }) }
