@@ -287,6 +287,13 @@ export default function MemberProfile() {
     return sum + (localCounts[localKey] ?? (Number(logs[dk]?.counts?.[key]) || 0))
   }, 0)
 
+  const cumulativeCount = (key, upToDay) => weekDays.reduce((sum, d) => {
+    if (dateKey(d) > upToDay) return sum
+    const dk = dateKey(d)
+    const localKey = `${dk}__count__${key}`
+    return sum + (localCounts[localKey] ?? (Number(logs[dk]?.counts?.[key]) || 0))
+  }, 0)
+
   const weeklyTotal = (key) => weekDays.reduce((sum, d) => {
     const dk = dateKey(d)
     const localKey = `${dk}__total__${key}`
@@ -846,9 +853,13 @@ export default function MemberProfile() {
                     const todayVal = !isBreakdown && goal.type !== 'habit' ? getCountVal(goal.text) : 0
                     const hasBreakdownToday = isBreakdown && goal.subGoals.some(sg => getCountVal(`${goal.text}::${sg.text}`) > 0)
                     const workedToday = todayVal > 0 || hasBreakdownToday
-                    // for non-habit goals: checkmark only when done AND logged something today
-                    const showCheck = goal.type === 'habit' ? done : (done && workedToday)
-                    const showDot = goal.type === 'habit' ? false : (!showCheck && (workedToday || done))
+                    // for count goals: check if goal was already complete as of the selected day
+                    const doneAsOfSelectedDay = goal.type === 'habit' ? done
+                      : goal.subGoals?.length > 0
+                        ? goal.subGoals.every(sg => { const k=`${goal.text}::${sg.text}`; return (Number(sg.target)||0)>0 && cumulativeCount(k, selectedDay)>=(Number(sg.target)||0) })
+                        : tgt > 0 && cumulativeCount(goal.text, selectedDay) >= tgt
+                    const showCheck = goal.type === 'habit' ? done : doneAsOfSelectedDay
+                    const showDot = goal.type === 'habit' ? false : (!showCheck && workedToday)
 
                     return (
                       <div key={goal.text} className="space-y-1">
