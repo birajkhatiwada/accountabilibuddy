@@ -807,101 +807,131 @@ export default function MemberProfile() {
           )}
 
           {/* Goal rows */}
-          {myGoals.length > 0 && (
-            <div>
-              <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold uppercase tracking-wider px-1 mb-1">
-                {selectedDay === todayKey ? 'Today' : selectedDayLabel}
-              </p>
-              <div className="divide-y divide-zinc-100 dark:divide-zinc-800/40">
-                {myGoals.map((goal) => {
-                  const isFutureDay = selectedDay > todayKey
-                  const checked = goal.type === 'habit' ? !!logs[selectedDay]?.habits?.[goal.text] : false
-                  const weekVal = goal.type !== 'habit' && !goal.subGoals?.length ? weeklyCount(goal.text) : 0
-                  const tgt = Number(goal.target) || 0
-                  const done = goal.type === 'habit' ? checked
-                    : goal.subGoals?.length > 0
-                      ? goal.subGoals.every(sg => { const k=`${goal.text}::${sg.text}`; return (Number(sg.target)||0)>0 && weeklyCount(k)>=(Number(sg.target)||0) })
-                      : tgt > 0 && weekVal >= tgt
+          {myGoals.length > 0 && (() => {
+            const goalDone = (goal) => {
+              const checked = goal.type === 'habit' ? !!logs[selectedDay]?.habits?.[goal.text] : false
+              const wv = goal.type !== 'habit' && !goal.subGoals?.length ? weeklyCount(goal.text) : 0
+              const tgt = Number(goal.target) || 0
+              return goal.type === 'habit' ? checked
+                : goal.subGoals?.length > 0
+                  ? goal.subGoals.every(sg => { const k=`${goal.text}::${sg.text}`; return (Number(sg.target)||0)>0 && weeklyCount(k)>=(Number(sg.target)||0) })
+                  : tgt > 0 && wv >= tgt
+            }
+            const doneCount = myGoals.filter(goalDone).length
+            const allDone = doneCount === myGoals.length
 
-                  const rightLabel = goal.type === 'habit'
-                    ? `${weeklyHabitDays(goal.text)}/7`
-                    : goal.subGoals?.length > 0
-                      ? `${goal.subGoals.filter(sg => { const k=`${goal.text}::${sg.text}`; return (Number(sg.target)||0)>0 && weeklyCount(k)>=(Number(sg.target)||0) }).length}/${goal.subGoals.length}`
-                      : tgt > 0 ? `${weekVal}/${tgt}${goal.unit ? ` ${goal.unit}` : ''}` : null
-
-                  return (
-                    <div key={goal.text}>
-                      <button
-                        onClick={() => !isFutureDay && (goal.type === 'habit' ? toggleHabit(goal.text) : setLoggingSheet(goal))}
-                        disabled={isFutureDay || (goal.type === 'habit' && !isOwner)}
-                        className="w-full flex items-center gap-2.5 py-2.5 text-left disabled:opacity-40">
-                        <div className={`w-3.5 h-3.5 rounded-sm border-2 shrink-0 flex items-center justify-center transition-colors ${done ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-600'}`}>
-                          {done && <svg width="7" height="5" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+            return (
+              <div>
+                {/* Progress bar */}
+                <div className="mb-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold uppercase tracking-wider">
+                      {selectedDay === todayKey ? 'Today' : selectedDayLabel}
+                    </p>
+                    <p className={`text-[11px] font-bold transition-colors ${allDone ? 'text-emerald-500' : 'text-zinc-400 dark:text-zinc-500'}`}>
+                      {allDone ? '🎉 All done!' : `${doneCount} / ${myGoals.length}`}
+                    </p>
+                  </div>
+                  <div className="flex gap-1">
+                    {myGoals.map((goal, i) => {
+                      const done = goalDone(goal)
+                      return (
+                        <div key={i} className="flex-1 h-1.5 rounded-full overflow-hidden bg-zinc-100 dark:bg-zinc-800">
+                          <div className={`h-full rounded-full transition-all duration-500 ${done ? 'bg-emerald-400' : 'w-0'}`}
+                            style={{ width: done ? '100%' : '0%' }} />
                         </div>
-                        <span className={`flex-1 text-sm truncate ${done ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</span>
-                        {rightLabel && <span className={`text-[11px] tabular-nums shrink-0 ${done ? 'text-emerald-500' : 'text-zinc-400 dark:text-zinc-500'}`}>{rightLabel}</span>}
-                        {goal.type !== 'habit' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-300 dark:text-zinc-700 shrink-0"><path d="M9 18l6-6-6-6"/></svg>}
-                      </button>
-                      {goal.subGoals?.length > 0 && (
-                        <div className="ml-6 mb-2 space-y-1.5">
-                          {goal.subGoals.map((sg, si) => {
-                            const k = `${goal.text}::${sg.text}`
-                            const sv = weeklyCount(k)
-                            const todayV = getCountVal(k)
-                            const st = Number(sg.target) || 0
-                            const sp = st ? Math.min(1, sv / st) : 0
-                            const sdone = st > 0 && sv >= st
-                            return (
-                              <div key={si} className="flex items-center gap-2">
-                                <div className="flex-1 min-w-0">
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div className="divide-y divide-zinc-100 dark:divide-zinc-800/40">
+                  {myGoals.map((goal) => {
+                    const isFutureDay = selectedDay > todayKey
+                    const done = goalDone(goal)
+                    const weekVal = goal.type !== 'habit' && !goal.subGoals?.length ? weeklyCount(goal.text) : 0
+                    const tgt = Number(goal.target) || 0
+
+                    const rightLabel = goal.type === 'habit'
+                      ? `${weeklyHabitDays(goal.text)}/7`
+                      : goal.subGoals?.length > 0
+                        ? `${goal.subGoals.filter(sg => { const k=`${goal.text}::${sg.text}`; return (Number(sg.target)||0)>0 && weeklyCount(k)>=(Number(sg.target)||0) }).length}/${goal.subGoals.length}`
+                        : tgt > 0 ? `${weekVal}/${tgt}${goal.unit ? ` ${goal.unit}` : ''}` : null
+
+                    return (
+                      <div key={goal.text}>
+                        <button
+                          onClick={() => !isFutureDay && (goal.type === 'habit' ? toggleHabit(goal.text) : setLoggingSheet(goal))}
+                          disabled={isFutureDay || (goal.type === 'habit' && !isOwner)}
+                          className="w-full flex items-center gap-2.5 py-2.5 text-left disabled:opacity-40">
+                          <div className={`w-3.5 h-3.5 rounded-sm border-2 shrink-0 flex items-center justify-center transition-colors ${done ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-600'}`}>
+                            {done && <svg width="7" height="5" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                          </div>
+                          <span className={`flex-1 text-sm truncate ${done ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</span>
+                          {rightLabel && <span className={`text-[11px] tabular-nums shrink-0 ${done ? 'text-emerald-500' : 'text-zinc-400 dark:text-zinc-500'}`}>{rightLabel}</span>}
+                          {goal.type !== 'habit' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-300 dark:text-zinc-700 shrink-0"><path d="M9 18l6-6-6-6"/></svg>}
+                        </button>
+                        {goal.subGoals?.length > 0 && (
+                          <div className="ml-6 mb-2 space-y-1.5">
+                            {goal.subGoals.map((sg, si) => {
+                              const k = `${goal.text}::${sg.text}`
+                              const sv = weeklyCount(k)
+                              const todayV = getCountVal(k)
+                              const st = Number(sg.target) || 0
+                              const sp = st ? Math.min(1, sv / st) : 0
+                              const sdone = st > 0 && sv >= st
+                              return (
+                                <div key={si} className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2">
                                     <span className={`text-xs truncate flex-1 ${sdone ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-500 dark:text-zinc-400'}`}>{sg.text}</span>
                                     <span className={`text-[10px] tabular-nums shrink-0 ${sdone ? 'text-emerald-500' : 'text-zinc-400 dark:text-zinc-500'}`}>{sv}{st ? `/${st}` : ''}{sg.unit ? ` ${sg.unit}` : ''}</span>
                                   </div>
-                                  {st > 0 && <div className="h-0.5 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden mt-1"><div className={`h-full rounded-full ${sdone ? 'bg-emerald-400' : 'bg-emerald-500'}`} style={{ width: `${sp * 100}%` }} /></div>}
+                                  {st > 0 && <div className="h-0.5 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden mt-1"><div className={`h-full rounded-full transition-all duration-500 ${sdone ? 'bg-emerald-400' : 'bg-emerald-500'}`} style={{ width: `${sp * 100}%` }} /></div>}
                                   {todayV > 0 && <p className="text-[9px] text-emerald-500 font-semibold mt-0.5">+{todayV} today</p>}
                                 </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      )}
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Daily note + photo */}
+                {(() => {
+                  const daily = getGoalProof('__daily__')
+                  const noteVal = proofNoteInputs['__daily__'] ?? ''
+                  const existingNote = daily.note ?? ''
+                  return (
+                    <div className="mt-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl px-4 py-3 space-y-2">
+                      {daily.photoUrl && <img src={daily.photoUrl} alt="" className="w-full max-h-48 rounded-xl object-cover" />}
+                      <div className="flex items-center gap-2">
+                        <span className="text-base shrink-0">📝</span>
+                        <input
+                          type="text"
+                          placeholder={existingNote || 'Note for today…'}
+                          value={noteVal}
+                          onChange={e => setProofNoteInputs(p => ({ ...p, '__daily__': e.target.value }))}
+                          onBlur={() => { if (noteVal.trim() && noteVal.trim() !== existingNote) sendProofNote('__daily__') }}
+                          onKeyDown={e => { if (e.key === 'Enter' && noteVal.trim()) sendProofNote('__daily__') }}
+                          style={{ fontSize: 16 }}
+                          className="flex-1 min-w-0 bg-transparent text-sm text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none"
+                        />
+                        <label className="shrink-0 text-zinc-400 hover:text-zinc-500 dark:hover:text-zinc-300 transition-colors cursor-pointer p-1">
+                          {uploadingPhoto['__daily__']
+                            ? <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                            : <Camera size={15} />}
+                          <input type="file" accept="image/*" capture="environment" className="hidden"
+                            onChange={e => { const f = e.target.files?.[0]; if (f) uploadGoalPhoto('__daily__', f); e.target.value = '' }} />
+                        </label>
+                      </div>
                     </div>
                   )
-                })}
+                })()}
               </div>
-              {/* Daily note + photo — one per day, editable below all goals */}
-              {(() => {
-                const daily = getGoalProof('__daily__')
-                const noteVal = proofNoteInputs['__daily__'] ?? ''
-                const existingNote = daily.note ?? ''
-                return (
-                  <div className="mt-2 pt-2 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
-                    {daily.photoUrl && <img src={daily.photoUrl} alt="" className="w-full max-h-40 rounded-xl object-cover" />}
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        placeholder={existingNote || 'Note for today…'}
-                        value={noteVal}
-                        onChange={e => setProofNoteInputs(p => ({ ...p, '__daily__': e.target.value }))}
-                        onBlur={() => { if (noteVal.trim() && noteVal.trim() !== existingNote) sendProofNote('__daily__') }}
-                        onKeyDown={e => { if (e.key === 'Enter' && noteVal.trim()) sendProofNote('__daily__') }}
-                        style={{ fontSize: 16 }}
-                        className="flex-1 min-w-0 bg-transparent border-b border-zinc-200 dark:border-zinc-700 py-1 text-sm text-zinc-600 dark:text-zinc-400 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-emerald-400 dark:focus:border-emerald-500 transition-colors"
-                      />
-                      <label className="shrink-0 text-zinc-400 hover:text-zinc-500 dark:hover:text-zinc-300 transition-colors p-1 cursor-pointer">
-                        {uploadingPhoto['__daily__']
-                          ? <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-                          : <Camera size={15} />}
-                        <input type="file" accept="image/*" capture="environment" className="hidden"
-                          onChange={e => { const f = e.target.files?.[0]; if (f) uploadGoalPhoto('__daily__', f); e.target.value = '' }} />
-                      </label>
-                    </div>
-                  </div>
-                )
-              })()}
-            </div>
-          )}
+            )
+          })()}
 
           {/* Logging bottom sheet */}
           {loggingSheet && (() => {
