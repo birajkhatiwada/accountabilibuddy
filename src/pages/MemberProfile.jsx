@@ -995,7 +995,7 @@ export default function MemberProfile() {
                   const daily = getGoalProof('__daily__')
                   const messages = daily.messages || []
                   const noteVal = proofNoteInputs['__daily__'] ?? ''
-                  const canSend = isOwner && !isFutureDay
+                  const canSend = isOwner && selectedDay <= todayKey
                   const fmtTime = ts => { const d = new Date(ts); return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
                   if (!canSend && messages.length === 0 && !daily.photoUrl) return null
                   return (
