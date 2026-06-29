@@ -979,19 +979,19 @@ export default function MemberProfile() {
 
                 {/* Daily note */}
                 {(() => {
-                  const daily = getGoalProof('__daily__')
+                  const daily = getGoalProof('daily')
                   const canEdit = isOwner && selectedDay <= todayKey
-                  const isEditing = !!proofOpen['__daily__']
-                  const noteVal = proofNoteInputs['__daily__'] ?? ''
+                  const isEditing = !!proofOpen['daily']
+                  const noteVal = proofNoteInputs['daily'] ?? ''
                   if (!canEdit && !daily.note && !daily.photoUrl) return null
 
                   const openEdit = () => {
-                    setProofNoteInputs(p => ({ ...p, '__daily__': daily.note ?? '' }))
-                    setProofOpen(p => ({ ...p, '__daily__': true }))
+                    setProofNoteInputs(p => ({ ...p, 'daily': daily.note ?? '' }))
+                    setProofOpen(p => ({ ...p, 'daily': true }))
                   }
                   const handleDone = async () => {
-                    await sendProofNote('__daily__')
-                    setProofOpen(p => ({ ...p, '__daily__': false }))
+                    await sendProofNote('daily')
+                    setProofOpen(p => ({ ...p, 'daily': false }))
                   }
 
                   return (
@@ -1015,19 +1015,19 @@ export default function MemberProfile() {
                             autoFocus
                             placeholder="Write a note for today…"
                             value={noteVal}
-                            onChange={e => setProofNoteInputs(p => ({ ...p, '__daily__': e.target.value }))}
+                            onChange={e => setProofNoteInputs(p => ({ ...p, 'daily': e.target.value }))}
                             style={{ fontSize: 16 }}
                             rows={3}
                             className="w-full bg-white dark:bg-zinc-700/60 rounded-xl px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 resize-none"
                           />
                           <div className="flex items-center justify-between">
                             <label className="flex items-center gap-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors cursor-pointer text-xs">
-                              {uploadingPhoto['__daily__']
+                              {uploadingPhoto['daily']
                                 ? <div className="w-3.5 h-3.5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
                                 : <Camera size={14} />}
                               Add photo
                               <input type="file" accept="image/*" capture="environment" className="hidden"
-                                onChange={e => { const f = e.target.files?.[0]; if (f) uploadGoalPhoto('__daily__', f); e.target.value = '' }} />
+                                onChange={e => { const f = e.target.files?.[0]; if (f) uploadGoalPhoto('daily', f); e.target.value = '' }} />
                             </label>
                             <button onClick={handleDone}
                               className="px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold rounded-lg transition-colors">
