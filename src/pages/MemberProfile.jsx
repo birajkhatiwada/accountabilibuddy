@@ -844,7 +844,7 @@ export default function MemberProfile() {
                         : tgt > 0 ? `${weekVal}/${tgt}${goal.unit ? ` ${goal.unit}` : ''}` : null
 
                     const barPct = goal.type === 'habit'
-                      ? weeklyHabitDays(goal.text) / 7
+                      ? (done ? 1 : weeklyHabitDays(goal.text) / 7)
                       : goal.subGoals?.length > 0
                         ? goal.subGoals.filter(sg => { const k=`${goal.text}::${sg.text}`; return (Number(sg.target)||0)>0 && cumulativeCount(k, selectedDay)>=(Number(sg.target)||0) }).length / goal.subGoals.length
                         : tgt > 0 ? Math.min(1, cumulativeCount(goal.text, selectedDay) / tgt) : 0
