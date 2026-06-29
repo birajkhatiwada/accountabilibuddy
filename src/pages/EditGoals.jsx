@@ -348,35 +348,30 @@ export default function EditGoals() {
   )
 
   return (
-    <div className="-mx-4 -mt-3 min-h-full flex flex-col">
-      {/* Banner */}
-      <div className={`bg-gradient-to-br ${color} relative overflow-hidden px-5 pt-10 pb-8 shrink-0`}>
-        <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
-          style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-        <div className="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-white/10 pointer-events-none" />
-        <div className="absolute -left-8 bottom-0 w-40 h-40 rounded-full bg-black/10 pointer-events-none" />
-
-        <div className="relative flex items-center justify-between mb-5">
+    <div className="-mx-4 -mt-3 min-h-full flex flex-col bg-zinc-950">
+      {/* Header */}
+      <div className="px-4 pt-4 pb-5 shrink-0">
+        <div className="flex items-center justify-between mb-5">
           <button onClick={() => navigate(-1)}
-            className="flex items-center gap-1.5 text-white/70 hover:text-white transition-colors text-sm font-semibold">
+            className="flex items-center gap-1.5 text-zinc-500 hover:text-zinc-300 transition-colors text-sm font-semibold">
             <ArrowLeft size={16} /> Back
           </button>
           <button onClick={() => save()} disabled={submitting || !goals.some(g => g.text.trim())}
-            className="bg-white/20 hover:bg-white/30 disabled:opacity-40 active:scale-95 text-white font-bold text-sm px-5 py-1.5 rounded-full transition-all">
+            className="bg-emerald-500 hover:bg-emerald-400 disabled:opacity-30 active:scale-95 text-white font-bold text-sm px-5 py-1.5 rounded-full transition-all">
             {submitting ? 'Saving…' : 'Save'}
           </button>
         </div>
 
-        <div className="relative">
-          <p className="text-white/50 text-[10px] font-bold uppercase tracking-widest mb-1">This week</p>
-          <h1 className="text-2xl font-black text-white leading-tight">
-            What are you<br />committing to?
-          </h1>
-        </div>
+        <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-1">This week</p>
+        <h1 className="text-3xl font-black text-white leading-tight">
+          What are you<br />committing to?
+        </h1>
       </div>
 
+      <div className="h-px bg-zinc-800 mx-4" />
+
       {/* Goal list */}
-      <div className="flex-1 bg-zinc-950 px-4 pt-2 pb-8">
+      <div className="flex-1 px-4 pt-2 pb-8">
         {goals.length === 0 ? (
           <p className="text-zinc-600 text-sm text-center py-8">No goals yet — add one below</p>
         ) : (
