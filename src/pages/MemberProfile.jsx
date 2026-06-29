@@ -861,12 +861,20 @@ export default function MemberProfile() {
                     const showCheck = goal.type === 'habit' ? done : doneAsOfSelectedDay
                     const showDot = goal.type === 'habit' ? false : (!showCheck && workedToday)
 
+                    const fillClass = (pct, isDone) => {
+                      if (isDone) return 'bg-emerald-400/30 dark:bg-emerald-500/20'
+                      if (pct <= 0) return ''
+                      if (pct < 0.35) return 'bg-rose-400/20 dark:bg-rose-500/15'
+                      if (pct < 0.65) return 'bg-amber-400/25 dark:bg-amber-500/15'
+                      return 'bg-emerald-500/20 dark:bg-emerald-500/15'
+                    }
+
                     return (
                       <div key={goal.text} className="space-y-1">
                         {/* Parent card */}
                         <div className="relative rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800/60">
                           <div
-                            className={`absolute inset-y-0 left-0 transition-all duration-700 ${done ? 'bg-emerald-400/25 dark:bg-emerald-500/20' : 'bg-emerald-500/15 dark:bg-emerald-500/10'}`}
+                            className={`absolute inset-y-0 left-0 transition-all duration-700 ${fillClass(barPct, done)}`}
                             style={{ width: `${barPct * 100}%` }}
                           />
                           <button
@@ -902,7 +910,7 @@ export default function MemberProfile() {
                               return (
                                 <div key={si} className="relative rounded-lg overflow-hidden bg-zinc-100 dark:bg-zinc-800/60">
                                   <div
-                                    className={`absolute inset-y-0 left-0 transition-all duration-700 ${sdone ? 'bg-emerald-400/25 dark:bg-emerald-500/20' : 'bg-emerald-500/15 dark:bg-emerald-500/10'}`}
+                                    className={`absolute inset-y-0 left-0 transition-all duration-700 ${fillClass(sp, sdone)}`}
                                     style={{ width: `${sp * 100}%` }}
                                   />
                                   <div className="relative flex items-center gap-2 px-3 py-2">
