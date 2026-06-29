@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { collection, query, where, onSnapshot, doc, updateDoc, addDoc, setDoc, Timestamp } from 'firebase/firestore'
 import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core'
@@ -273,6 +273,7 @@ export default function EditGoals() {
   const [goals, setGoals] = useState(null)   // null = loading
   const [entry, setEntry] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  const savedGoals = useRef(null)  // snapshot of goals at load time, for change detection
   const [editingGoal, setEditingGoal] = useState(null)  // { index, goal } or { index: -1 } for new
 
   const sessionDoc = doc(db, 'sessions', sessionId)
@@ -289,7 +290,11 @@ export default function EditGoals() {
       setMembers(d.names || [])
       setBannerColorIdx(d.bannerColors?.[name] ?? null)
       const mg = d.memberGoals?.[name]
-      if (goals === null) setGoals(mg?.length ? mg : [])
+      if (goals === null) {
+        const loaded = mg?.length ? mg : []
+        setGoals(loaded)
+        savedGoals.current = JSON.stringify(loaded)
+      }
     })
   }, [sessionId, name])
 
@@ -302,7 +307,10 @@ export default function EditGoals() {
         .find(e => e.weekId === weekId && (e.nameLower || e.name?.toLowerCase()) === name.toLowerCase())
       setEntry(mine || null)
       // seed from entry only if we haven't loaded from session yet
-      if (goals === null && mine?.goalItems?.length) setGoals(mine.goalItems)
+      if (goals === null && mine?.goalItems?.length) {
+        setGoals(mine.goalItems)
+        savedGoals.current = JSON.stringify(mine.goalItems)
+      }
     })
   }, [sessionId, weekId, name])
 
@@ -347,21 +355,26 @@ export default function EditGoals() {
     </div>
   )
 
+  const hasChanges = goals !== null && savedGoals.current !== null && JSON.stringify(goals) !== savedGoals.current
+  const hasValid = goals?.some(g => g.text.trim())
+  const lockLabel = submitting ? 'Saving…' : hasChanges ? 'Lock in Changes' : 'Lock in'
+
   return (
     <div className="-mx-4 -mt-3 min-h-full flex flex-col bg-zinc-950">
       {/* Header */}
-      <div className="px-4 pt-4 pb-5 shrink-0">
-        <div className="flex items-center justify-between mb-5">
+      <div className="bg-zinc-900 border-b border-zinc-800 px-4 pt-4 pb-4 shrink-0">
+        <div className="flex items-center justify-between">
           <button onClick={() => navigate(-1)}
-            className="flex items-center gap-1.5 text-zinc-500 hover:text-zinc-300 transition-colors text-sm font-semibold">
+            className="flex items-center gap-1.5 text-zinc-400 hover:text-zinc-200 transition-colors text-sm font-semibold">
             <ArrowLeft size={16} /> Back
           </button>
-          <button onClick={() => save()} disabled={submitting || !goals.some(g => g.text.trim())}
-            className="bg-emerald-500 hover:bg-emerald-400 disabled:opacity-30 active:scale-95 text-white font-bold text-sm px-5 py-1.5 rounded-full transition-all">
-            {submitting ? 'Saving…' : 'Save'}
-          </button>
+          <p className="text-sm font-black text-white">Edit Goals</p>
+          <div className="w-16" />
         </div>
+      </div>
 
+      {/* Title */}
+      <div className="px-4 pt-5 pb-4 shrink-0">
         <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-1">This week</p>
         <h1 className="text-3xl font-black text-white leading-tight">
           What are you<br />committing to?
@@ -405,10 +418,10 @@ export default function EditGoals() {
           Add goal
         </button>
 
-        {goals.some(g => g.text.trim()) && (
+        {hasValid && (
           <button onClick={() => save()} disabled={submitting}
             className="mt-3 w-full bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] disabled:opacity-40 text-white font-black rounded-2xl py-3.5 text-base transition-all">
-            {submitting ? 'Saving…' : 'Lock in 🔒'}
+            {lockLabel}
           </button>
         )}
       </div>
