@@ -823,7 +823,7 @@ export default function MemberProfile() {
                   {selectedDay === todayKey ? 'Today' : selectedDayLabel}
                 </p>
 
-                <div className="divide-y divide-zinc-100 dark:divide-zinc-800/40">
+                <div className="space-y-1.5">
                   {myGoals.map((goal) => {
                     const isFutureDay = selectedDay > todayKey
                     const done = goalDone(goal)
@@ -843,38 +843,38 @@ export default function MemberProfile() {
                         : tgt > 0 ? Math.min(1, weekVal / tgt) : 0
 
                     return (
-                      <div key={goal.text} className="py-0.5">
+                      <div key={goal.text} className="relative rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800/60">
+                        {/* fill layer */}
+                        <div
+                          className={`absolute inset-y-0 left-0 transition-all duration-700 ${done ? 'bg-emerald-400/25 dark:bg-emerald-500/20' : 'bg-emerald-500/15 dark:bg-emerald-500/10'}`}
+                          style={{ width: `${barPct * 100}%` }}
+                        />
                         <button
                           onClick={() => !isFutureDay && (goal.type === 'habit' ? toggleHabit(goal.text) : setLoggingSheet(goal))}
                           disabled={isFutureDay || (goal.type === 'habit' && !isOwner)}
-                          className="w-full flex items-center gap-2.5 py-2 text-left disabled:opacity-40">
-                          <div className={`w-3.5 h-3.5 rounded-sm border-2 shrink-0 flex items-center justify-center transition-colors ${done ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-600'}`}>
+                          className="relative w-full flex items-center gap-2.5 px-3 py-2.5 text-left disabled:opacity-40">
+                          <div className={`w-3.5 h-3.5 rounded-sm border-2 shrink-0 flex items-center justify-center transition-colors ${done ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-500'}`}>
                             {done && <svg width="7" height="5" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
                           </div>
-                          <span className={`flex-1 text-sm truncate ${done ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</span>
-                          {rightLabel && <span className={`text-[11px] tabular-nums shrink-0 ${done ? 'text-emerald-500' : 'text-zinc-400 dark:text-zinc-500'}`}>{rightLabel}</span>}
-                          {goal.type !== 'habit' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-300 dark:text-zinc-700 shrink-0"><path d="M9 18l6-6-6-6"/></svg>}
+                          <span className={`flex-1 text-sm truncate ${done ? 'text-emerald-700 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</span>
+                          {rightLabel && <span className={`text-[11px] tabular-nums shrink-0 ${done ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-400 dark:text-zinc-500'}`}>{rightLabel}</span>}
+                          {goal.type !== 'habit' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-300 dark:text-zinc-600 shrink-0"><path d="M9 18l6-6-6-6"/></svg>}
                         </button>
-                        <div className="ml-6 mb-1 h-0.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full transition-all duration-500 ${done ? 'bg-emerald-400' : 'bg-emerald-500'}`} style={{ width: `${barPct * 100}%` }} />
-                        </div>
                         {goal.subGoals?.length > 0 && (
-                          <div className="ml-6 mb-2 space-y-1.5">
+                          <div className="relative px-3 pb-2.5 space-y-1.5 ml-6">
                             {goal.subGoals.map((sg, si) => {
                               const k = `${goal.text}::${sg.text}`
                               const sv = weeklyCount(k)
                               const todayV = getCountVal(k)
                               const st = Number(sg.target) || 0
-                              const sp = st ? Math.min(1, sv / st) : 0
                               const sdone = st > 0 && sv >= st
                               return (
-                                <div key={si} className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <span className={`text-xs truncate flex-1 ${sdone ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-500 dark:text-zinc-400'}`}>{sg.text}</span>
-                                    <span className={`text-[10px] tabular-nums shrink-0 ${sdone ? 'text-emerald-500' : 'text-zinc-400 dark:text-zinc-500'}`}>{sv}{st ? `/${st}` : ''}{sg.unit ? ` ${sg.unit}` : ''}</span>
-                                  </div>
-                                  {st > 0 && <div className="h-0.5 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden mt-1"><div className={`h-full rounded-full transition-all duration-500 ${sdone ? 'bg-emerald-400' : 'bg-emerald-500'}`} style={{ width: `${sp * 100}%` }} /></div>}
-                                  {todayV > 0 && <p className="text-[9px] text-emerald-500 font-semibold mt-0.5">+{todayV} today</p>}
+                                <div key={si} className="flex items-center gap-2">
+                                  <span className={`text-xs truncate flex-1 ${sdone ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-500 dark:text-zinc-400'}`}>{sg.text}</span>
+                                  <span className={`text-[10px] tabular-nums shrink-0 ${sdone ? 'text-emerald-500' : 'text-zinc-400 dark:text-zinc-500'}`}>
+                                    {sv}{st ? `/${st}` : ''}{sg.unit ? ` ${sg.unit}` : ''}
+                                    {todayV > 0 && <span className="text-emerald-500 ml-1">+{todayV}</span>}
+                                  </span>
                                 </div>
                               )
                             })}
