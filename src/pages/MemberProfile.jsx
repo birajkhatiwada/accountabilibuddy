@@ -861,20 +861,53 @@ export default function MemberProfile() {
                     const showCheck = goal.type === 'habit' ? done : doneAsOfSelectedDay
                     const showDot = goal.type === 'habit' ? false : (!showCheck && workedToday)
 
-                    const fillClass = (pct, isDone) => {
-                      if (isDone) return 'bg-emerald-400/30 dark:bg-emerald-500/20'
-                      if (pct <= 0) return ''
-                      if (pct < 0.35) return 'bg-rose-400/20 dark:bg-rose-500/15'
-                      if (pct < 0.65) return 'bg-amber-400/25 dark:bg-amber-500/15'
-                      return 'bg-emerald-500/20 dark:bg-emerald-500/15'
+                    const stateColors = (pct, isDone) => {
+                      if (isDone || pct >= 1) return {
+                        fill: 'bg-emerald-400/25 dark:bg-emerald-500/20',
+                        text: 'text-emerald-800 dark:text-emerald-300',
+                        label: 'text-emerald-600 dark:text-emerald-400',
+                        chevron: 'text-emerald-300 dark:text-emerald-700',
+                        todayPill: 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/15',
+                      }
+                      if (pct <= 0) return {
+                        fill: '',
+                        text: 'text-zinc-800 dark:text-zinc-200',
+                        label: 'text-zinc-400 dark:text-zinc-500',
+                        chevron: 'text-zinc-300 dark:text-zinc-600',
+                        todayPill: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10',
+                      }
+                      if (pct < 0.35) return {
+                        fill: 'bg-rose-400/20 dark:bg-rose-500/12',
+                        text: 'text-rose-800 dark:text-rose-300',
+                        label: 'text-rose-500 dark:text-rose-400',
+                        chevron: 'text-rose-300 dark:text-rose-700',
+                        todayPill: 'text-rose-700 dark:text-rose-300 bg-rose-500/15',
+                      }
+                      if (pct < 0.65) return {
+                        fill: 'bg-amber-400/20 dark:bg-amber-500/12',
+                        text: 'text-amber-800 dark:text-amber-300',
+                        label: 'text-amber-600 dark:text-amber-400',
+                        chevron: 'text-amber-300 dark:text-amber-700',
+                        todayPill: 'text-amber-700 dark:text-amber-300 bg-amber-500/15',
+                      }
+                      return {
+                        fill: 'bg-emerald-500/18 dark:bg-emerald-500/12',
+                        text: 'text-emerald-800 dark:text-emerald-300',
+                        label: 'text-emerald-600 dark:text-emerald-400',
+                        chevron: 'text-emerald-300 dark:text-emerald-700',
+                        todayPill: 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/15',
+                      }
                     }
+
+                    const isDoneForColor = goal.type === 'habit' ? barPct >= 1 : done
+                    const c = stateColors(barPct, isDoneForColor)
 
                     return (
                       <div key={goal.text} className="space-y-1">
                         {/* Parent card */}
                         <div className="relative rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800/60">
                           <div
-                            className={`absolute inset-y-0 left-0 transition-all duration-700 ${fillClass(barPct, goal.type === 'habit' ? barPct >= 1 : done)}`}
+                            className={`absolute inset-y-0 left-0 transition-all duration-700 ${c.fill}`}
                             style={{ width: `${barPct * 100}%` }}
                           />
                           <button
@@ -888,12 +921,12 @@ export default function MemberProfile() {
                                 </svg>
                               )}
                             </div>
-                            <span className={`flex-1 text-sm truncate ${done ? 'text-emerald-700 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</span>
+                            <span className={`flex-1 text-sm truncate ${c.text}`}>{goal.text}</span>
                             {todayVal > 0 && (
-                              <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-full shrink-0">+{todayVal} today</span>
+                              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${c.todayPill}`}>+{todayVal} today</span>
                             )}
-                            {rightLabel && <span className={`text-[11px] tabular-nums shrink-0 ${done ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-400 dark:text-zinc-500'}`}>{rightLabel}</span>}
-                            {goal.type !== 'habit' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-300 dark:text-zinc-600 shrink-0"><path d="M9 18l6-6-6-6"/></svg>}
+                            {rightLabel && <span className={`text-[11px] tabular-nums shrink-0 ${c.label}`}>{rightLabel}</span>}
+                            {goal.type !== 'habit' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`shrink-0 ${c.chevron}`}><path d="M9 18l6-6-6-6"/></svg>}
                           </button>
                         </div>
 
@@ -907,16 +940,17 @@ export default function MemberProfile() {
                               const st = Number(sg.target) || 0
                               const sp = st ? Math.min(1, sv / st) : 0
                               const sdone = st > 0 && sv >= st
+                              const sc = stateColors(sp, sdone)
                               return (
                                 <div key={si} className="relative rounded-lg overflow-hidden bg-zinc-100 dark:bg-zinc-800/60">
                                   <div
-                                    className={`absolute inset-y-0 left-0 transition-all duration-700 ${fillClass(sp, sdone)}`}
+                                    className={`absolute inset-y-0 left-0 transition-all duration-700 ${sc.fill}`}
                                     style={{ width: `${sp * 100}%` }}
                                   />
                                   <div className="relative flex items-center gap-2 px-3 py-2">
-                                    <span className={`text-xs flex-1 truncate ${sdone ? 'text-emerald-700 dark:text-emerald-400' : 'text-zinc-600 dark:text-zinc-300'}`}>{sg.text}</span>
-                                    {todayV > 0 && <span className="text-[10px] font-semibold text-emerald-500 shrink-0">+{todayV}</span>}
-                                    <span className={`text-[10px] tabular-nums shrink-0 ${sdone ? 'text-emerald-500' : 'text-zinc-400 dark:text-zinc-500'}`}>{sv}{st ? `/${st}` : ''}{sg.unit ? ` ${sg.unit}` : ''}</span>
+                                    <span className={`text-xs flex-1 truncate ${sc.text}`}>{sg.text}</span>
+                                    {todayV > 0 && <span className={`text-[10px] font-semibold shrink-0 ${sc.label}`}>+{todayV}</span>}
+                                    <span className={`text-[10px] tabular-nums shrink-0 ${sc.label}`}>{sv}{st ? `/${st}` : ''}{sg.unit ? ` ${sg.unit}` : ''}</span>
                                   </div>
                                 </div>
                               )
