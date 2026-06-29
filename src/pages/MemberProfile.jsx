@@ -874,7 +874,7 @@ export default function MemberProfile() {
                         {/* Parent card */}
                         <div className="relative rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800/60">
                           <div
-                            className={`absolute inset-y-0 left-0 transition-all duration-700 ${fillClass(barPct, done)}`}
+                            className={`absolute inset-y-0 left-0 transition-all duration-700 ${fillClass(barPct, goal.type === 'habit' ? barPct >= 1 : done)}`}
                             style={{ width: `${barPct * 100}%` }}
                           />
                           <button
