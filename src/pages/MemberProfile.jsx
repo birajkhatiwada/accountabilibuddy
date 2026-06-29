@@ -1064,7 +1064,7 @@ export default function MemberProfile() {
           })()}
 
           {/* Proof log */}
-          {entry.updates?.length > 0 && (
+          {entry?.updates?.length > 0 && (
             <div className="space-y-2">
               <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold px-1">Progress log</p>
               {entry.updates.map((u, i) => {
