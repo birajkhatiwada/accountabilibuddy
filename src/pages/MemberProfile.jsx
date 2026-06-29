@@ -855,12 +855,24 @@ export default function MemberProfile() {
                           {rightLabel && <span className={`text-[11px] tabular-nums shrink-0 ${done ? 'text-emerald-500' : 'text-zinc-400 dark:text-zinc-500'}`}>{rightLabel}</span>}
                           {goal.type !== 'habit' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-300 dark:text-zinc-700 shrink-0"><path d="M9 18l6-6-6-6"/></svg>}
                         </button>
-                        <div className="ml-6 mb-1.5 h-1 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all duration-500 ${done ? 'bg-emerald-400' : 'bg-emerald-500/60'}`}
-                            style={{ width: `${barPct * 100}%` }}
-                          />
-                        </div>
+                        {/* Segmented progress bar */}
+                        {(() => {
+                          const isHabit = goal.type === 'habit'
+                          const segments = isHabit ? 7 : goal.subGoals?.length > 0 ? goal.subGoals.length : 8
+                          const filled = isHabit
+                            ? weeklyHabitDays(goal.text)
+                            : Math.round(barPct * segments)
+                          return (
+                            <div className="ml-6 mb-2 flex gap-0.5">
+                              {Array.from({ length: segments }).map((_, i) => (
+                                <div key={i}
+                                  className={`flex-1 h-1.5 rounded-sm transition-all duration-300 ${i < filled ? (done ? 'bg-emerald-400' : 'bg-emerald-500') : 'bg-zinc-200 dark:bg-zinc-700/80'}`}
+                                  style={{ transitionDelay: `${i * 30}ms` }}
+                                />
+                              ))}
+                            </div>
+                          )
+                        })()}
                         {goal.subGoals?.length > 0 && (
                           <div className="ml-6 mb-2 space-y-1.5">
                             {goal.subGoals.map((sg, si) => {
