@@ -43,18 +43,23 @@ export default function DailyNote({ daily, canEdit, dayLabel, onSave, onColorSav
   })
 
   useEffect(() => {
-    if (!editor) return
+    if (!editor || editor.isDestroyed) return
     editor.setEditable(isEditing)
-    if (isEditing) setTimeout(() => editor.commands.focus('end'), 30)
+    if (!isEditing) return
+    const t = setTimeout(() => {
+      if (!editor.isDestroyed) editor.commands.focus('end')
+    }, 30)
+    return () => clearTimeout(t)
   }, [isEditing, editor])
 
   useEffect(() => {
-    if (!editor) return
+    if (!editor || editor.isDestroyed) return
     const incoming = daily.content || daily.note || ''
     editor.commands.setContent(incoming, false)
   }, [daily.content, daily.note, editor])
 
   const handleDone = () => {
+    if (!editor || editor.isDestroyed) return
     onSave(editor.getJSON(), editor.getText().trim())
     setIsEditing(false)
     setShowColorPicker(false)
