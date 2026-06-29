@@ -92,8 +92,8 @@ export default function DailyNote({ daily, canEdit, dayLabel, onSave, onColorSav
         <EditorContent editor={editor} className="tiptap-note" />
       </div>
 
-      {/* Toolbar — always visible to owner */}
-      {canEdit && (
+      {/* Toolbar — edit mode only */}
+      {canEdit && isEditing && (
         <>
           <div className={`px-3 py-2 border-t ${noteColor.border} flex items-center justify-between`}>
             <div className="flex items-center gap-0.5">
