@@ -116,13 +116,11 @@ export default function MemberProfile() {
   const [bio, setBio] = useState('')
   const [status, setStatus] = useState('')
   const [nickname, setNickname] = useState('')
-  const [editingBio, setEditingBio] = useState(false)
-  const [editingStatus, setEditingStatus] = useState(false)
   const [bioInput, setBioInput] = useState('')
   const [statusInput, setStatusInput] = useState('')
   const [bannerColorIdx, setBannerColorIdx] = useState(null)
   const [bannerVibe, setBannerVibe] = useState('')
-  const [showCustomize, setShowCustomize] = useState(false)
+  const [editBannerOpen, setEditBannerOpen] = useState(false)
   const saveTimers = useRef({})
   const confettiFired = useRef(false)
 
@@ -676,31 +674,17 @@ export default function MemberProfile() {
               {streak >= 2 && <span className="text-[10px] font-bold text-amber-200 bg-amber-500/20 px-1.5 py-0.5 rounded-full">🔥{streak}w</span>}
               {badges.map((b, i) => <span key={i} title={b.label} className="text-sm cursor-default">{b.emoji}</span>)}
             </div>
-
-            {editingStatus ? (
-              <input autoFocus value={statusInput}
-                onChange={e => setStatusInput(e.target.value)}
-                onBlur={() => saveStatus(statusInput)}
-                onKeyDown={e => { if (e.key === 'Enter') saveStatus(statusInput); if (e.key === 'Escape') setEditingStatus(false) }}
-                maxLength={40} placeholder="status…"
-                className="mt-1 w-full bg-white/10 border border-white/20 rounded-lg px-2 py-0.5 text-xs text-white placeholder-white/30 focus:outline-none"
-                style={{ fontSize: 16 }}
-              />
-            ) : (
-              <button onClick={() => { setStatusInput(status); setEditingStatus(true) }}
-                className="mt-0.5 flex items-center gap-1 group">
-                <span className="text-xs text-white/55 group-hover:text-white/80 transition-colors leading-none">
-                  {status || (isOwner ? '+ status' : '')}
-                </span>
-                {isOwner && <Pencil size={8} className="text-white/20 group-hover:text-white/50 transition-colors shrink-0" />}
-              </button>
-            )}
+            {status && <p className="mt-0.5 text-xs text-white/55 leading-none">{status}</p>}
             <p className="text-[10px] text-white/35 mt-0.5 leading-none">{formatWeekLabel(weekId)}</p>
           </div>
 
           <div className="flex items-center gap-0.5 shrink-0">
-            <button onClick={() => setShowCustomize(v => !v)}
-              className={`p-1.5 rounded-full text-base transition-all ${showCustomize ? 'bg-white/25' : 'opacity-50 hover:opacity-90'}`}>🎨</button>
+            {isOwner && (
+              <button onClick={() => { setStatusInput(status); setBioInput(bio); setEditBannerOpen(true) }}
+                className="p-1.5 rounded-full opacity-50 hover:opacity-90 hover:bg-white/15 transition-all">
+                <Pencil size={13} className="text-white" />
+              </button>
+            )}
             <button onClick={handleShare}
               className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/15 hover:bg-white/25 text-white/70 text-[11px] font-semibold transition-all">
               <Link2 size={11} />{copied ? 'Copied!' : 'Share'}
@@ -718,52 +702,17 @@ export default function MemberProfile() {
           </div>
         </div>
 
-        {/* Bio — only shown if set or being edited */}
-        {editingBio ? (
-          <textarea autoFocus value={bioInput}
-            onChange={e => setBioInput(e.target.value)}
-            onBlur={() => saveBio(bioInput)}
-            onKeyDown={e => { if (e.key === 'Escape') saveBio(bioInput) }}
-            maxLength={120} rows={2} placeholder="Short bio…"
-            className="relative mt-2 w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/40 resize-none"
-            style={{ fontSize: 16 }}
-          />
-        ) : bio ? (
-          <button onClick={() => { setBioInput(bio); setEditingBio(true) }}
-            className="relative mt-1.5 flex items-start gap-1 group text-left">
-            <span className="text-xs text-white/55 group-hover:text-white/80 transition-colors leading-snug">{bio}</span>
-            {isOwner && <Pencil size={8} className="text-white/20 group-hover:text-white/50 transition-colors mt-0.5 shrink-0" />}
-          </button>
-        ) : isOwner ? (
-          <button onClick={() => { setBioInput(''); setEditingBio(true) }}
-            className="relative mt-1 text-[11px] text-white/25 hover:text-white/60 transition-colors">+ bio</button>
-        ) : null}
+        {bio && <p className="relative mt-1.5 text-xs text-white/55 leading-snug">{bio}</p>}
 
-        {/* Customize panel */}
-        {showCustomize && (
-          <div className="relative mt-3 bg-black/20 backdrop-blur-sm rounded-2xl p-3 space-y-2.5">
-            <div className="flex flex-wrap gap-2">
-              {BANNER_COLORS.map((_, i) => (
-                <button key={i} onClick={() => saveBannerColor(i)}
-                  className={`w-5 h-5 rounded-full transition-all ${bannerColorIdx === i ? 'ring-2 ring-white scale-110' : 'opacity-70 hover:opacity-100'}`}
-                  style={{ background: BANNER_COLOR_PREVIEWS[i] }} />
-              ))}
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {VIBE_EMOJIS.map(e => (
-                <button key={e} onClick={() => saveBannerVibe(bannerVibe === e ? '' : e)}
-                  className={`text-lg transition-all ${bannerVibe === e ? 'scale-125' : 'opacity-50 hover:opacity-100'}`}>{e}</button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {isOwner && myGoals.length > 0 && (
-          <button onClick={() => navigate(`/${sessionId}/member/${encodeURIComponent(name)}/goals`)}
-            className="relative mt-2 flex items-center gap-1 text-[11px] text-white/40 hover:text-white/70 transition-colors">
-            <Pencil size={9} /> edit goals
-          </button>
-        )}
+        {/* Bottom row: edit goals button */}
+        <div className="relative mt-3 flex items-center gap-2">
+          {isOwner && myGoals.length > 0 && (
+            <button onClick={() => navigate(`/${sessionId}/member/${encodeURIComponent(name)}/goals`)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 hover:bg-white/25 border border-white/20 hover:border-white/40 text-white text-xs font-bold transition-all hover:scale-105 active:scale-95 backdrop-blur-sm">
+              ✏️ Edit Goals
+            </button>
+          )}
+        </div>
 
         <div className="h-px -mx-5 bg-black/10 mt-3" />
       </div>
@@ -1213,6 +1162,71 @@ export default function MemberProfile() {
 
         </>
       )}
+
+      {/* Edit Banner sheet */}
+      {editBannerOpen && createPortal(
+        <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setEditBannerOpen(false)}>
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div className="relative bg-white dark:bg-zinc-900 rounded-t-3xl w-full max-w-lg slide-up pb-safe" onClick={e => e.stopPropagation()}>
+            <div className="w-10 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto mt-3 mb-4" />
+            <div className="px-5 pb-6 space-y-5">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-black text-zinc-900 dark:text-white">Edit Banner</h3>
+                <button onClick={() => setEditBannerOpen(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"><X size={18} /></button>
+              </div>
+
+              {/* Status */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">Status</label>
+                <input value={statusInput} onChange={e => setStatusInput(e.target.value)}
+                  maxLength={40} placeholder="What's the vibe this week?"
+                  style={{ fontSize: 16 }}
+                  className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-emerald-400 dark:focus:border-emerald-500 transition-colors" />
+              </div>
+
+              {/* Bio */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">Bio</label>
+                <textarea value={bioInput} onChange={e => setBioInput(e.target.value)}
+                  maxLength={120} rows={2} placeholder="Short bio…"
+                  style={{ fontSize: 16 }}
+                  className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-emerald-400 dark:focus:border-emerald-500 transition-colors resize-none" />
+              </div>
+
+              {/* Banner color */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">Banner Color</label>
+                <div className="flex flex-wrap gap-2">
+                  {BANNER_COLORS.map((_, i) => (
+                    <button key={i} onClick={() => saveBannerColor(i)}
+                      className={`w-7 h-7 rounded-full transition-all hover:scale-110 ${bannerColorIdx === i ? 'ring-2 ring-offset-2 ring-zinc-400 dark:ring-zinc-500 dark:ring-offset-zinc-900 scale-110' : ''}`}
+                      style={{ background: BANNER_COLOR_PREVIEWS[i] }} />
+                  ))}
+                </div>
+              </div>
+
+              {/* Vibe */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">Vibe</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {VIBE_EMOJIS.map(e => (
+                    <button key={e} onClick={() => saveBannerVibe(bannerVibe === e ? '' : e)}
+                      className={`text-xl w-9 h-9 flex items-center justify-center rounded-xl transition-all hover:scale-110 ${bannerVibe === e ? 'bg-zinc-100 dark:bg-zinc-800 scale-110 ring-2 ring-zinc-300 dark:ring-zinc-600' : 'opacity-50 hover:opacity-100'}`}>
+                      {e}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Save */}
+              <button onClick={() => { saveBio(bioInput); saveStatus(statusInput); setEditBannerOpen(false) }}
+                className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white font-bold rounded-2xl transition-colors">
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      , document.body)}
 
       {/* Avatar picker */}
       {pickingAvatar && createPortal(
