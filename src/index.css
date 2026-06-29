@@ -76,7 +76,7 @@
 .add-goal-btn {
   color: #10b981;
   background:
-    linear-gradient(#09090b, #09090b) padding-box,
+    linear-gradient(var(--agb-bg, #f9fafb), var(--agb-bg, #f9fafb)) padding-box,
     linear-gradient(90deg, #10b981, #6366f1, #ec4899, #10b981) border-box;
   background-size: 300% 100%;
   border: 1.5px solid transparent;
@@ -87,15 +87,27 @@
   transition: color 0.2s;
 }
 
+.dark .add-goal-btn {
+  --agb-bg: #09090b;
+}
+
 .add-goal-btn:hover {
-  color: #fff;
+  color: #10b981;
   background:
-    linear-gradient(rgba(16,185,129,0.1), rgba(16,185,129,0.1)) padding-box,
+    linear-gradient(rgba(16,185,129,0.08), rgba(16,185,129,0.08)) padding-box,
     linear-gradient(90deg, #10b981, #6366f1, #ec4899, #10b981) border-box;
   background-size: 300% 100%;
   animation:
     add-goal-border 1.5s ease infinite,
     add-goal-pulse 1s ease-in-out infinite;
+}
+
+.dark .add-goal-btn:hover {
+  color: #fff;
+  background:
+    linear-gradient(rgba(16,185,129,0.1), rgba(16,185,129,0.1)) padding-box,
+    linear-gradient(90deg, #10b981, #6366f1, #ec4899, #10b981) border-box;
+  background-size: 300% 100%;
 }
 
 .add-goal-plus-wrap {
