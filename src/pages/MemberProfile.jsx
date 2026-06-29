@@ -120,6 +120,7 @@ export default function MemberProfile() {
   const [nickname, setNickname] = useState('')
   const [bioInput, setBioInput] = useState('')
   const [statusInput, setStatusInput] = useState('')
+  const [nicknameInput, setNicknameInput] = useState('')
   const [bannerColorIdx, setBannerColorIdx] = useState(null)
   const [bannerVibe, setBannerVibe] = useState('')
   const [editBannerOpen, setEditBannerOpen] = useState(false)
@@ -589,6 +590,7 @@ export default function MemberProfile() {
   const saveAvatar = async (emoji) => { await setDoc(sessionDoc, { avatars: { ...avatars, [name]: emoji } }, { merge: true }); setPickingAvatar(false) }
   const saveBio = async (val) => { await setDoc(sessionDoc, { bios: { [name]: val.trim() } }, { merge: true }) }
   const saveStatus = async (val) => { await setDoc(sessionDoc, { statuses: { [name]: val.trim() } }, { merge: true }) }
+  const saveNickname = async (val) => { setNickname(val.trim()); await setDoc(sessionDoc, { nicknames: { [name]: val.trim() } }, { merge: true }) }
   const saveBannerColor = async (idx) => { setBannerColorIdx(idx); await setDoc(sessionDoc, { bannerColors: { [name]: idx } }, { merge: true }) }
   const saveBannerVibe = async (emoji) => { setBannerVibe(emoji); await setDoc(sessionDoc, { bannerVibes: { [name]: emoji } }, { merge: true }) }
 
@@ -682,7 +684,7 @@ export default function MemberProfile() {
 
           {/* Edit banner button */}
           {isOwner && (
-            <button onClick={() => { setStatusInput(status); setBioInput(bio); setEditBannerOpen(true) }}
+            <button onClick={() => { setStatusInput(status); setBioInput(bio); setNicknameInput(nickname); setEditBannerOpen(true) }}
               className="absolute bottom-2.5 right-2.5 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-black/30 hover:bg-black/50 backdrop-blur-sm text-white/80 hover:text-white text-xs font-semibold transition-all active:scale-95">
               <Pencil size={11} /> Edit
             </button>
@@ -1188,6 +1190,15 @@ export default function MemberProfile() {
                 <button onClick={() => setEditBannerOpen(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"><X size={18} /></button>
               </div>
 
+              {/* Display name */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">Display Name <span className="font-normal normal-case text-zinc-500">({name})</span></label>
+                <input value={nicknameInput} onChange={e => setNicknameInput(e.target.value)}
+                  maxLength={30} placeholder={name}
+                  style={{ fontSize: 16 }}
+                  className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-emerald-400 dark:focus:border-emerald-500 transition-colors" />
+              </div>
+
               {/* Status */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">Status</label>
@@ -1246,7 +1257,7 @@ export default function MemberProfile() {
               </div>
 
               {/* Save */}
-              <button onClick={() => { saveBio(bioInput); saveStatus(statusInput); setEditBannerOpen(false) }}
+              <button onClick={() => { saveBio(bioInput); saveStatus(statusInput); saveNickname(nicknameInput); setEditBannerOpen(false) }}
                 className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white font-bold rounded-2xl transition-colors">
                 Save
               </button>
