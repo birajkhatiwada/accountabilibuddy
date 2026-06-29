@@ -584,8 +584,8 @@ export default function MemberProfile() {
 
   const deleteMember = async () => { await setDoc(sessionDoc, { names: members.filter(m => m !== name) }, { merge: true }); navigate(`/${sessionId}`) }
   const saveAvatar = async (emoji) => { await setDoc(sessionDoc, { avatars: { ...avatars, [name]: emoji } }, { merge: true }); setPickingAvatar(false) }
-  const saveBio = async (val) => { await setDoc(sessionDoc, { bios: { [name]: val.trim() } }, { merge: true }); setEditingBio(false) }
-  const saveStatus = async (val) => { await setDoc(sessionDoc, { statuses: { [name]: val.trim() } }, { merge: true }); setEditingStatus(false) }
+  const saveBio = async (val) => { await setDoc(sessionDoc, { bios: { [name]: val.trim() } }, { merge: true }) }
+  const saveStatus = async (val) => { await setDoc(sessionDoc, { statuses: { [name]: val.trim() } }, { merge: true }) }
   const saveBannerColor = async (idx) => { setBannerColorIdx(idx); await setDoc(sessionDoc, { bannerColors: { [name]: idx } }, { merge: true }) }
   const saveBannerVibe = async (emoji) => { setBannerVibe(emoji); await setDoc(sessionDoc, { bannerVibes: { [name]: emoji } }, { merge: true }) }
 
