@@ -683,29 +683,13 @@ export default function MemberProfile() {
           <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: `radial-gradient(circle, white 1px, transparent 1px)`, backgroundSize: '20px 20px' }} />
           {bannerVibe && !bannerImageUrl && <div className="absolute right-5 bottom-3 text-7xl opacity-20 select-none pointer-events-none leading-none">{bannerVibe}</div>}
 
-          {/* Top-right actions */}
-          <div className="absolute top-2.5 right-2.5 flex items-center gap-1">
-            {isOwner && (
-              <button onClick={() => { setStatusInput(status); setBioInput(bio); setEditBannerOpen(true) }}
-                className="p-1.5 rounded-full bg-black/20 hover:bg-black/40 text-white/70 hover:text-white transition-all">
-                <Pencil size={12} />
-              </button>
-            )}
-            <button onClick={handleShare}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/20 hover:bg-black/40 text-white/70 hover:text-white text-[11px] font-semibold transition-all">
-              <Link2 size={11} />{copied ? 'Copied!' : 'Share'}
+          {/* Edit banner button */}
+          {isOwner && (
+            <button onClick={() => { setStatusInput(status); setBioInput(bio); setEditBannerOpen(true) }}
+              className="absolute bottom-2.5 right-2.5 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-black/30 hover:bg-black/50 backdrop-blur-sm text-white/80 hover:text-white text-xs font-semibold transition-all active:scale-95">
+              <Pencil size={11} /> Edit
             </button>
-            {confirmDelete ? (
-              <>
-                <button onClick={deleteMember} className="text-[11px] font-bold text-red-300 px-2 py-0.5 bg-red-900/60 rounded-full">Remove</button>
-                <button onClick={() => setConfirmDelete(false)} className="text-[11px] text-white/50 px-1.5 py-0.5">No</button>
-              </>
-            ) : (
-              <button onClick={() => setConfirmDelete(true)} className="p-1.5 rounded-full bg-black/10 hover:bg-red-500/40 text-white/40 hover:text-red-200 transition-all">
-                <Trash2 size={12} />
-              </button>
-            )}
-          </div>
+          )}
         </div>
 
         {/* Profile info — avatar overlaps banner */}
