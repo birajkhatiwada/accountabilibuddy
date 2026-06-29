@@ -863,7 +863,7 @@ export default function MemberProfile() {
 
                     const stateColors = (pct, isDone) => {
                       if (isDone || pct >= 1) return {
-                        fill: 'bg-emerald-400/25 dark:bg-emerald-500/20',
+                        fill: 'bg-emerald-500/30 dark:bg-emerald-400/25',
                         text: 'text-emerald-800 dark:text-emerald-300',
                         label: 'text-emerald-600 dark:text-emerald-400',
                         chevron: 'text-emerald-300 dark:text-emerald-700',
@@ -883,7 +883,7 @@ export default function MemberProfile() {
                         checkStroke: '#10b981',
                       }
                       if (pct < 0.35) return {
-                        fill: 'bg-rose-400/20 dark:bg-rose-500/12',
+                        fill: 'bg-rose-500/20 dark:bg-rose-500/15',
                         text: 'text-rose-800 dark:text-rose-300',
                         label: 'text-rose-500 dark:text-rose-400',
                         chevron: 'text-rose-300 dark:text-rose-700',
@@ -893,7 +893,7 @@ export default function MemberProfile() {
                         checkStroke: '#f43f5e',
                       }
                       if (pct < 0.65) return {
-                        fill: 'bg-amber-400/20 dark:bg-amber-500/12',
+                        fill: 'bg-amber-500/20 dark:bg-amber-500/15',
                         text: 'text-amber-800 dark:text-amber-300',
                         label: 'text-amber-600 dark:text-amber-400',
                         chevron: 'text-amber-300 dark:text-amber-700',
@@ -903,7 +903,7 @@ export default function MemberProfile() {
                         checkStroke: '#f59e0b',
                       }
                       return {
-                        fill: 'bg-emerald-500/18 dark:bg-emerald-500/12',
+                        fill: 'bg-emerald-500/20 dark:bg-emerald-500/15',
                         text: 'text-emerald-800 dark:text-emerald-300',
                         label: 'text-emerald-600 dark:text-emerald-400',
                         chevron: 'text-emerald-300 dark:text-emerald-700',
