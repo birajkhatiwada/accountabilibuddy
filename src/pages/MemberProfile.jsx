@@ -650,61 +650,65 @@ export default function MemberProfile() {
     <div className="flex flex-col space-y-4 -mx-4 px-4 -mt-5 pb-4">
 
       {/* Banner */}
-      <div className={`-mx-4 bg-gradient-to-br ${color} relative overflow-hidden px-5 pt-4 pb-3`}>
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `radial-gradient(circle, white 1px, transparent 1px)`, backgroundSize: '20px 20px' }} />
-        {bannerVibe && <div className="absolute right-4 top-1/2 -translate-y-1/2 text-6xl opacity-15 select-none pointer-events-none">{bannerVibe}</div>}
+      <div className="-mx-4">
+        {/* Cover image */}
+        <div className={`bg-gradient-to-br ${color} h-28 relative overflow-hidden`}>
+          <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: `radial-gradient(circle, white 1px, transparent 1px)`, backgroundSize: '20px 20px' }} />
+          {bannerVibe && <div className="absolute right-5 bottom-3 text-7xl opacity-20 select-none pointer-events-none leading-none">{bannerVibe}</div>}
 
-        {/* Main row: avatar + info + actions */}
-        <div className="relative flex items-center gap-3">
-          <button onClick={() => setPickingAvatar(v => !v)}
-            className="w-12 h-12 rounded-xl bg-white/20 border border-white/25 flex items-center justify-center relative group transition-all hover:scale-105 active:scale-95 shrink-0">
-            {avatars[name]
-              ? <span className="text-2xl">{avatars[name]}</span>
-              : <span className="text-white font-black text-2xl leading-none">{name[0].toUpperCase()}</span>}
-            <span className="absolute inset-0 rounded-xl bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <Pencil size={9} className="text-white" />
-            </span>
-          </button>
-
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <h2 className="text-lg font-black text-white leading-none">{nickname || name}</h2>
-              {entry?.status === 'completed' && <span className="text-[10px] font-bold text-emerald-200 bg-emerald-500/25 px-1.5 py-0.5 rounded-full">✅ Done!</span>}
-              {entry?.status === 'failed'    && <span className="text-[10px] font-bold text-red-200 bg-red-500/25 px-1.5 py-0.5 rounded-full">❌ Failed</span>}
-              {streak >= 2 && <span className="text-[10px] font-bold text-amber-200 bg-amber-500/20 px-1.5 py-0.5 rounded-full">🔥{streak}w</span>}
-              {badges.map((b, i) => <span key={i} title={b.label} className="text-sm cursor-default">{b.emoji}</span>)}
-            </div>
-            {status && <p className="mt-0.5 text-xs text-white/55 leading-none">{status}</p>}
-            <p className="text-[10px] text-white/35 mt-0.5 leading-none">{formatWeekLabel(weekId)}</p>
-          </div>
-
-          <div className="flex items-center gap-0.5 shrink-0">
+          {/* Top-right actions */}
+          <div className="absolute top-2.5 right-2.5 flex items-center gap-1">
             {isOwner && (
               <button onClick={() => { setStatusInput(status); setBioInput(bio); setEditBannerOpen(true) }}
-                className="p-1.5 rounded-full opacity-50 hover:opacity-90 hover:bg-white/15 transition-all">
-                <Pencil size={13} className="text-white" />
+                className="p-1.5 rounded-full bg-black/20 hover:bg-black/40 text-white/70 hover:text-white transition-all">
+                <Pencil size={12} />
               </button>
             )}
             <button onClick={handleShare}
-              className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/15 hover:bg-white/25 text-white/70 text-[11px] font-semibold transition-all">
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/20 hover:bg-black/40 text-white/70 hover:text-white text-[11px] font-semibold transition-all">
               <Link2 size={11} />{copied ? 'Copied!' : 'Share'}
             </button>
             {confirmDelete ? (
               <>
-                <button onClick={deleteMember} className="text-[11px] font-bold text-red-300 px-2 py-0.5 bg-red-900/50 rounded-full">Remove</button>
+                <button onClick={deleteMember} className="text-[11px] font-bold text-red-300 px-2 py-0.5 bg-red-900/60 rounded-full">Remove</button>
                 <button onClick={() => setConfirmDelete(false)} className="text-[11px] text-white/50 px-1.5 py-0.5">No</button>
               </>
             ) : (
-              <button onClick={() => setConfirmDelete(true)} className="p-1.5 rounded-full hover:bg-red-500/30 text-white/35 hover:text-red-300 transition-all">
-                <Trash2 size={13} />
+              <button onClick={() => setConfirmDelete(true)} className="p-1.5 rounded-full bg-black/10 hover:bg-red-500/40 text-white/40 hover:text-red-200 transition-all">
+                <Trash2 size={12} />
               </button>
             )}
           </div>
         </div>
 
-        {bio && <p className="relative mt-1.5 text-xs text-white/55 leading-snug">{bio}</p>}
+        {/* Profile info — avatar overlaps banner */}
+        <div className="px-4 pb-3">
+          <div className="flex items-end justify-between -mt-7 mb-3">
+            {/* Avatar */}
+            <button onClick={() => setPickingAvatar(v => !v)}
+              className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${color} ring-4 ring-zinc-50 dark:ring-zinc-950 flex items-center justify-center relative group transition-all hover:scale-105 active:scale-95 shrink-0 shadow-lg`}>
+              {avatars[name]
+                ? <span className="text-3xl">{avatars[name]}</span>
+                : <span className="text-white font-black text-3xl leading-none">{name[0].toUpperCase()}</span>}
+              <span className="absolute inset-0 rounded-2xl bg-black/25 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <Pencil size={11} className="text-white" />
+              </span>
+            </button>
 
-        <div className="h-px -mx-5 bg-black/10 mt-3" />
+            {/* Badges top-right */}
+            <div className="flex items-center gap-1 pb-1 flex-wrap justify-end">
+              {entry?.status === 'completed' && <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-500/20 px-1.5 py-0.5 rounded-full">✅ Done!</span>}
+              {entry?.status === 'failed'    && <span className="text-[10px] font-bold text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-500/20 px-1.5 py-0.5 rounded-full">❌ Failed</span>}
+              {streak >= 2 && <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-500/20 px-1.5 py-0.5 rounded-full">🔥 {streak}w streak</span>}
+              {badges.map((b, i) => <span key={i} title={b.label} className="text-sm cursor-default">{b.emoji}</span>)}
+            </div>
+          </div>
+
+          <h2 className="text-xl font-black text-zinc-900 dark:text-white leading-none">{nickname || name}</h2>
+          {status && <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400 leading-snug">{status}</p>}
+          {bio && <p className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500 leading-snug">{bio}</p>}
+          <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-1">{formatWeekLabel(weekId)}</p>
+        </div>
       </div>
 
       {/* Edit Goals — full-width below banner */}
