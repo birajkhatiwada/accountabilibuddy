@@ -117,6 +117,9 @@
   color: #3f3f46;
   min-height: 48px;
 }
+.dark .tiptap-note .ProseMirror {
+  color: #e4e4e7;
+}
 .tiptap-note .ProseMirror p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;
@@ -124,6 +127,9 @@
   font-style: italic;
   pointer-events: none;
   height: 0;
+}
+.dark .tiptap-note .ProseMirror p.is-editor-empty:first-child::before {
+  color: #71717a;
 }
 .tiptap-note .ProseMirror strong { font-weight: 700; }
 .tiptap-note .ProseMirror em { font-style: italic; }
