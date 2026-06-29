@@ -868,6 +868,9 @@ export default function MemberProfile() {
                         label: 'text-emerald-600 dark:text-emerald-400',
                         chevron: 'text-emerald-300 dark:text-emerald-700',
                         todayPill: 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/15',
+                        checkFull: 'bg-emerald-500 border-emerald-500',
+                        checkOutline: 'border-emerald-400 dark:border-emerald-500',
+                        checkStroke: '#10b981',
                       }
                       if (pct <= 0) return {
                         fill: '',
@@ -875,6 +878,9 @@ export default function MemberProfile() {
                         label: 'text-zinc-400 dark:text-zinc-500',
                         chevron: 'text-zinc-300 dark:text-zinc-600',
                         todayPill: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10',
+                        checkFull: 'bg-emerald-500 border-emerald-500',
+                        checkOutline: 'border-emerald-400 dark:border-emerald-500',
+                        checkStroke: '#10b981',
                       }
                       if (pct < 0.35) return {
                         fill: 'bg-rose-400/20 dark:bg-rose-500/12',
@@ -882,6 +888,9 @@ export default function MemberProfile() {
                         label: 'text-rose-500 dark:text-rose-400',
                         chevron: 'text-rose-300 dark:text-rose-700',
                         todayPill: 'text-rose-700 dark:text-rose-300 bg-rose-500/15',
+                        checkFull: 'bg-rose-500 border-rose-500',
+                        checkOutline: 'border-rose-400 dark:border-rose-500',
+                        checkStroke: '#f43f5e',
                       }
                       if (pct < 0.65) return {
                         fill: 'bg-amber-400/20 dark:bg-amber-500/12',
@@ -889,6 +898,9 @@ export default function MemberProfile() {
                         label: 'text-amber-600 dark:text-amber-400',
                         chevron: 'text-amber-300 dark:text-amber-700',
                         todayPill: 'text-amber-700 dark:text-amber-300 bg-amber-500/15',
+                        checkFull: 'bg-amber-500 border-amber-500',
+                        checkOutline: 'border-amber-400 dark:border-amber-500',
+                        checkStroke: '#f59e0b',
                       }
                       return {
                         fill: 'bg-emerald-500/18 dark:bg-emerald-500/12',
@@ -896,6 +908,9 @@ export default function MemberProfile() {
                         label: 'text-emerald-600 dark:text-emerald-400',
                         chevron: 'text-emerald-300 dark:text-emerald-700',
                         todayPill: 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/15',
+                        checkFull: 'bg-emerald-500 border-emerald-500',
+                        checkOutline: 'border-emerald-400 dark:border-emerald-500',
+                        checkStroke: '#10b981',
                       }
                     }
 
@@ -914,10 +929,10 @@ export default function MemberProfile() {
                             onClick={() => !isFutureDay && (goal.type === 'habit' ? toggleHabit(goal.text) : setLoggingSheet(goal))}
                             disabled={isFutureDay || (goal.type === 'habit' && !isOwner)}
                             className="relative w-full flex items-center gap-2.5 px-3 py-2.5 text-left disabled:opacity-40">
-                            <div className={`w-3.5 h-3.5 rounded-sm border-2 shrink-0 flex items-center justify-center transition-colors ${showCheck ? 'bg-emerald-500 border-emerald-500' : showDot ? 'border-emerald-400 dark:border-emerald-500' : 'border-zinc-300 dark:border-zinc-500'}`}>
+                            <div className={`w-3.5 h-3.5 rounded-sm border-2 shrink-0 flex items-center justify-center transition-colors ${showCheck ? c.checkFull : showDot ? c.checkOutline : 'border-zinc-300 dark:border-zinc-500'}`}>
                               {(showCheck || showDot) && (
                                 <svg width="7" height="5" viewBox="0 0 10 8" fill="none">
-                                  <path d="M1 4L3.5 6.5L9 1" stroke={showCheck ? 'white' : '#10b981'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                                  <path d="M1 4L3.5 6.5L9 1" stroke={showCheck ? 'white' : c.checkStroke} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                               )}
                             </div>
