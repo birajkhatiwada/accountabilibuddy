@@ -987,63 +987,63 @@ export default function MemberProfile() {
             const isFutureDay = selectedDay > todayKey
             const close = () => setLoggingSheet(null)
 
-            const sheetHeader = (label) => (
-              <div className="flex items-center justify-between pt-1 pb-3">
-                <div>
-                  <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest">{label}</p>
-                  <p className="text-base font-bold text-zinc-900 dark:text-white leading-tight mt-0.5">{goal.text}</p>
+            const SheetWrap = ({ children }) => (
+              <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={close}>
+                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+                <div className="relative bg-white dark:bg-zinc-900 rounded-t-3xl w-full max-w-lg slide-up flex flex-col"
+                  style={{ maxHeight: '88vh' }} onClick={e => e.stopPropagation()}>
+                  <div className="flex justify-center pt-3 pb-0 shrink-0"><div className="w-10 h-1 bg-zinc-200 dark:bg-zinc-700 rounded-full" /></div>
+                  {children}
                 </div>
-                <button onClick={close} className="ml-3 shrink-0 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors p-1">
-                  <X size={16} />
-                </button>
               </div>
             )
-
-
 
             // ── breakdown ──────────────────────────────────────────────────
             if (goal.subGoals?.length > 0) {
               return createPortal(
-                <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={close}>
-                  <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-                  <div className="relative bg-white dark:bg-zinc-900 rounded-t-2xl w-full max-w-lg slide-up flex flex-col"
-                    style={{ maxHeight: '88vh' }} onClick={e => e.stopPropagation()}>
-                    <div className="flex justify-center pt-2.5 pb-1 shrink-0"><div className="w-8 h-1 bg-zinc-200 dark:bg-zinc-700 rounded-full" /></div>
-                    <div className="px-5 pb-8 flex-1 overflow-y-auto overscroll-contain">
-                      {sheetHeader('Breakdown')}
-                      <div className="space-y-2">
-                        {goal.subGoals.map((sg, si) => {
-                          const k = `${goal.text}::${sg.text}`
-                          const weekVal = weeklyCount(k)
-                          const todayVal = getCountVal(k)
-                          const tgt = Number(sg.target) || 0
-                          const pct = tgt ? Math.min(1, weekVal / tgt) : 0
-                          const done = tgt > 0 && weekVal >= tgt
-                          return (
-                            <div key={si} className="bg-zinc-50 dark:bg-zinc-800/60 rounded-xl px-3 py-2.5">
-                              <div className="flex items-center justify-between mb-1">
-                                <span className={`text-xs font-semibold ${done ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-700 dark:text-zinc-200'}`}>{sg.text}</span>
-                                <span className={`text-[11px] tabular-nums font-semibold ${done ? 'text-emerald-500' : 'text-zinc-400'}`}>
-                                  {weekVal}{tgt ? `/${tgt}` : ''}{sg.unit ? ` ${sg.unit}` : ''} <span className="font-normal opacity-60">wk</span>
-                                </span>
-                              </div>
-                              {tgt > 0 && <div className="h-1 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden mb-2.5"><div className={`h-full rounded-full transition-all ${done ? 'bg-emerald-400' : 'bg-emerald-500'}`} style={{ width: `${pct * 100}%` }} /></div>}
-                              {isOwner && !isFutureDay && (
-                                <div className="flex items-center gap-2">
-                                  <button onClick={() => setDayCount(k, Math.max(0, todayVal - 1))}
-                                    className="w-8 h-8 rounded-lg bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-base font-bold flex items-center justify-center hover:bg-zinc-300 dark:hover:bg-zinc-600 active:scale-95 transition-all">−</button>
-                                  <span className="flex-1 text-center text-xl font-black tabular-nums text-zinc-900 dark:text-white">{todayVal}{sg.unit ? <span className="text-xs font-normal text-zinc-400 ml-1">{sg.unit}</span> : null}</span>
-                                  <button onClick={() => setDayCount(k, Math.min(999, todayVal + 1))}
-                                    className="w-8 h-8 rounded-lg bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-base font-bold flex items-center justify-center hover:bg-zinc-300 dark:hover:bg-zinc-600 active:scale-95 transition-all">+</button>
-                                </div>
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
+                <SheetWrap>
+                  <div className="px-5 pt-4 pb-2 flex items-start justify-between shrink-0">
+                    <div>
+                      <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-0.5">Breakdown</p>
+                      <h2 className="text-xl font-black text-zinc-900 dark:text-white leading-tight">{goal.text}</h2>
                     </div>
+                    <button onClick={close} className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors mt-0.5"><X size={16} /></button>
                   </div>
-                </div>
+                  <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-5" />
+                  <div className="px-5 pb-8 pt-4 flex-1 overflow-y-auto overscroll-contain space-y-3">
+                    {goal.subGoals.map((sg, si) => {
+                      const k = `${goal.text}::${sg.text}`
+                      const weekVal = weeklyCount(k)
+                      const todayVal = getCountVal(k)
+                      const tgt = Number(sg.target) || 0
+                      const pct = tgt ? Math.min(1, weekVal / tgt) : 0
+                      const done = tgt > 0 && weekVal >= tgt
+                      return (
+                        <div key={si} className={`rounded-2xl p-4 border ${done ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/50' : 'bg-zinc-50 dark:bg-zinc-800/60 border-zinc-100 dark:border-zinc-800'}`}>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className={`text-sm font-bold ${done ? 'text-emerald-700 dark:text-emerald-300' : 'text-zinc-800 dark:text-zinc-100'}`}>{sg.text}</span>
+                            <span className={`text-xs font-semibold tabular-nums px-2 py-0.5 rounded-full ${done ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400'}`}>
+                              {weekVal}{tgt ? `/${tgt}` : ''}{sg.unit ? ` ${sg.unit}` : ''} wk
+                            </span>
+                          </div>
+                          {tgt > 0 && <div className="h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden mb-3"><div className={`h-full rounded-full transition-all duration-500 ${done ? 'bg-emerald-400' : 'bg-emerald-500'}`} style={{ width: `${pct * 100}%` }} /></div>}
+                          {isOwner && !isFutureDay && (
+                            <div className="flex items-center gap-3">
+                              <button onClick={() => setDayCount(k, Math.max(0, todayVal - 1))}
+                                className="w-10 h-10 rounded-xl bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-lg font-bold flex items-center justify-center hover:bg-zinc-300 dark:hover:bg-zinc-600 active:scale-90 transition-all select-none">−</button>
+                              <div className="flex-1 text-center">
+                                <span className="text-2xl font-black tabular-nums text-zinc-900 dark:text-white">{todayVal}</span>
+                                {sg.unit && <span className="text-xs text-zinc-400 ml-1.5">{sg.unit} today</span>}
+                              </div>
+                              <button onClick={() => setDayCount(k, Math.min(999, todayVal + 1))}
+                                className="w-10 h-10 rounded-xl bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-lg font-bold flex items-center justify-center hover:bg-zinc-300 dark:hover:bg-zinc-600 active:scale-90 transition-all select-none">+</button>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </SheetWrap>
               , document.body)
             }
 
@@ -1052,40 +1052,48 @@ export default function MemberProfile() {
             const tgt = Number(goal.target) || 0
             const pct = tgt ? Math.min(1, weekVal / tgt) : 0
             const done = tgt > 0 && weekVal >= tgt
+            const todayCount = getCountVal(goal.text)
             return createPortal(
-              <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={close}>
-                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-                <div className="relative bg-white dark:bg-zinc-900 rounded-t-2xl w-full max-w-lg slide-up flex flex-col"
-                  style={{ maxHeight: '88vh' }} onClick={e => e.stopPropagation()}>
-                  <div className="flex justify-center pt-2.5 pb-1 shrink-0"><div className="w-8 h-1 bg-zinc-200 dark:bg-zinc-700 rounded-full" /></div>
-                  <div className="px-5 pb-8 flex-1 overflow-y-auto overscroll-contain">
-                    {sheetHeader('Count goal')}
-                    {tgt > 0 && (
-                      <div className="mb-4">
-                        <div className="flex items-baseline gap-1.5 mb-1.5">
-                          <span className={`text-2xl font-black tabular-nums ${done ? 'text-emerald-500' : 'text-zinc-900 dark:text-white'}`}>{weekVal}</span>
-                          <span className="text-sm text-zinc-400">/ {tgt}{goal.unit ? ` ${goal.unit}` : ''} this week</span>
-                        </div>
-                        <div className="h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full transition-all ${done ? 'bg-emerald-400' : 'bg-emerald-500'}`} style={{ width: `${pct * 100}%` }} />
-                        </div>
-                      </div>
-                    )}
-                    {isOwner && !isFutureDay && (
-                      <div className="flex items-center gap-3 py-2">
-                        <button onClick={() => setDayCount(goal.text, Math.max(0, getCountVal(goal.text) - 1))}
-                          className="w-11 h-11 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xl font-bold flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-95 transition-all">−</button>
-                        <div className="flex-1 text-center">
-                          <span className="text-3xl font-black tabular-nums text-zinc-900 dark:text-white">{getCountVal(goal.text)}</span>
-                          {goal.unit && <p className="text-[11px] text-zinc-400 mt-0.5">{goal.unit} today</p>}
-                        </div>
-                        <button onClick={() => setDayCount(goal.text, Math.min(999, getCountVal(goal.text) + 1))}
-                          className="w-11 h-11 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xl font-bold flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-95 transition-all">+</button>
-                      </div>
-                    )}
+              <SheetWrap>
+                <div className="px-5 pt-4 pb-2 flex items-start justify-between shrink-0">
+                  <div>
+                    <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-0.5">Log progress</p>
+                    <h2 className="text-xl font-black text-zinc-900 dark:text-white leading-tight">{goal.text}</h2>
                   </div>
+                  <button onClick={close} className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors mt-0.5"><X size={16} /></button>
                 </div>
-              </div>
+
+                {tgt > 0 && (
+                  <div className="px-5 pt-2 pb-3">
+                    <div className="flex items-baseline justify-between mb-2">
+                      <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500">Weekly total</span>
+                      <span className={`text-sm font-black tabular-nums ${done ? 'text-emerald-500' : 'text-zinc-700 dark:text-zinc-300'}`}>
+                        {weekVal} <span className="font-normal text-zinc-400">/ {tgt}{goal.unit ? ` ${goal.unit}` : ''}</span>
+                      </span>
+                    </div>
+                    <div className="h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full transition-all duration-500 ${done ? 'bg-emerald-400' : 'bg-emerald-500'}`} style={{ width: `${pct * 100}%` }} />
+                    </div>
+                  </div>
+                )}
+
+                <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-5" />
+
+                {isOwner && !isFutureDay ? (
+                  <div className="px-5 py-8 flex items-center gap-4">
+                    <button onClick={() => setDayCount(goal.text, Math.max(0, todayCount - 1))}
+                      className="w-14 h-14 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-2xl font-bold flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-90 transition-all select-none">−</button>
+                    <div className="flex-1 text-center">
+                      <p className="text-5xl font-black tabular-nums text-zinc-900 dark:text-white leading-none">{todayCount}</p>
+                      <p className="text-xs text-zinc-400 mt-2">{goal.unit ? `${goal.unit} today` : 'today'}</p>
+                    </div>
+                    <button onClick={() => setDayCount(goal.text, Math.min(999, todayCount + 1))}
+                      className="w-14 h-14 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-white text-2xl font-bold flex items-center justify-center active:scale-90 transition-all select-none shadow-lg shadow-emerald-500/25">+</button>
+                  </div>
+                ) : (
+                  <div className="px-5 py-8 text-center text-sm text-zinc-400">{isFutureDay ? "Can't log a future day" : 'View only'}</div>
+                )}
+              </SheetWrap>
             , document.body)
           })()}
 
@@ -1095,42 +1103,56 @@ export default function MemberProfile() {
             const proof = getGoalProof(goal.text)
             const uploading = uploadingPhoto[goal.text]
             const isEditing = !!editingProof[goal.text]
+            const closeProof = () => { setActiveGoalSheet(null); setEditingProof({}); setReactionPickerOpen(null) }
 
             return createPortal(
-              <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => { setActiveGoalSheet(null); setEditingProof({}); setReactionPickerOpen(null) }}>
-                <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-                <div className="relative bg-white dark:bg-zinc-900 rounded-t-3xl w-full max-w-lg shadow-2xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-                  {/* Handle */}
-                  <div className="flex justify-center pt-3 pb-1"><div className="w-10 h-1 rounded-full bg-zinc-200 dark:bg-zinc-700" /></div>
+              <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={closeProof}>
+                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+                <div className="relative bg-white dark:bg-zinc-900 rounded-t-3xl w-full max-w-lg slide-up shadow-2xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                  <div className="flex justify-center pt-3"><div className="w-10 h-1 rounded-full bg-zinc-200 dark:bg-zinc-700" /></div>
 
-                  <div className="px-5 pb-8 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <p className="font-bold text-zinc-900 dark:text-white">{goal.text}</p>
-                      <button onClick={() => { setActiveGoalSheet(null); setEditingProof({}) }} className="text-zinc-400 hover:text-zinc-600 transition-colors"><X size={18} /></button>
+                  <div className="px-5 pt-4 pb-2 flex items-start justify-between">
+                    <div>
+                      <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-0.5">Add proof</p>
+                      <h2 className="text-xl font-black text-zinc-900 dark:text-white leading-tight">{goal.text}</h2>
                     </div>
+                    <button onClick={closeProof} className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors mt-0.5"><X size={16} /></button>
+                  </div>
 
+                  <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-5 mt-3" />
+
+                  <div className="px-5 py-4 pb-8">
                     {isEditing ? (
-                      <div className="border border-emerald-500 rounded-xl overflow-hidden">
+                      <div className="border border-emerald-500/50 dark:border-emerald-500/30 rounded-2xl overflow-hidden">
                         <textarea autoFocus value={proofNoteInputs[goal.text] ?? ''} onChange={e => setProofNoteInputs(p => ({ ...p, [goal.text]: e.target.value }))}
                           placeholder="What did you do?" rows={4} style={{ fontSize: 16 }}
-                          className="w-full bg-white dark:bg-zinc-900 px-4 py-3 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-300 dark:placeholder-zinc-600 focus:outline-none resize-none" />
-                        <div className="flex items-center justify-end gap-2 px-4 py-2.5 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/80">
-                          <button onClick={() => setEditingProof(p => ({ ...p, [goal.text]: false }))} className="text-sm text-zinc-400 hover:text-zinc-600 transition-colors">Cancel</button>
+                          className="w-full bg-white dark:bg-zinc-900 px-4 py-3 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none resize-none" />
+                        <div className="flex items-center justify-end gap-2 px-4 py-2.5 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/60">
+                          <button onClick={() => setEditingProof(p => ({ ...p, [goal.text]: false }))} className="text-sm text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors px-3 py-1.5">Cancel</button>
                           <button onClick={() => { sendProofNote(goal.text); setEditingProof(p => ({ ...p, [goal.text]: false })); setActiveGoalSheet(null) }}
                             disabled={!(proofNoteInputs[goal.text] ?? '').trim()}
-                            className="text-sm font-bold text-white bg-emerald-500 hover:bg-emerald-400 disabled:opacity-30 px-4 py-1.5 rounded-lg transition-colors">Save</button>
+                            className="text-sm font-bold text-white bg-emerald-500 hover:bg-emerald-400 disabled:opacity-30 px-4 py-1.5 rounded-xl transition-colors">Save</button>
                         </div>
                       </div>
                     ) : (
-                      <div className="flex flex-col gap-3">
+                      <div className="space-y-2.5">
                         <button onClick={() => { setEditingProof(p => ({ ...p, [goal.text]: true })); setProofNoteInputs(p => ({ ...p, [goal.text]: proof.note || '' })) }}
-                          className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors text-left">
-                          <Pencil size={15} className="text-zinc-400 shrink-0" />
-                          <span className="text-sm text-zinc-600 dark:text-zinc-400">{proof.note || 'Add a note…'}</span>
+                          className="flex items-center gap-3.5 w-full px-4 py-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700/80 border border-zinc-100 dark:border-zinc-800 transition-colors text-left">
+                          <div className="w-8 h-8 rounded-xl bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center shrink-0">
+                            <Pencil size={13} className="text-zinc-500 dark:text-zinc-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">Add a note</p>
+                            {proof.note && <p className="text-xs text-zinc-400 truncate mt-0.5">{proof.note}</p>}
+                          </div>
                         </button>
-                        <label className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer">
-                          {uploading ? <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin shrink-0" /> : <Camera size={15} className="text-zinc-400 shrink-0" />}
-                          <span className="text-sm text-zinc-600 dark:text-zinc-400">{proof.photoUrl ? 'Replace photo' : 'Add a photo…'}</span>
+                        <label className="flex items-center gap-3.5 w-full px-4 py-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700/80 border border-zinc-100 dark:border-zinc-800 transition-colors cursor-pointer">
+                          <div className="w-8 h-8 rounded-xl bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center shrink-0">
+                            {uploading ? <div className="w-3.5 h-3.5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /> : <Camera size={13} className="text-zinc-500 dark:text-zinc-400" />}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">{proof.photoUrl ? 'Replace photo' : 'Add a photo'}</p>
+                          </div>
                           <input type="file" accept="image/*" capture="environment" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) { uploadGoalPhoto(goal.text, f); setActiveGoalSheet(null) } e.target.value = '' }} />
                         </label>
                       </div>
