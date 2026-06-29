@@ -844,6 +844,8 @@ export default function MemberProfile() {
 
                     const isBreakdown = goal.subGoals?.length > 0
                     const todayVal = !isBreakdown && goal.type !== 'habit' ? getCountVal(goal.text) : 0
+                    const hasBreakdownToday = isBreakdown && goal.subGoals.some(sg => getCountVal(`${goal.text}::${sg.text}`) > 0)
+                    const workedToday = todayVal > 0 || hasBreakdownToday
 
                     return (
                       <div key={goal.text} className="space-y-1">
@@ -857,8 +859,10 @@ export default function MemberProfile() {
                             onClick={() => !isFutureDay && (goal.type === 'habit' ? toggleHabit(goal.text) : setLoggingSheet(goal))}
                             disabled={isFutureDay || (goal.type === 'habit' && !isOwner)}
                             className="relative w-full flex items-center gap-2.5 px-3 py-2.5 text-left disabled:opacity-40">
-                            <div className={`w-3.5 h-3.5 rounded-sm border-2 shrink-0 flex items-center justify-center transition-colors ${done ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-500'}`}>
-                              {done && <svg width="7" height="5" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                            <div className={`w-3.5 h-3.5 rounded-sm border-2 shrink-0 flex items-center justify-center transition-colors ${done ? 'bg-emerald-500 border-emerald-500' : workedToday ? 'bg-emerald-500/15 border-emerald-400 dark:border-emerald-500' : 'border-zinc-300 dark:border-zinc-500'}`}>
+                              {done
+                                ? <svg width="7" height="5" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                : workedToday && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
                             </div>
                             <span className={`flex-1 text-sm truncate ${done ? 'text-emerald-700 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</span>
                             {todayVal > 0 && (
