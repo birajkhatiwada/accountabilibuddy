@@ -238,12 +238,12 @@ function SortableGoalRow({ id, text, type, target, unit, subGoals = [], onEdit, 
 
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-zinc-100 truncate">{text}</p>
-        {subtitle && <p className="text-[10px] text-zinc-500 mt-0.5">{subtitle}</p>}
+        <p className="text-base font-semibold text-zinc-100 truncate">{text}</p>
+        {subtitle && <p className="text-xs text-zinc-500 mt-0.5">{subtitle}</p>}
         {subGoals.length > 0 && (
           <div className="mt-1 space-y-0.5">
             {subGoals.map((sg, i) => (
-              <p key={i} className="text-[10px] text-zinc-600 truncate">
+              <p key={i} className="text-xs text-zinc-600 truncate">
                 ↳ {sg.text}{sg.target ? ` · ${sg.target}${sg.unit ? ` ${sg.unit}` : ''}` : ''}
               </p>
             ))}
@@ -362,23 +362,12 @@ export default function EditGoals() {
   return (
     <div className="-mx-4 -mt-3 min-h-full flex flex-col bg-zinc-950">
       {/* Header */}
-      <div className="bg-zinc-900 border-b border-zinc-800 px-4 pt-4 pb-4 shrink-0">
-        <div className="flex items-center justify-between">
-          <button onClick={() => navigate(-1)}
-            className="flex items-center gap-1.5 text-zinc-400 hover:text-zinc-200 transition-colors text-sm font-semibold">
-            <ArrowLeft size={16} /> Back
-          </button>
-          <p className="text-sm font-black text-white">Edit Goals</p>
-          <div className="w-16" />
-        </div>
-      </div>
-
-      {/* Title */}
       <div className="px-4 pt-5 pb-4 shrink-0">
-        <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-1">This week</p>
-        <h1 className="text-3xl font-black text-white leading-tight">
-          What are you<br />committing to?
-        </h1>
+        <button onClick={() => navigate(-1)}
+          className="flex items-center gap-1.5 text-zinc-500 hover:text-zinc-300 transition-colors text-sm font-semibold mb-3">
+          <ArrowLeft size={15} /> Back
+        </button>
+        <h1 className="text-3xl font-black text-white">Edit Goals</h1>
       </div>
 
       <div className="h-px bg-zinc-800 mx-4" />
@@ -411,9 +400,9 @@ export default function EditGoals() {
 
         {/* Add goal */}
         <button onClick={() => setEditingGoal({ index: -1, goal: null })}
-          className="group add-goal-btn mt-4 w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold active:scale-95 transition-transform">
+          className="group add-goal-btn mt-4 w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-base font-bold active:scale-95 transition-transform">
           <span className="add-goal-plus-wrap">
-            <Plus size={15} strokeWidth={2.5} />
+            <Plus size={16} strokeWidth={2.5} />
           </span>
           Add goal
         </button>
