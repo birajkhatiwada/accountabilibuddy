@@ -986,64 +986,60 @@ export default function MemberProfile() {
             const goal = loggingSheet
             const isFutureDay = selectedDay > todayKey
             const close = () => setLoggingSheet(null)
-
-            const SheetWrap = ({ children }) => (
-              <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={close}>
-                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-                <div className="relative bg-white dark:bg-zinc-900 rounded-t-3xl w-full max-w-lg slide-up flex flex-col"
-                  style={{ maxHeight: '88vh' }} onClick={e => e.stopPropagation()}>
-                  <div className="flex justify-center pt-3 pb-0 shrink-0"><div className="w-10 h-1 bg-zinc-200 dark:bg-zinc-700 rounded-full" /></div>
-                  {children}
-                </div>
-              </div>
-            )
+            const sheetClass = "fixed inset-0 z-50 flex items-end justify-center"
+            const innerClass = "relative bg-white dark:bg-zinc-900 rounded-t-3xl w-full max-w-lg slide-up flex flex-col"
+            const handle = <div className="flex justify-center pt-3 pb-0 shrink-0"><div className="w-10 h-1 bg-zinc-200 dark:bg-zinc-700 rounded-full" /></div>
 
             // ── breakdown ──────────────────────────────────────────────────
             if (goal.subGoals?.length > 0) {
               return createPortal(
-                <SheetWrap>
-                  <div className="px-5 pt-4 pb-2 flex items-start justify-between shrink-0">
-                    <div>
-                      <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-0.5">Breakdown</p>
-                      <h2 className="text-xl font-black text-zinc-900 dark:text-white leading-tight">{goal.text}</h2>
+                <div className={sheetClass} onClick={close}>
+                  <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+                  <div className={innerClass} style={{ maxHeight: '88vh' }} onClick={e => e.stopPropagation()}>
+                    {handle}
+                    <div className="px-5 pt-4 pb-2 flex items-start justify-between shrink-0">
+                      <div>
+                        <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-0.5">Breakdown</p>
+                        <h2 className="text-xl font-black text-zinc-900 dark:text-white leading-tight">{goal.text}</h2>
+                      </div>
+                      <button onClick={close} className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors mt-0.5"><X size={16} /></button>
                     </div>
-                    <button onClick={close} className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors mt-0.5"><X size={16} /></button>
-                  </div>
-                  <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-5" />
-                  <div className="px-5 pb-8 pt-4 flex-1 overflow-y-auto overscroll-contain space-y-3">
-                    {goal.subGoals.map((sg, si) => {
-                      const k = `${goal.text}::${sg.text}`
-                      const weekVal = weeklyCount(k)
-                      const todayVal = getCountVal(k)
-                      const tgt = Number(sg.target) || 0
-                      const pct = tgt ? Math.min(1, weekVal / tgt) : 0
-                      const done = tgt > 0 && weekVal >= tgt
-                      return (
-                        <div key={si} className={`rounded-2xl p-4 border ${done ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/50' : 'bg-zinc-50 dark:bg-zinc-800/60 border-zinc-100 dark:border-zinc-800'}`}>
-                          <div className="flex items-center justify-between mb-2">
-                            <span className={`text-sm font-bold ${done ? 'text-emerald-700 dark:text-emerald-300' : 'text-zinc-800 dark:text-zinc-100'}`}>{sg.text}</span>
-                            <span className={`text-xs font-semibold tabular-nums px-2 py-0.5 rounded-full ${done ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400'}`}>
-                              {weekVal}{tgt ? `/${tgt}` : ''}{sg.unit ? ` ${sg.unit}` : ''} wk
-                            </span>
-                          </div>
-                          {tgt > 0 && <div className="h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden mb-3"><div className={`h-full rounded-full transition-all duration-500 ${done ? 'bg-emerald-400' : 'bg-emerald-500'}`} style={{ width: `${pct * 100}%` }} /></div>}
-                          {isOwner && !isFutureDay && (
-                            <div className="flex items-center gap-3">
-                              <button onClick={() => setDayCount(k, Math.max(0, todayVal - 1))}
-                                className="w-10 h-10 rounded-xl bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-lg font-bold flex items-center justify-center hover:bg-zinc-300 dark:hover:bg-zinc-600 active:scale-90 transition-all select-none">−</button>
-                              <div className="flex-1 text-center">
-                                <span className="text-2xl font-black tabular-nums text-zinc-900 dark:text-white">{todayVal}</span>
-                                {sg.unit && <span className="text-xs text-zinc-400 ml-1.5">{sg.unit} today</span>}
-                              </div>
-                              <button onClick={() => setDayCount(k, Math.min(999, todayVal + 1))}
-                                className="w-10 h-10 rounded-xl bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-lg font-bold flex items-center justify-center hover:bg-zinc-300 dark:hover:bg-zinc-600 active:scale-90 transition-all select-none">+</button>
+                    <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-5" />
+                    <div className="px-5 pb-8 pt-4 flex-1 overflow-y-auto overscroll-contain space-y-3">
+                      {goal.subGoals.map((sg, si) => {
+                        const k = `${goal.text}::${sg.text}`
+                        const weekVal = weeklyCount(k)
+                        const todayVal = getCountVal(k)
+                        const tgt = Number(sg.target) || 0
+                        const pct = tgt ? Math.min(1, weekVal / tgt) : 0
+                        const done = tgt > 0 && weekVal >= tgt
+                        return (
+                          <div key={si} className={`rounded-2xl p-4 border ${done ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/50' : 'bg-zinc-50 dark:bg-zinc-800/60 border-zinc-100 dark:border-zinc-800'}`}>
+                            <div className="flex items-center justify-between mb-2">
+                              <span className={`text-sm font-bold ${done ? 'text-emerald-700 dark:text-emerald-300' : 'text-zinc-800 dark:text-zinc-100'}`}>{sg.text}</span>
+                              <span className={`text-xs font-semibold tabular-nums px-2 py-0.5 rounded-full ${done ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400'}`}>
+                                {weekVal}{tgt ? `/${tgt}` : ''}{sg.unit ? ` ${sg.unit}` : ''} wk
+                              </span>
                             </div>
-                          )}
-                        </div>
-                      )
-                    })}
+                            {tgt > 0 && <div className="h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden mb-3"><div className={`h-full rounded-full transition-all duration-500 ${done ? 'bg-emerald-400' : 'bg-emerald-500'}`} style={{ width: `${pct * 100}%` }} /></div>}
+                            {isOwner && !isFutureDay && (
+                              <div className="flex items-center gap-3">
+                                <button onClick={() => setDayCount(k, Math.max(0, todayVal - 1))}
+                                  className="w-9 h-9 rounded-xl bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-sm font-bold flex items-center justify-center hover:bg-zinc-300 dark:hover:bg-zinc-600 active:scale-90 transition-all select-none">−</button>
+                                <div className="flex-1 text-center">
+                                  <span className="text-xl font-black tabular-nums text-zinc-900 dark:text-white">{todayVal}</span>
+                                  {sg.unit && <span className="text-xs text-zinc-400 ml-1.5">{sg.unit}</span>}
+                                </div>
+                                <button onClick={() => setDayCount(k, Math.min(999, todayVal + 1))}
+                                  className="w-9 h-9 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-bold flex items-center justify-center active:scale-90 transition-all select-none">+</button>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
                   </div>
-                </SheetWrap>
+                </div>
               , document.body)
             }
 
@@ -1054,46 +1050,47 @@ export default function MemberProfile() {
             const done = tgt > 0 && weekVal >= tgt
             const todayCount = getCountVal(goal.text)
             return createPortal(
-              <SheetWrap>
-                <div className="px-5 pt-4 pb-2 flex items-start justify-between shrink-0">
-                  <div>
-                    <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-0.5">Log progress</p>
-                    <h2 className="text-xl font-black text-zinc-900 dark:text-white leading-tight">{goal.text}</h2>
+              <div className={sheetClass} onClick={close}>
+                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+                <div className={innerClass} style={{ maxHeight: '88vh' }} onClick={e => e.stopPropagation()}>
+                  {handle}
+                  <div className="px-5 pt-4 pb-2 flex items-start justify-between shrink-0">
+                    <div>
+                      <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-0.5">Log progress</p>
+                      <h2 className="text-xl font-black text-zinc-900 dark:text-white leading-tight">{goal.text}</h2>
+                    </div>
+                    <button onClick={close} className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors mt-0.5"><X size={16} /></button>
                   </div>
-                  <button onClick={close} className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors mt-0.5"><X size={16} /></button>
+                  {tgt > 0 && (
+                    <div className="px-5 pt-2 pb-3">
+                      <div className="flex items-baseline justify-between mb-2">
+                        <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500">Weekly total</span>
+                        <span className={`text-sm font-black tabular-nums ${done ? 'text-emerald-500' : 'text-zinc-700 dark:text-zinc-300'}`}>
+                          {weekVal} <span className="font-normal text-zinc-400">/ {tgt}{goal.unit ? ` ${goal.unit}` : ''}</span>
+                        </span>
+                      </div>
+                      <div className="h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full transition-all duration-500 ${done ? 'bg-emerald-400' : 'bg-emerald-500'}`} style={{ width: `${pct * 100}%` }} />
+                      </div>
+                    </div>
+                  )}
+                  <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-5" />
+                  {isOwner && !isFutureDay ? (
+                    <div className="px-5 py-6 flex items-center gap-4">
+                      <button onClick={() => setDayCount(goal.text, Math.max(0, todayCount - 1))}
+                        className="w-11 h-11 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-lg font-bold flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-90 transition-all select-none">−</button>
+                      <div className="flex-1 text-center">
+                        <p className="text-4xl font-black tabular-nums text-zinc-900 dark:text-white leading-none">{todayCount}</p>
+                        <p className="text-xs text-zinc-400 mt-1.5">{goal.unit ? `${goal.unit} today` : 'today'}</p>
+                      </div>
+                      <button onClick={() => setDayCount(goal.text, Math.min(999, todayCount + 1))}
+                        className="w-11 h-11 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white text-lg font-bold flex items-center justify-center active:scale-90 transition-all select-none">+</button>
+                    </div>
+                  ) : (
+                    <div className="px-5 py-8 text-center text-sm text-zinc-400">{isFutureDay ? "Can't log a future day" : 'View only'}</div>
+                  )}
                 </div>
-
-                {tgt > 0 && (
-                  <div className="px-5 pt-2 pb-3">
-                    <div className="flex items-baseline justify-between mb-2">
-                      <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500">Weekly total</span>
-                      <span className={`text-sm font-black tabular-nums ${done ? 'text-emerald-500' : 'text-zinc-700 dark:text-zinc-300'}`}>
-                        {weekVal} <span className="font-normal text-zinc-400">/ {tgt}{goal.unit ? ` ${goal.unit}` : ''}</span>
-                      </span>
-                    </div>
-                    <div className="h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full transition-all duration-500 ${done ? 'bg-emerald-400' : 'bg-emerald-500'}`} style={{ width: `${pct * 100}%` }} />
-                    </div>
-                  </div>
-                )}
-
-                <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-5" />
-
-                {isOwner && !isFutureDay ? (
-                  <div className="px-5 py-8 flex items-center gap-4">
-                    <button onClick={() => setDayCount(goal.text, Math.max(0, todayCount - 1))}
-                      className="w-14 h-14 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-2xl font-bold flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-90 transition-all select-none">−</button>
-                    <div className="flex-1 text-center">
-                      <p className="text-5xl font-black tabular-nums text-zinc-900 dark:text-white leading-none">{todayCount}</p>
-                      <p className="text-xs text-zinc-400 mt-2">{goal.unit ? `${goal.unit} today` : 'today'}</p>
-                    </div>
-                    <button onClick={() => setDayCount(goal.text, Math.min(999, todayCount + 1))}
-                      className="w-14 h-14 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-white text-2xl font-bold flex items-center justify-center active:scale-90 transition-all select-none shadow-lg shadow-emerald-500/25">+</button>
-                  </div>
-                ) : (
-                  <div className="px-5 py-8 text-center text-sm text-zinc-400">{isFutureDay ? "Can't log a future day" : 'View only'}</div>
-                )}
-              </SheetWrap>
+              </div>
             , document.body)
           })()}
 
