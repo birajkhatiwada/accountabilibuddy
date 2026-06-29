@@ -842,39 +842,54 @@ export default function MemberProfile() {
                         ? goal.subGoals.filter(sg => { const k=`${goal.text}::${sg.text}`; return (Number(sg.target)||0)>0 && weeklyCount(k)>=(Number(sg.target)||0) }).length / goal.subGoals.length
                         : tgt > 0 ? Math.min(1, weekVal / tgt) : 0
 
+                    const isBreakdown = goal.subGoals?.length > 0
+                    const todayVal = !isBreakdown && goal.type !== 'habit' ? getCountVal(goal.text) : 0
+
                     return (
-                      <div key={goal.text} className="relative rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800/60">
-                        {/* fill layer */}
-                        <div
-                          className={`absolute inset-y-0 left-0 transition-all duration-700 ${done ? 'bg-emerald-400/25 dark:bg-emerald-500/20' : 'bg-emerald-500/15 dark:bg-emerald-500/10'}`}
-                          style={{ width: `${barPct * 100}%` }}
-                        />
-                        <button
-                          onClick={() => !isFutureDay && (goal.type === 'habit' ? toggleHabit(goal.text) : setLoggingSheet(goal))}
-                          disabled={isFutureDay || (goal.type === 'habit' && !isOwner)}
-                          className="relative w-full flex items-center gap-2.5 px-3 py-2.5 text-left disabled:opacity-40">
-                          <div className={`w-3.5 h-3.5 rounded-sm border-2 shrink-0 flex items-center justify-center transition-colors ${done ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-500'}`}>
-                            {done && <svg width="7" height="5" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-                          </div>
-                          <span className={`flex-1 text-sm truncate ${done ? 'text-emerald-700 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</span>
-                          {rightLabel && <span className={`text-[11px] tabular-nums shrink-0 ${done ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-400 dark:text-zinc-500'}`}>{rightLabel}</span>}
-                          {goal.type !== 'habit' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-300 dark:text-zinc-600 shrink-0"><path d="M9 18l6-6-6-6"/></svg>}
-                        </button>
-                        {goal.subGoals?.length > 0 && (
-                          <div className="relative px-3 pb-2.5 space-y-1.5 ml-6">
+                      <div key={goal.text} className="space-y-1">
+                        {/* Parent card */}
+                        <div className="relative rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800/60">
+                          <div
+                            className={`absolute inset-y-0 left-0 transition-all duration-700 ${done ? 'bg-emerald-400/25 dark:bg-emerald-500/20' : 'bg-emerald-500/15 dark:bg-emerald-500/10'}`}
+                            style={{ width: `${barPct * 100}%` }}
+                          />
+                          <button
+                            onClick={() => !isFutureDay && (goal.type === 'habit' ? toggleHabit(goal.text) : setLoggingSheet(goal))}
+                            disabled={isFutureDay || (goal.type === 'habit' && !isOwner)}
+                            className="relative w-full flex items-center gap-2.5 px-3 py-2.5 text-left disabled:opacity-40">
+                            <div className={`w-3.5 h-3.5 rounded-sm border-2 shrink-0 flex items-center justify-center transition-colors ${done ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-500'}`}>
+                              {done && <svg width="7" height="5" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                            </div>
+                            <span className={`flex-1 text-sm truncate ${done ? 'text-emerald-700 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</span>
+                            {todayVal > 0 && (
+                              <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-full shrink-0">+{todayVal} today</span>
+                            )}
+                            {rightLabel && <span className={`text-[11px] tabular-nums shrink-0 ${done ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-400 dark:text-zinc-500'}`}>{rightLabel}</span>}
+                            {goal.type !== 'habit' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-300 dark:text-zinc-600 shrink-0"><path d="M9 18l6-6-6-6"/></svg>}
+                          </button>
+                        </div>
+
+                        {/* Sub-goal cards */}
+                        {isBreakdown && (
+                          <div className="ml-4 space-y-1">
                             {goal.subGoals.map((sg, si) => {
                               const k = `${goal.text}::${sg.text}`
                               const sv = weeklyCount(k)
                               const todayV = getCountVal(k)
                               const st = Number(sg.target) || 0
+                              const sp = st ? Math.min(1, sv / st) : 0
                               const sdone = st > 0 && sv >= st
                               return (
-                                <div key={si} className="flex items-center gap-2">
-                                  <span className={`text-xs truncate flex-1 ${sdone ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-500 dark:text-zinc-400'}`}>{sg.text}</span>
-                                  <span className={`text-[10px] tabular-nums shrink-0 ${sdone ? 'text-emerald-500' : 'text-zinc-400 dark:text-zinc-500'}`}>
-                                    {sv}{st ? `/${st}` : ''}{sg.unit ? ` ${sg.unit}` : ''}
-                                    {todayV > 0 && <span className="text-emerald-500 ml-1">+{todayV}</span>}
-                                  </span>
+                                <div key={si} className="relative rounded-lg overflow-hidden bg-zinc-100 dark:bg-zinc-800/60">
+                                  <div
+                                    className={`absolute inset-y-0 left-0 transition-all duration-700 ${sdone ? 'bg-emerald-400/25 dark:bg-emerald-500/20' : 'bg-emerald-500/15 dark:bg-emerald-500/10'}`}
+                                    style={{ width: `${sp * 100}%` }}
+                                  />
+                                  <div className="relative flex items-center gap-2 px-3 py-2">
+                                    <span className={`text-xs flex-1 truncate ${sdone ? 'text-emerald-700 dark:text-emerald-400' : 'text-zinc-600 dark:text-zinc-300'}`}>{sg.text}</span>
+                                    {todayV > 0 && <span className="text-[10px] font-semibold text-emerald-500 shrink-0">+{todayV}</span>}
+                                    <span className={`text-[10px] tabular-nums shrink-0 ${sdone ? 'text-emerald-500' : 'text-zinc-400 dark:text-zinc-500'}`}>{sv}{st ? `/${st}` : ''}{sg.unit ? ` ${sg.unit}` : ''}</span>
+                                  </div>
                                 </div>
                               )
                             })}
