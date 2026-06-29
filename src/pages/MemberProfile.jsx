@@ -855,16 +855,8 @@ export default function MemberProfile() {
                           {rightLabel && <span className={`text-[11px] tabular-nums shrink-0 ${done ? 'text-emerald-500' : 'text-zinc-400 dark:text-zinc-500'}`}>{rightLabel}</span>}
                           {goal.type !== 'habit' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-300 dark:text-zinc-700 shrink-0"><path d="M9 18l6-6-6-6"/></svg>}
                         </button>
-                        <div className="ml-6 mb-2 flex items-center gap-1.5">
-                          {Array.from({ length: 8 }).map((_, i) => {
-                            const filled = i < Math.round(barPct * 8)
-                            return (
-                              <div key={i}
-                                className={`w-2 h-2 rounded-full transition-all duration-300 ${filled ? (done ? 'bg-emerald-400 scale-110' : 'bg-emerald-500') : 'bg-zinc-200 dark:bg-zinc-700'}`}
-                                style={{ transitionDelay: `${i * 40}ms` }}
-                              />
-                            )
-                          })}
+                        <div className="ml-6 mb-1 h-0.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full transition-all duration-500 ${done ? 'bg-emerald-400' : 'bg-emerald-500'}`} style={{ width: `${barPct * 100}%` }} />
                         </div>
                         {goal.subGoals?.length > 0 && (
                           <div className="ml-6 mb-2 space-y-1.5">
