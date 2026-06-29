@@ -110,6 +110,7 @@ export default function MemberProfile() {
   const [loggingSheet, setLoggingSheet] = useState(null)
   const [uploadingPhoto, setUploadingPhoto] = useState({})
   const [reactionPickerOpen, setReactionPickerOpen] = useState(null)
+  const [showNoteColorPicker, setShowNoteColorPicker] = useState(false)
   const longPressTimer = useRef(null)
   const [justChecked, setJustChecked] = useState({})
   const [bio, setBio] = useState('')
@@ -437,6 +438,23 @@ export default function MemberProfile() {
     setProofNoteInputs(p => ({ ...p, [goalText]: '' }))
   }
 
+
+  const saveDailyColor = async (color) => {
+    const current = getDayLog(selectedDay)
+    const existing = current.proof?.['daily'] || {}
+    await setDoc(doc(db, 'entries', entry.id, 'dailyLogs', selectedDay), {
+      ...current,
+      proof: { ...(current.proof || {}), daily: { ...existing, color } }
+    })
+  }
+
+  const NOTE_COLORS = [
+    { id: 'yellow', bg: 'bg-yellow-100', border: 'border-yellow-200', dot: 'bg-yellow-300' },
+    { id: 'blue',   bg: 'bg-sky-100',    border: 'border-sky-200',    dot: 'bg-sky-300' },
+    { id: 'green',  bg: 'bg-green-100',  border: 'border-green-200',  dot: 'bg-green-300' },
+    { id: 'pink',   bg: 'bg-rose-100',   border: 'border-rose-200',   dot: 'bg-rose-300' },
+    { id: 'purple', bg: 'bg-purple-100', border: 'border-purple-200', dot: 'bg-purple-300' },
+  ]
 
   const renderProofSection = (goalText, isFutureDay) => {
     if (isFutureDay || !entry || entry.status === 'failed') return null
@@ -977,7 +995,7 @@ export default function MemberProfile() {
                   })}
                 </div>
 
-                {/* Daily note */}
+                {/* Daily note — sticky note style */}
                 {(() => {
                   const daily = getGoalProof('daily')
                   const canEdit = isOwner && selectedDay <= todayKey
@@ -985,9 +1003,13 @@ export default function MemberProfile() {
                   const noteVal = proofNoteInputs['daily'] ?? ''
                   if (!canEdit && !daily.note && !daily.photoUrl) return null
 
+                  const colorId = daily.color || 'yellow'
+                  const noteColor = NOTE_COLORS.find(c => c.id === colorId) || NOTE_COLORS[0]
+
                   const openEdit = () => {
                     setProofNoteInputs(p => ({ ...p, 'daily': daily.note ?? '' }))
                     setProofOpen(p => ({ ...p, 'daily': true }))
+                    setShowNoteColorPicker(false)
                   }
                   const handleDone = async () => {
                     await sendProofNote('daily')
@@ -995,53 +1017,77 @@ export default function MemberProfile() {
                   }
 
                   return (
-                    <div className="mt-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl px-4 py-3 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">Notes</p>
+                    <div className={`mt-4 rounded-2xl shadow-sm overflow-hidden ${noteColor.bg} border ${noteColor.border}`}>
+                      {/* Header */}
+                      <div className="px-4 pt-3 pb-2 flex items-start justify-between">
+                        <div>
+                          <p className="font-bold text-sm text-zinc-700">{selectedDay === todayKey ? 'Today' : selectedDayLabel}</p>
+                          {daily.note && <p className="text-[10px] text-zinc-400 mt-0.5">Daily note</p>}
+                        </div>
                         {canEdit && !isEditing && (daily.note || daily.photoUrl) && (
-                          <button onClick={openEdit} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors">
-                            <Pencil size={12} />
+                          <button onClick={openEdit} className="text-zinc-400 hover:text-zinc-600 transition-colors mt-0.5">
+                            <Pencil size={13} />
                           </button>
                         )}
                       </div>
 
-                      {daily.photoUrl && (
-                        <img src={daily.photoUrl} alt="" className="w-full max-h-48 rounded-xl object-cover" />
-                      )}
-
-                      {isEditing && canEdit ? (
-                        <div className="space-y-2">
+                      {/* Content */}
+                      <div className="px-4 pb-2 min-h-[60px]">
+                        {daily.photoUrl && (
+                          <img src={daily.photoUrl} alt="" className="w-full max-h-48 rounded-xl object-cover mb-2" />
+                        )}
+                        {isEditing && canEdit ? (
                           <textarea
                             autoFocus
                             placeholder="Write a note for today…"
                             value={noteVal}
                             onChange={e => setProofNoteInputs(p => ({ ...p, 'daily': e.target.value }))}
                             style={{ fontSize: 16 }}
-                            rows={3}
-                            className="w-full bg-white dark:bg-zinc-700/60 rounded-xl px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 resize-none"
+                            rows={4}
+                            className="w-full bg-transparent text-sm text-zinc-700 placeholder-zinc-400 focus:outline-none resize-none leading-relaxed"
                           />
-                          <div className="flex items-center justify-between">
-                            <label className="flex items-center gap-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors cursor-pointer text-xs">
+                        ) : daily.note ? (
+                          <p className="text-sm text-zinc-700 leading-relaxed whitespace-pre-wrap">{daily.note}</p>
+                        ) : canEdit ? (
+                          <button onClick={openEdit} className="text-sm text-zinc-400 italic">Add a note…</button>
+                        ) : null}
+                      </div>
+
+                      {/* Toolbar */}
+                      {canEdit && (
+                        <div className={`px-4 py-2.5 border-t ${noteColor.border} flex items-center justify-between`}>
+                          <div className="flex items-center gap-4">
+                            <button onClick={openEdit} className="text-zinc-400 hover:text-zinc-600 transition-colors">
+                              <Pencil size={15} />
+                            </button>
+                            <label className="text-zinc-400 hover:text-zinc-600 transition-colors cursor-pointer">
                               {uploadingPhoto['daily']
-                                ? <div className="w-3.5 h-3.5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-                                : <Camera size={14} />}
-                              Add photo
+                                ? <div className="w-3.5 h-3.5 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
+                                : <Camera size={15} />}
                               <input type="file" accept="image/*" capture="environment" className="hidden"
                                 onChange={e => { const f = e.target.files?.[0]; if (f) uploadGoalPhoto('daily', f); e.target.value = '' }} />
                             </label>
+                            <button onClick={() => setShowNoteColorPicker(v => !v)}
+                              className={`w-4 h-4 rounded-sm border border-zinc-300 shadow-sm ${noteColor.dot} transition-transform hover:scale-110`} />
+                          </div>
+                          {isEditing && (
                             <button onClick={handleDone}
-                              className="px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold rounded-lg transition-colors">
+                              className="px-3 py-1 bg-zinc-700 hover:bg-zinc-800 text-white text-xs font-semibold rounded-lg transition-colors">
                               Done
                             </button>
-                          </div>
+                          )}
                         </div>
-                      ) : daily.note ? (
-                        <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">{daily.note}</p>
-                      ) : canEdit ? (
-                        <button onClick={openEdit} className="text-sm text-zinc-400 dark:text-zinc-500 italic hover:text-zinc-500 transition-colors">
-                          Add a note…
-                        </button>
-                      ) : null}
+                      )}
+
+                      {/* Color picker */}
+                      {showNoteColorPicker && canEdit && (
+                        <div className={`px-4 pb-3 flex items-center gap-2 border-t ${noteColor.border}`}>
+                          {NOTE_COLORS.map(c => (
+                            <button key={c.id} onClick={() => { saveDailyColor(c.id); setShowNoteColorPicker(false) }}
+                              className={`w-6 h-6 rounded-full ${c.dot} border-2 transition-transform hover:scale-110 ${colorId === c.id ? 'border-zinc-500 scale-110' : 'border-transparent'}`} />
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )
                 })()}
