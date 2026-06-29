@@ -846,8 +846,8 @@ export default function MemberProfile() {
                     const barPct = goal.type === 'habit'
                       ? weeklyHabitDays(goal.text) / 7
                       : goal.subGoals?.length > 0
-                        ? goal.subGoals.filter(sg => { const k=`${goal.text}::${sg.text}`; return (Number(sg.target)||0)>0 && weeklyCount(k)>=(Number(sg.target)||0) }).length / goal.subGoals.length
-                        : tgt > 0 ? Math.min(1, weekVal / tgt) : 0
+                        ? goal.subGoals.filter(sg => { const k=`${goal.text}::${sg.text}`; return (Number(sg.target)||0)>0 && cumulativeCount(k, selectedDay)>=(Number(sg.target)||0) }).length / goal.subGoals.length
+                        : tgt > 0 ? Math.min(1, cumulativeCount(goal.text, selectedDay) / tgt) : 0
 
                     const isBreakdown = goal.subGoals?.length > 0
                     const todayVal = !isBreakdown && goal.type !== 'habit' ? getCountVal(goal.text) : 0
@@ -874,7 +874,7 @@ export default function MemberProfile() {
                         {/* Parent card */}
                         <div className="relative rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800/60">
                           <div
-                            className={`absolute inset-y-0 left-0 transition-all duration-700 ${fillClass(barPct, done)}`}
+                            className={`absolute inset-y-0 left-0 transition-all duration-700 ${fillClass(barPct, doneAsOfSelectedDay)}`}
                             style={{ width: `${barPct * 100}%` }}
                           />
                           <button
