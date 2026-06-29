@@ -238,7 +238,7 @@ function SortableGoalRow({ id, text, type, target, unit, subGoals = [], onEdit, 
 
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <p className="text-base font-semibold text-zinc-100 truncate">{text}</p>
+        <p className="text-sm font-semibold text-zinc-100 truncate">{text}</p>
         {subtitle && <p className="text-xs text-zinc-500 mt-0.5">{subtitle}</p>}
         {subGoals.length > 0 && (
           <div className="mt-1 space-y-0.5">
@@ -400,16 +400,16 @@ export default function EditGoals() {
 
         {/* Add goal */}
         <button onClick={() => setEditingGoal({ index: -1, goal: null })}
-          className="group add-goal-btn mt-4 w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-base font-bold active:scale-95 transition-transform">
+          className="group add-goal-btn mt-4 w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold active:scale-95 transition-transform">
           <span className="add-goal-plus-wrap">
-            <Plus size={16} strokeWidth={2.5} />
+            <Plus size={14} strokeWidth={2.5} />
           </span>
           Add goal
         </button>
 
         {hasValid && (
           <button onClick={() => save()} disabled={submitting}
-            className="mt-3 w-full bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] disabled:opacity-40 text-white font-black rounded-2xl py-3.5 text-base transition-all">
+            className="mt-3 w-full bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] disabled:opacity-40 text-white font-bold rounded-2xl py-3 text-sm transition-all">
             {lockLabel}
           </button>
         )}
