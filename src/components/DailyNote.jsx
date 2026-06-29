@@ -7,11 +7,12 @@ import { useState, useEffect, useRef } from 'react'
 import { Camera, Bold, Italic, List, CheckSquare } from 'lucide-react'
 
 const NOTE_COLORS = [
-  { id: 'yellow', bg: 'bg-yellow-50 dark:bg-yellow-950/60',   border: 'border-yellow-200 dark:border-yellow-800/60',   dot: 'bg-yellow-300 dark:bg-yellow-600' },
-  { id: 'blue',   bg: 'bg-sky-50 dark:bg-sky-950/60',         border: 'border-sky-200 dark:border-sky-800/60',          dot: 'bg-sky-300 dark:bg-sky-600' },
-  { id: 'green',  bg: 'bg-green-50 dark:bg-green-950/60',     border: 'border-green-200 dark:border-green-800/60',      dot: 'bg-green-300 dark:bg-green-600' },
-  { id: 'pink',   bg: 'bg-rose-50 dark:bg-rose-950/60',       border: 'border-rose-200 dark:border-rose-800/60',        dot: 'bg-rose-300 dark:bg-rose-600' },
-  { id: 'purple', bg: 'bg-purple-50 dark:bg-purple-950/60',   border: 'border-purple-200 dark:border-purple-800/60',    dot: 'bg-purple-300 dark:bg-purple-600' },
+  { id: 'default', bg: 'bg-zinc-50 dark:bg-zinc-800/50',       border: 'border-zinc-200 dark:border-zinc-700/50',        dot: 'bg-zinc-300 dark:bg-zinc-600' },
+  { id: 'yellow',  bg: 'bg-yellow-50 dark:bg-yellow-950/60',   border: 'border-yellow-200 dark:border-yellow-800/60',    dot: 'bg-yellow-300 dark:bg-yellow-600' },
+  { id: 'blue',    bg: 'bg-sky-50 dark:bg-sky-950/60',         border: 'border-sky-200 dark:border-sky-800/60',          dot: 'bg-sky-300 dark:bg-sky-600' },
+  { id: 'green',   bg: 'bg-green-50 dark:bg-green-950/60',     border: 'border-green-200 dark:border-green-800/60',      dot: 'bg-green-300 dark:bg-green-600' },
+  { id: 'pink',    bg: 'bg-rose-50 dark:bg-rose-950/60',       border: 'border-rose-200 dark:border-rose-800/60',        dot: 'bg-rose-300 dark:bg-rose-600' },
+  { id: 'purple',  bg: 'bg-purple-50 dark:bg-purple-950/60',   border: 'border-purple-200 dark:border-purple-800/60',    dot: 'bg-purple-300 dark:bg-purple-600' },
 ]
 
 function ToolbarBtn({ onClick, active, children }) {
@@ -29,7 +30,7 @@ export default function DailyNote({ daily, canEdit, dayLabel, onSave, onColorSav
   const [showColorPicker, setShowColorPicker] = useState(false)
   const saveOnBlur = useRef(true)
 
-  const colorId = daily.color || 'yellow'
+  const colorId = daily.color || 'default'
   const noteColor = NOTE_COLORS.find(c => c.id === colorId) || NOTE_COLORS[0]
   const isEmpty = !daily.content && !daily.note && !daily.photoUrl
 
