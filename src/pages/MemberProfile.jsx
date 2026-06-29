@@ -437,6 +437,20 @@ export default function MemberProfile() {
     setProofNoteInputs(p => ({ ...p, [goalText]: '' }))
   }
 
+  const sendDailyMessage = async () => {
+    const text = (proofNoteInputs['__daily__'] ?? '').trim()
+    if (!text) return
+    const current = getDayLog(selectedDay)
+    const existing = current.proof?.['__daily__'] || {}
+    const messages = existing.messages || []
+    const newMsg = { text, ts: new Date().toISOString() }
+    await setDoc(doc(db, 'entries', entry.id, 'dailyLogs', selectedDay), {
+      ...current,
+      proof: { ...(current.proof || {}), '__daily__': { ...existing, messages: [...messages, newMsg] } }
+    })
+    setProofNoteInputs(p => ({ ...p, '__daily__': '' }))
+  }
+
   const renderProofSection = (goalText, isFutureDay) => {
     if (isFutureDay || !entry || entry.status === 'failed') return null
     const saved = getGoalProof(goalText)
@@ -976,34 +990,64 @@ export default function MemberProfile() {
                   })}
                 </div>
 
-                {/* Daily note + photo */}
+                {/* Daily notes — Discord style */}
                 {(() => {
                   const daily = getGoalProof('__daily__')
+                  const messages = daily.messages || []
                   const noteVal = proofNoteInputs['__daily__'] ?? ''
-                  const existingNote = daily.note ?? ''
+                  const canSend = isOwner && !isFutureDay
+                  const fmtTime = ts => { const d = new Date(ts); return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
+                  if (!canSend && messages.length === 0 && !daily.photoUrl) return null
                   return (
-                    <div className="mt-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl px-4 py-3 space-y-2">
-                      {daily.photoUrl && <img src={daily.photoUrl} alt="" className="w-full max-h-48 rounded-xl object-cover" />}
-                      <div className="flex items-center gap-2">
-                        <span className="text-base shrink-0">📝</span>
-                        <input
-                          type="text"
-                          placeholder={existingNote || 'Note for today…'}
-                          value={noteVal}
-                          onChange={e => setProofNoteInputs(p => ({ ...p, '__daily__': e.target.value }))}
-                          onBlur={() => { if (noteVal.trim() && noteVal.trim() !== existingNote) sendProofNote('__daily__') }}
-                          onKeyDown={e => { if (e.key === 'Enter' && noteVal.trim()) sendProofNote('__daily__') }}
-                          style={{ fontSize: 16 }}
-                          className="flex-1 min-w-0 bg-transparent text-sm text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none"
-                        />
-                        <label className="shrink-0 text-zinc-400 hover:text-zinc-500 dark:hover:text-zinc-300 transition-colors cursor-pointer p-1">
-                          {uploadingPhoto['__daily__']
-                            ? <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-                            : <Camera size={15} />}
-                          <input type="file" accept="image/*" capture="environment" className="hidden"
-                            onChange={e => { const f = e.target.files?.[0]; if (f) uploadGoalPhoto('__daily__', f); e.target.value = '' }} />
-                        </label>
-                      </div>
+                    <div className="mt-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl overflow-hidden">
+                      <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider px-4 pt-3 pb-1">Notes</p>
+
+                      {/* Message feed */}
+                      {(messages.length > 0 || daily.photoUrl) && (
+                        <div className="px-3 pb-2 space-y-1">
+                          {daily.photoUrl && (
+                            <div className="flex justify-end">
+                              <img src={daily.photoUrl} alt="" className="max-h-40 rounded-2xl rounded-br-sm object-cover" />
+                            </div>
+                          )}
+                          {messages.map((msg, i) => (
+                            <div key={i} className="flex justify-end">
+                              <div className="max-w-[80%] bg-emerald-500 dark:bg-emerald-600 rounded-2xl rounded-br-sm px-3 py-1.5">
+                                <p className="text-sm text-white leading-snug">{msg.text}</p>
+                                <p className="text-[10px] text-emerald-200 mt-0.5 text-right">{fmtTime(msg.ts)}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Input bar */}
+                      {canSend && (
+                        <div className="flex items-center gap-2 px-3 py-2.5 border-t border-zinc-100 dark:border-zinc-700/50">
+                          <label className="shrink-0 text-zinc-400 hover:text-zinc-500 dark:hover:text-zinc-300 transition-colors cursor-pointer">
+                            {uploadingPhoto['__daily__']
+                              ? <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                              : <Camera size={16} />}
+                            <input type="file" accept="image/*" capture="environment" className="hidden"
+                              onChange={e => { const f = e.target.files?.[0]; if (f) uploadGoalPhoto('__daily__', f); e.target.value = '' }} />
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Add a note…"
+                            value={noteVal}
+                            onChange={e => setProofNoteInputs(p => ({ ...p, '__daily__': e.target.value }))}
+                            onKeyDown={e => { if (e.key === 'Enter' && noteVal.trim()) sendDailyMessage() }}
+                            style={{ fontSize: 16 }}
+                            className="flex-1 min-w-0 bg-white dark:bg-zinc-700/60 rounded-xl px-3 py-1.5 text-sm text-zinc-700 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-400/40"
+                          />
+                          <button
+                            onClick={sendDailyMessage}
+                            disabled={!noteVal.trim()}
+                            className="shrink-0 w-8 h-8 rounded-xl bg-emerald-500 disabled:bg-zinc-200 dark:disabled:bg-zinc-700 flex items-center justify-center transition-colors">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )
                 })()}
