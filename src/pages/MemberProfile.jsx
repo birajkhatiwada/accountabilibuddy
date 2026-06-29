@@ -873,10 +873,12 @@ export default function MemberProfile() {
                             onClick={() => !isFutureDay && (goal.type === 'habit' ? toggleHabit(goal.text) : setLoggingSheet(goal))}
                             disabled={isFutureDay || (goal.type === 'habit' && !isOwner)}
                             className="relative w-full flex items-center gap-2.5 px-3 py-2.5 text-left disabled:opacity-40">
-                            <div className={`w-3.5 h-3.5 rounded-sm border-2 shrink-0 flex items-center justify-center transition-colors ${showCheck ? 'bg-emerald-500 border-emerald-500' : showDot ? 'bg-emerald-500/15 border-emerald-400 dark:border-emerald-500' : 'border-zinc-300 dark:border-zinc-500'}`}>
-                              {showCheck
-                                ? <svg width="7" height="5" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                                : showDot && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+                            <div className={`w-3.5 h-3.5 rounded-sm border-2 shrink-0 flex items-center justify-center transition-colors ${showCheck ? 'bg-emerald-500 border-emerald-500' : showDot ? 'border-emerald-400 dark:border-emerald-500' : 'border-zinc-300 dark:border-zinc-500'}`}>
+                              {(showCheck || showDot) && (
+                                <svg width="7" height="5" viewBox="0 0 10 8" fill="none">
+                                  <path d="M1 4L3.5 6.5L9 1" stroke={showCheck ? 'white' : '#10b981'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              )}
                             </div>
                             <span className={`flex-1 text-sm truncate ${done ? 'text-emerald-700 dark:text-emerald-400' : 'text-zinc-800 dark:text-zinc-200'}`}>{goal.text}</span>
                             {todayVal > 0 && (
