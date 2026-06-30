@@ -423,27 +423,6 @@ export default function Home() {
                 ? e.goalItems.reduce((sum, g) => sum + getGoalProgress(e.id, g).pct, 0) / e.goalItems.length
                 : null
 
-              // Per-day activity score (0–1) for the 7 days of this week
-              const dayScores = weekDays.map(day => {
-                const key = day.toISOString().split('T')[0]
-                const log = logs[key]
-                if (!log || !e?.goalItems?.length) return null
-                const goalScores = e.goalItems.map(g => {
-                  if (g.type === 'habit') return log.habits?.[g.text] ? 1 : 0
-                  if (g.subGoals?.length > 0) {
-                    const ratios = g.subGoals.map(sg => {
-                      const k = `${g.text}::${sg.text}`
-                      const done = Number(log.counts?.[k]) || 0
-                      return Math.min(1, done / (Number(sg.target) || 1))
-                    })
-                    return ratios.reduce((s, r) => s + r, 0) / ratios.length
-                  }
-                  const done = Number(log.counts?.[g.text]) || 0
-                  return g.target ? Math.min(1, done / Number(g.target)) : (done > 0 ? 1 : 0)
-                })
-                return goalScores.reduce((s, v) => s + v, 0) / goalScores.length
-              })
-
               const isToday = (d) => d.toISOString().split('T')[0] === todayKey
               const isPast = (d) => d.toISOString().split('T')[0] <= todayKey
 
@@ -499,38 +478,98 @@ export default function Home() {
                     )}
                   </div>
 
-                  {/* 7-day bar chart */}
+                  {/* Per-goal breakdown */}
                   {e?.goalItems?.length > 0 && (
-                    <div className="mt-3">
-                      <div className="flex items-end gap-1 h-8">
-                        {weekDays.map((day, i) => {
-                          const score = dayScores[i]
-                          const past = isPast(day)
-                          const today = isToday(day)
-                          const barH = score != null && past ? Math.max(4, Math.round(score * 32)) : 4
+                    <div className="mt-3 space-y-2.5">
+                      {e.goalItems.map((g, gi) => {
+                        const prog = getGoalProgress(e.id, g)
+                        if (g.type === 'habit') {
+                          const checkedDays = weekDays.map(day => {
+                            const k = day.toISOString().split('T')[0]
+                            return !!logs[k]?.habits?.[g.text]
+                          })
+                          const doneCount = checkedDays.filter(Boolean).length
                           return (
-                            <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                              <div className="w-full rounded-sm transition-all" style={{
-                                height: barH,
-                                backgroundColor: !past
-                                  ? 'transparent'
-                                  : score === null || score === 0
-                                    ? (today ? '#fbbf24' : '#e4e4e7')
-                                    : score >= 1
-                                      ? '#34d399'
-                                      : hex,
-                                border: !past ? '1px dashed #d4d4d8' : 'none',
-                                opacity: !past ? 0.4 : 1,
-                              }} />
+                            <div key={gi}>
+                              <div className="flex items-center gap-1.5 mb-1">
+                                <span className="text-[9px] font-black uppercase tracking-wider text-violet-400 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/60 px-1.5 py-0.5 rounded-md">daily</span>
+                                <span className="text-[11px] text-zinc-600 dark:text-zinc-400 font-medium truncate">{g.text}</span>
+                                <span className="text-[10px] text-zinc-400 shrink-0 ml-auto">{doneCount}/7</span>
+                              </div>
+                              <div className="flex gap-1">
+                                {weekDays.map((day, di) => {
+                                  const past = isPast(day)
+                                  const today = isToday(day)
+                                  const checked = checkedDays[di]
+                                  return (
+                                    <div key={di} className="flex-1 flex flex-col items-center gap-0.5">
+                                      <div className={`w-full h-5 rounded-md flex items-center justify-center transition-all ${
+                                        checked ? 'bg-emerald-400' :
+                                        today ? 'bg-amber-200 dark:bg-amber-900/40' :
+                                        past ? 'bg-zinc-200 dark:bg-zinc-700' :
+                                        'bg-zinc-100 dark:bg-zinc-800/50'
+                                      }`}>
+                                        {checked && <svg width="8" height="6" viewBox="0 0 8 6" fill="none"><path d="M1 3L3 5L7 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                                      </div>
+                                      <span className={`text-[8px] font-bold ${today ? 'text-amber-400' : 'text-zinc-400 dark:text-zinc-600'}`}>
+                                        {['M','T','W','T','F','S','S'][di]}
+                                      </span>
+                                    </div>
+                                  )
+                                })}
+                              </div>
                             </div>
                           )
-                        })}
-                      </div>
-                      <div className="flex gap-1 mt-1">
-                        {['M','T','W','T','F','S','S'].map((d, i) => (
-                          <div key={i} className={`flex-1 text-center text-[9px] font-bold ${isToday(weekDays[i]) ? 'text-amber-400' : 'text-zinc-400 dark:text-zinc-600'}`}>{d}</div>
-                        ))}
-                      </div>
+                        }
+
+                        if (g.subGoals?.length > 0) {
+                          return (
+                            <div key={gi}>
+                              <div className="flex items-center gap-1.5 mb-1.5">
+                                <span className="text-[9px] font-black uppercase tracking-wider text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-1.5 py-0.5 rounded-md">count</span>
+                                <span className="text-[11px] text-zinc-600 dark:text-zinc-400 font-medium truncate">{g.text}</span>
+                              </div>
+                              {g.subGoals.map((sg, si) => {
+                                const k = `${g.text}::${sg.text}`
+                                const done = Object.values(logs).reduce((s, d) => s + (Number(d.counts?.[k]) || 0), 0)
+                                const tgt = Number(sg.target) || null
+                                const pct = tgt ? Math.min(1, done / tgt) : null
+                                return (
+                                  <div key={si} className="flex items-center gap-2 pl-1">
+                                    <span className="text-[10px] text-zinc-400 w-20 truncate shrink-0">{sg.text}</span>
+                                    <div className="flex-1 bg-zinc-100 dark:bg-zinc-800 rounded-full h-1.5 overflow-hidden">
+                                      <div className="h-full rounded-full transition-all" style={{
+                                        width: `${Math.round((pct ?? 0) * 100)}%`,
+                                        backgroundColor: pct >= 1 ? '#34d399' : hex,
+                                      }} />
+                                    </div>
+                                    <span className="text-[10px] text-zinc-400 shrink-0 tabular-nums">{done}{tgt ? `/${tgt}` : ''}</span>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          )
+                        }
+
+                        const done = prog.done ?? 0
+                        const tgt = prog.total
+                        const pct = prog.pct ?? 0
+                        return (
+                          <div key={gi}>
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <span className="text-[9px] font-black uppercase tracking-wider text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-1.5 py-0.5 rounded-md">count</span>
+                              <span className="text-[11px] text-zinc-600 dark:text-zinc-400 font-medium truncate">{g.text}</span>
+                              <span className="text-[10px] text-zinc-400 shrink-0 ml-auto tabular-nums">{done}{tgt ? `/${tgt}` : ''}{g.unit ? ` ${g.unit}` : ''}</span>
+                            </div>
+                            <div className="bg-zinc-100 dark:bg-zinc-800 rounded-full h-1.5 overflow-hidden">
+                              <div className="h-full rounded-full transition-all" style={{
+                                width: `${Math.round(pct * 100)}%`,
+                                backgroundColor: pct >= 1 ? '#34d399' : pct >= 0.5 ? '#fbbf24' : hex,
+                              }} />
+                            </div>
+                          </div>
+                        )
+                      })}
                     </div>
                   )}
 
