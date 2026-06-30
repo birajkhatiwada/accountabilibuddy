@@ -12,10 +12,22 @@ import DailyNote from '../components/DailyNote'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 import confetti from 'canvas-confetti'
+import catSprites from '../assets/cat-sprites.png'
+
+// Sprite sheet: 7 cols × 4 rows, each cell = 2816/7 × 1536/4 px in the source image.
+// We display each sprite at CELL×CELL px by scaling the whole sheet accordingly.
+const CAT_CELL = 76  // display size per sprite cell (px)
+const CAT_COLS = 7
+const CAT_ROWS = 4
+// Walking frames: row 0, cols 2–4 (side-profile walking cat)
+const WALK_FRAMES = [[2,0],[3,0],[4,0],[3,0]]
+// Sleeping frame: row 1, col 5 (curled-up cat)
+const SLEEP_FRAME = [5, 1]
 
 function CatProgressBar({ pct }) {
   const [isWalking, setIsWalking] = useState(false)
   const [facingRight, setFacingRight] = useState(true)
+  const [walkFrame, setWalkFrame] = useState(0)
   const prevRef = useRef(pct)
   const timerRef = useRef(null)
 
@@ -29,6 +41,13 @@ function CatProgressBar({ pct }) {
     }
     return () => clearTimeout(timerRef.current)
   }, [pct])
+
+  // Cycle through walking frames while walking
+  useEffect(() => {
+    if (!isWalking) { setWalkFrame(0); return }
+    const id = setInterval(() => setWalkFrame(f => (f + 1) % WALK_FRAMES.length), 150)
+    return () => clearInterval(id)
+  }, [isWalking])
 
   const pctRound = Math.round(pct * 100)
   const clampedLeft = Math.min(Math.max(pctRound, 9), 91)
@@ -56,63 +75,30 @@ function CatProgressBar({ pct }) {
           className="absolute select-none"
           style={{ left: `${clampedLeft}%`, bottom: '6px', transform: 'translateX(-50%)', transition: 'left 0.7s ease' }}
         >
-          {/* ZZZ floats above the sitting cat's head */}
+          {/* ZZZ floats above sleeping cat */}
           {!isWalking && (
-            <div className="absolute pointer-events-none" style={{ top: '-8px', left: '50%', transform: 'translateX(-50%)' }}>
+            <div className="absolute pointer-events-none" style={{ top: '-10px', left: '50%', transform: 'translateX(-50%)' }}>
               <span className="zzz-1 absolute text-[10px] font-black text-zinc-400 dark:text-zinc-500">z</span>
               <span className="zzz-2 absolute text-[8px] font-black text-zinc-300 dark:text-zinc-600" style={{ left: '9px', top: '-5px' }}>z</span>
             </div>
           )}
 
-          {isWalking ? (
-            /* ── WALKING: side-profile silhouette ── */
-            <svg viewBox="0 0 80 50" width="80" height="50" overflow="visible"
-              style={{ filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.18))', transform: facingRight ? 'scaleX(-1)' : 'none' }}>
-              {/* Tail */}
-              <g className="cat-tail-w">
-                <path d="M 62 25 C 72 16 75 6 67 3" stroke="#c8692a" strokeWidth="4" fill="none" strokeLinecap="round" />
-              </g>
-              {/* Bob group wraps legs + body + head */}
-              <g className="cat-bob">
-                {/* Legs — behind body */}
-                <g className="cat-leg-group cat-leg-a"><rect x="54" y="20" width="7" height="26" rx="3.5" fill="#e07830" /></g>
-                <g className="cat-leg-group cat-leg-b"><rect x="45" y="20" width="7" height="26" rx="3.5" fill="#e07830" /></g>
-                <g className="cat-leg-group cat-leg-b"><rect x="30" y="20" width="7" height="26" rx="3.5" fill="#e07830" /></g>
-                <g className="cat-leg-group cat-leg-a"><rect x="21" y="20" width="7" height="26" rx="3.5" fill="#e07830" /></g>
-                {/* Body — covers leg tops */}
-                <ellipse cx="42" cy="23" rx="22" ry="12" fill="#e07830" />
-                {/* Ears */}
-                <polygon points="7,10 12,1 18,10"  fill="#e07830" />
-                <polygon points="16,10 22,1 27,10" fill="#e07830" />
-                {/* Head */}
-                <circle cx="16" cy="18" r="13" fill="#e07830" />
-                {/* Eyes — just two glowing dots */}
-                <circle cx="12" cy="17" r="2.2" fill="#fff9" />
-                <circle cx="20" cy="17" r="2.2" fill="#fff9" />
-              </g>
-            </svg>
-          ) : (
-            /* ── SLEEPING: loaf/sitting pose ── */
-            <svg viewBox="0 0 54 46" width="54" height="46" overflow="visible"
-              style={{ filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.18))' }}>
-              {/* Tail curled around body */}
-              <g className="cat-tail-i">
-                <path d="M 43 36 C 50 30 52 22 46 20" stroke="#c8692a" strokeWidth="3.5" fill="none" strokeLinecap="round" />
-              </g>
-              {/* Loaf body (legs tucked under) */}
-              <g className="cat-breathe">
-                <ellipse cx="27" cy="36" rx="20" ry="10" fill="#e07830" />
-              </g>
-              {/* Ears */}
-              <polygon points="14,17 18,8 23,17"  fill="#e07830" />
-              <polygon points="23,17 28,8 33,17" fill="#e07830" />
-              {/* Head — round, sitting upright */}
-              <circle cx="27" cy="22" r="13" fill="#e07830" />
-              {/* Closed eyes — soft U curves */}
-              <path d="M 19 22 Q 22 18 25 22" stroke="#fff" strokeWidth="2" fill="none" strokeLinecap="round" />
-              <path d="M 29 22 Q 32 18 35 22" stroke="#fff" strokeWidth="2" fill="none" strokeLinecap="round" />
-            </svg>
-          )}
+          {/* Sprite */}
+          {(() => {
+            const [col, row] = isWalking ? WALK_FRAMES[walkFrame] : SLEEP_FRAME
+            return (
+              <div style={{
+                width: CAT_CELL,
+                height: CAT_CELL,
+                backgroundImage: `url(${catSprites})`,
+                backgroundSize: `${CAT_COLS * CAT_CELL}px ${CAT_ROWS * CAT_CELL}px`,
+                backgroundPosition: `-${col * CAT_CELL}px -${row * CAT_CELL}px`,
+                backgroundRepeat: 'no-repeat',
+                imageRendering: 'pixelated',
+                transform: isWalking && facingRight ? 'scaleX(-1)' : 'none',
+              }} />
+            )
+          })()}
         </div>
       </div>
     </div>
