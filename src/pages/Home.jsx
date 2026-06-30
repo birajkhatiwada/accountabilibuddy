@@ -352,21 +352,6 @@ export default function Home() {
       ) : (
         <div className="space-y-4">
 
-          {/* Summary stats */}
-          <div className="grid grid-cols-3 gap-2">
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl p-3 text-center border border-zinc-200 dark:border-zinc-800">
-              <p className="text-2xl font-black text-emerald-400">{doneThisWeek}</p>
-              <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wide mt-0.5">Done</p>
-            </div>
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl p-3 text-center border border-zinc-200 dark:border-zinc-800">
-              <p className="text-2xl font-black text-amber-400">{activeThisWeek}</p>
-              <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wide mt-0.5">Active</p>
-            </div>
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl p-3 text-center border border-zinc-200 dark:border-zinc-800">
-              <p className="text-2xl font-black text-red-400">${potTotal}</p>
-              <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wide mt-0.5">The Pot</p>
-            </div>
-          </div>
 
           {/* Last week recap link */}
           <button
