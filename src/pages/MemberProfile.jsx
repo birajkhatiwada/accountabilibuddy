@@ -56,96 +56,63 @@ function CatProgressBar({ pct }) {
           className="absolute select-none"
           style={{ left: `${clampedLeft}%`, bottom: '6px', transform: 'translateX(-50%)', transition: 'left 0.7s ease' }}
         >
-          {/* ZZZ — only when sleeping, floats above the head */}
+          {/* ZZZ floats above the sitting cat's head */}
           {!isWalking && (
-            <div className="absolute pointer-events-none"
-              style={{ top: '-10px', ...(facingRight ? { right: '-4px' } : { left: '-4px' }) }}>
+            <div className="absolute pointer-events-none" style={{ top: '-8px', left: '50%', transform: 'translateX(-50%)' }}>
               <span className="zzz-1 absolute text-[10px] font-black text-zinc-400 dark:text-zinc-500">z</span>
-              <span className="zzz-2 absolute text-[8px] font-black text-zinc-300 dark:text-zinc-600" style={{ left: '8px', top: '-5px' }}>z</span>
+              <span className="zzz-2 absolute text-[8px] font-black text-zinc-300 dark:text-zinc-600" style={{ left: '9px', top: '-5px' }}>z</span>
             </div>
           )}
 
-          <svg viewBox="0 0 80 52" width="80" height="52" overflow="visible"
-            style={{ filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.2))', transform: facingRight ? 'scaleX(-1)' : 'none' }}>
-
-            {/* Tail — drawn first so everything is on top */}
-            <g className={isWalking ? 'cat-tail-w' : 'cat-tail-i'}>
-              <path d="M 62 27 C 73 18 76 8 68 4" stroke="#d07438" strokeWidth="4" fill="none" strokeLinecap="round" />
-            </g>
-
-            {/* Legs — drawn BEFORE body so body covers tops, making them look attached */}
-            <g className={isWalking ? 'cat-bob' : ''}>
-              {/* Back-right (phase A) */}
-              <g className={`cat-leg-group ${isWalking ? 'cat-leg-a' : ''}`}>
-                <rect x="55" y="22" width="7" height="26" rx="3.5" fill="#f0a060" />
+          {isWalking ? (
+            /* ── WALKING: side-profile silhouette ── */
+            <svg viewBox="0 0 80 50" width="80" height="50" overflow="visible"
+              style={{ filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.18))', transform: facingRight ? 'scaleX(-1)' : 'none' }}>
+              {/* Tail */}
+              <g className="cat-tail-w">
+                <path d="M 62 25 C 72 16 75 6 67 3" stroke="#c8692a" strokeWidth="4" fill="none" strokeLinecap="round" />
               </g>
-              {/* Back-left (phase B) */}
-              <g className={`cat-leg-group ${isWalking ? 'cat-leg-b' : ''}`}>
-                <rect x="46" y="22" width="7" height="26" rx="3.5" fill="#f0a060" />
+              {/* Bob group wraps legs + body + head */}
+              <g className="cat-bob">
+                {/* Legs — behind body */}
+                <g className="cat-leg-group cat-leg-a"><rect x="54" y="20" width="7" height="26" rx="3.5" fill="#e07830" /></g>
+                <g className="cat-leg-group cat-leg-b"><rect x="45" y="20" width="7" height="26" rx="3.5" fill="#e07830" /></g>
+                <g className="cat-leg-group cat-leg-b"><rect x="30" y="20" width="7" height="26" rx="3.5" fill="#e07830" /></g>
+                <g className="cat-leg-group cat-leg-a"><rect x="21" y="20" width="7" height="26" rx="3.5" fill="#e07830" /></g>
+                {/* Body — covers leg tops */}
+                <ellipse cx="42" cy="23" rx="22" ry="12" fill="#e07830" />
+                {/* Ears */}
+                <polygon points="7,10 12,1 18,10"  fill="#e07830" />
+                <polygon points="16,10 22,1 27,10" fill="#e07830" />
+                {/* Head */}
+                <circle cx="16" cy="18" r="13" fill="#e07830" />
+                {/* Eyes — just two glowing dots */}
+                <circle cx="12" cy="17" r="2.2" fill="#fff9" />
+                <circle cx="20" cy="17" r="2.2" fill="#fff9" />
               </g>
-              {/* Front-right (phase B) */}
-              <g className={`cat-leg-group ${isWalking ? 'cat-leg-b' : ''}`}>
-                <rect x="31" y="22" width="7" height="26" rx="3.5" fill="#f0a060" />
+            </svg>
+          ) : (
+            /* ── SLEEPING: loaf/sitting pose ── */
+            <svg viewBox="0 0 54 46" width="54" height="46" overflow="visible"
+              style={{ filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.18))' }}>
+              {/* Tail curled around body */}
+              <g className="cat-tail-i">
+                <path d="M 43 36 C 50 30 52 22 46 20" stroke="#c8692a" strokeWidth="3.5" fill="none" strokeLinecap="round" />
               </g>
-              {/* Front-left (phase A) */}
-              <g className={`cat-leg-group ${isWalking ? 'cat-leg-a' : ''}`}>
-                <rect x="22" y="22" width="7" height="26" rx="3.5" fill="#f0a060" />
+              {/* Loaf body (legs tucked under) */}
+              <g className="cat-breathe">
+                <ellipse cx="27" cy="36" rx="20" ry="10" fill="#e07830" />
               </g>
-
-              {/* Body — on top of legs, same color so join is seamless */}
-              <g className={!isWalking ? 'cat-breathe' : ''}>
-                <ellipse cx="42" cy="25" rx="22" ry="12" fill="#f0a060" />
-                {/* Belly patch */}
-                <ellipse cx="42" cy="27" rx="13" ry="7" fill="#fac898" opacity="0.55" />
-              </g>
-
-              {/* Ears — before head so head covers their bases */}
-              <polygon points="6,11 11,1 18,11"  fill="#f0a060" />
-              <polygon points="16,11 22,1 28,11" fill="#f0a060" />
-              <polygon points="8,11 11,4 17,11"  fill="#e8608a" />
-              <polygon points="17,11 22,4 27,11" fill="#e8608a" />
-
-              {/* Head */}
-              <circle cx="17" cy="19" r="14" fill="#f0a060" />
-
-              {/* Eyes */}
-              {isWalking ? (
-                <>
-                  {/* Almond eyes */}
-                  <ellipse cx="12" cy="18" rx="3.2" ry="2.6" fill="#1a1a1a" />
-                  <ellipse cx="22" cy="18" rx="3.2" ry="2.6" fill="#1a1a1a" />
-                  {/* Amber iris */}
-                  <ellipse cx="12" cy="18" rx="2" ry="2.2" fill="#c07820" />
-                  <ellipse cx="22" cy="18" rx="2" ry="2.2" fill="#c07820" />
-                  {/* Slit pupil */}
-                  <ellipse cx="12" cy="18" rx="0.9" ry="2" fill="#111" />
-                  <ellipse cx="22" cy="18" rx="0.9" ry="2" fill="#111" />
-                  {/* Eye shine */}
-                  <circle cx="13.2" cy="16.8" r="0.9" fill="white" />
-                  <circle cx="23.2" cy="16.8" r="0.9" fill="white" />
-                </>
-              ) : (
-                <>
-                  {/* Curved closed eyes with lash */}
-                  <path d="M 8.5 19 Q 12 15 15.5 19" stroke="#1a1a1a" strokeWidth="2" fill="none" strokeLinecap="round" />
-                  <path d="M 18.5 19 Q 22 15 25.5 19" stroke="#1a1a1a" strokeWidth="2" fill="none" strokeLinecap="round" />
-                </>
-              )}
-
-              {/* Nose — small heart shape */}
-              <path d="M 16 23 Q 17 21.5 18 23 Q 17 25 16 23 Z" fill="#e8608a" />
-
-              {/* Mouth */}
-              <path d="M 14 25 Q 17 28.5 20 25" stroke="#c04870" strokeWidth="1.2" fill="none" strokeLinecap="round" />
-
-              {/* Whiskers — 3 per side, fanning out */}
-              <line x1="1"  y1="20" x2="11" y2="22" stroke="#ccc" strokeWidth="0.9" />
-              <line x1="1"  y1="23" x2="11" y2="23" stroke="#ccc" strokeWidth="0.9" />
-              <line x1="1"  y1="26" x2="11" y2="24" stroke="#ccc" strokeWidth="0.9" />
-              <line x1="23" y1="22" x2="33" y2="20" stroke="#ccc" strokeWidth="0.9" />
-              <line x1="23" y1="23" x2="33" y2="23" stroke="#ccc" strokeWidth="0.9" />
-              <line x1="23" y1="24" x2="33" y2="26" stroke="#ccc" strokeWidth="0.9" />
-            </g>
+              {/* Ears */}
+              <polygon points="14,17 18,8 23,17"  fill="#e07830" />
+              <polygon points="23,17 28,8 33,17" fill="#e07830" />
+              {/* Head — round, sitting upright */}
+              <circle cx="27" cy="22" r="13" fill="#e07830" />
+              {/* Closed eyes — soft U curves */}
+              <path d="M 19 22 Q 22 18 25 22" stroke="#fff" strokeWidth="2" fill="none" strokeLinecap="round" />
+              <path d="M 29 22 Q 32 18 35 22" stroke="#fff" strokeWidth="2" fill="none" strokeLinecap="round" />
+            </svg>
+          }
           </svg>
         </div>
       </div>
