@@ -15,11 +15,13 @@ import confetti from 'canvas-confetti'
 
 function CatProgressBar({ pct }) {
   const [isWalking, setIsWalking] = useState(false)
+  const [facingRight, setFacingRight] = useState(true)
   const prevRef = useRef(pct)
   const timerRef = useRef(null)
 
   useEffect(() => {
-    if (pct > prevRef.current) {
+    if (pct !== prevRef.current) {
+      setFacingRight(pct > prevRef.current)
       setIsWalking(true)
       clearTimeout(timerRef.current)
       timerRef.current = setTimeout(() => setIsWalking(false), 1800)
@@ -54,15 +56,17 @@ function CatProgressBar({ pct }) {
           className="absolute transition-all duration-700 select-none"
           style={{ left: `${clampedLeft}%`, bottom: '6px', transform: 'translateX(-50%)' }}
         >
-          {/* ZZZ — only when sleeping */}
+          {/* ZZZ — only when sleeping, floats above the head */}
           {!isWalking && (
-            <div className="absolute pointer-events-none" style={{ top: '-10px', right: '-4px' }}>
+            <div className="absolute pointer-events-none"
+              style={{ top: '-10px', ...(facingRight ? { right: '-4px' } : { left: '-4px' }) }}>
               <span className="zzz-1 absolute text-[10px] font-black text-zinc-400 dark:text-zinc-500">z</span>
               <span className="zzz-2 absolute text-[8px] font-black text-zinc-300 dark:text-zinc-600" style={{ left: '8px', top: '-5px' }}>z</span>
             </div>
           )}
 
-          <svg viewBox="0 0 72 44" width="72" height="44" overflow="visible" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.18))' }}>
+          <svg viewBox="0 0 72 44" width="72" height="44" overflow="visible"
+            style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.18))', transform: facingRight ? 'scaleX(-1)' : 'none' }}>
             {/* Tail — behind body */}
             <g className={isWalking ? 'cat-tail-w' : 'cat-tail-i'}>
               <path d="M 57 26 C 66 18 70 10 63 6" stroke="#d4804a" strokeWidth="3.5" fill="none" strokeLinecap="round" />
