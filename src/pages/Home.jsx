@@ -257,8 +257,8 @@ export default function Home() {
       Object.values(log.counts || {}).some(v => v > 0) ||
       Object.values(log.totals || {}).some(v => v > 0))
 
-  // Per-member daily goal completion per day this week (for multi-line chart)
-  // Each point = % of goals where something was logged that day
+  // Per-member cumulative goal progress per day this week (for multi-line chart)
+  // Each point = % of weekly target achieved as of that day
   const getMemberDailyProgress = (name) => {
     const e = getEntry(name)
     if (!e?.goalItems?.length) return []
@@ -267,24 +267,25 @@ export default function Home() {
     const today = new Date(); today.setHours(23, 59, 59, 0)
     return weekDays
       .filter(day => day <= today)
-      .map(day => {
-        const key = day.toISOString().split('T')[0]
-        const log = logs[key] || {}
+      .map((day, dayIdx) => {
+        const daysUpTo = weekDays.slice(0, dayIdx + 1)
         const progPerGoal = goals.map(g => {
           if (g.type === 'habit') {
-            return log.habits?.[g.text] ? 1 : 0
+            // % of days elapsed where habit was done (not out of 7, but out of days so far)
+            const elapsed = daysUpTo.length
+            const checked = daysUpTo.filter(d => logs[d.toISOString().split('T')[0]]?.habits?.[g.text]).length
+            return checked / elapsed
           }
           if (g.subGoals?.length > 0) {
             const ratios = g.subGoals.map(sg => {
               const k = `${g.text}::${sg.text}`
-              const done = Number(log.counts?.[k]) || 0
-              // daily contribution = done / (target / 7), capped at 1
-              return Math.min(1, done / ((Number(sg.target) || 7) / 7))
+              const done = daysUpTo.reduce((s, d) => s + (Number(logs[d.toISOString().split('T')[0]]?.counts?.[k]) || 0), 0)
+              return Math.min(1, done / (Number(sg.target) || 1))
             })
             return ratios.reduce((s, r) => s + r, 0) / ratios.length
           }
-          const done = Number(log.counts?.[g.text]) || 0
-          return g.target ? Math.min(1, done / ((Number(g.target)) / 7)) : (done > 0 ? 1 : 0)
+          const done = daysUpTo.reduce((s, d) => s + (Number(logs[d.toISOString().split('T')[0]]?.counts?.[g.text]) || 0), 0)
+          return Math.min(1, done / (Number(g.target) || 1))
         })
         return progPerGoal.reduce((s, v) => s + v, 0) / progPerGoal.length
       })
