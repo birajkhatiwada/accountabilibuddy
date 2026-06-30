@@ -229,11 +229,15 @@ export default function MemberProfile() {
     return s
   })()
 
-  const weekDays = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(weekId)
-    d.setDate(d.getDate() + i)
-    return d
-  })
+  const weekDays = useMemo(() => {
+    const [y, m, d] = weekId.split('-').map(Number)
+    const monday = new Date(y, m - 1, d) // local midnight — no UTC shift
+    return Array.from({ length: 7 }, (_, i) => {
+      const day = new Date(monday)
+      day.setDate(monday.getDate() + i)
+      return day
+    })
+  }, [weekId])
 
   // ── logging helpers ────────────────────────────────────────────────────────
 
