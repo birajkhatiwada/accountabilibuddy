@@ -14,14 +14,15 @@ import HighchartsReact from 'highcharts-react-official'
 import confetti from 'canvas-confetti'
 import catSprites from '../assets/cat-sprites.png'
 
-// Sprite sheet: 7 cols × 4 rows, each cell = 2816/7 × 1536/4 px in the source image.
-// We display each sprite at CELL×CELL px by scaling the whole sheet accordingly.
-const CAT_CELL = 76  // display size per sprite cell (px)
-const CAT_COLS = 7
+// Sprite sheet: 8 cols × 4 rows (2816/8=352, 1536/4=384 per cell — clean integers).
+// Display each cell at W×H px; background-size scales the whole sheet proportionally.
+const CAT_W = 70   // display width per cell  (352 source → 70px)
+const CAT_H = 76   // display height per cell (384 source → 76px)
+const CAT_COLS = 8
 const CAT_ROWS = 4
-// Walking frames: row 0, cols 2–4 (side-profile walking cat)
+// Walking frames: row 0, cols 2–4 (side-profile walking poses)
 const WALK_FRAMES = [[2,0],[3,0],[4,0],[3,0]]
-// Sleeping frame: row 1, col 5 (curled-up cat)
+// Sleeping frame: row 1, col 5 (curled-up sleeping cat)
 const SLEEP_FRAME = [5, 1]
 
 function CatProgressBar({ pct }) {
@@ -88,11 +89,11 @@ function CatProgressBar({ pct }) {
             const [col, row] = isWalking ? WALK_FRAMES[walkFrame] : SLEEP_FRAME
             return (
               <div style={{
-                width: CAT_CELL,
-                height: CAT_CELL,
+                width: CAT_W,
+                height: CAT_H,
                 backgroundImage: `url(${catSprites})`,
-                backgroundSize: `${CAT_COLS * CAT_CELL}px ${CAT_ROWS * CAT_CELL}px`,
-                backgroundPosition: `-${col * CAT_CELL}px -${row * CAT_CELL}px`,
+                backgroundSize: `${CAT_COLS * CAT_W}px ${CAT_ROWS * CAT_H}px`,
+                backgroundPosition: `-${col * CAT_W}px -${row * CAT_H}px`,
                 backgroundRepeat: 'no-repeat',
                 imageRendering: 'pixelated',
                 transform: isWalking && facingRight ? 'scaleX(-1)' : 'none',
