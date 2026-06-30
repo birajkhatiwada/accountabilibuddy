@@ -265,9 +265,10 @@ export default function Home() {
       Object.values(log.counts || {}).some(v => v > 0) ||
       Object.values(log.totals || {}).some(v => v > 0))
 
-  // Per-member cumulative goal progress per day:
-  // Each point = fraction of goals that have had ANY activity from Mon through that day.
-  // Once a goal is touched it stays counted → line only goes up or stays flat, never drops.
+  // Per-member cumulative goal progress per day — same math as the completion ring.
+  // Each point = average across all goals of (progress so far / weekly target).
+  // Habits: days checked so far / 7. Counts: cumulative logged / target.
+  // Only goes up or stays flat — never drops.
   const getMemberDailyProgress = (name) => {
     const e = getEntry(name)
     if (!e?.goalItems?.length) return []
@@ -278,13 +279,23 @@ export default function Home() {
       .filter(day => day <= today)
       .map((_, dayIdx) => {
         const daysUpTo = weekDays.slice(0, dayIdx + 1)
-        const touched = goals.filter(g => daysUpTo.some(d => {
-          const log = logs[toLocalKey(d)] || {}
-          if (g.type === 'habit') return !!log.habits?.[g.text]
-          if (g.subGoals?.length > 0) return g.subGoals.some(sg => Number(log.counts?.[`${g.text}::${sg.text}`]) > 0)
-          return Number(log.counts?.[g.text]) > 0
-        }))
-        return touched.length / goals.length
+        const scores = goals.map(g => {
+          if (g.type === 'habit') {
+            const checked = daysUpTo.filter(d => logs[toLocalKey(d)]?.habits?.[g.text]).length
+            return checked / 7
+          }
+          if (g.subGoals?.length > 0) {
+            const ratios = g.subGoals.map(sg => {
+              const k = `${g.text}::${sg.text}`
+              const done = daysUpTo.reduce((s, d) => s + (Number(logs[toLocalKey(d)]?.counts?.[k]) || 0), 0)
+              return Math.min(1, done / (Number(sg.target) || 1))
+            })
+            return ratios.reduce((s, r) => s + r, 0) / ratios.length
+          }
+          const done = daysUpTo.reduce((s, d) => s + (Number(logs[toLocalKey(d)]?.counts?.[g.text]) || 0), 0)
+          return Math.min(1, done / (Number(g.target) || 1))
+        })
+        return scores.reduce((s, v) => s + v, 0) / scores.length
       })
   }
 
