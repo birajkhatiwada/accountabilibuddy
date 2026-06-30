@@ -13,6 +13,72 @@ import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 import confetti from 'canvas-confetti'
 
+function CatProgressBar({ pct }) {
+  const [isWalking, setIsWalking] = useState(false)
+  const prevRef = useRef(pct)
+  const timerRef = useRef(null)
+
+  useEffect(() => {
+    if (pct > prevRef.current) {
+      setIsWalking(true)
+      clearTimeout(timerRef.current)
+      timerRef.current = setTimeout(() => setIsWalking(false), 1800)
+    }
+    prevRef.current = pct
+    return () => clearTimeout(timerRef.current)
+  }, [pct])
+
+  const pctRound = Math.round(pct * 100)
+  const clampedLeft = Math.min(Math.max(pctRound, 4), 96)
+
+  return (
+    <div className="w-full mt-2">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">This week</span>
+        <span className="text-xs font-black text-zinc-700 dark:text-zinc-200">{pctRound}%</span>
+      </div>
+
+      {/* Track */}
+      <div className="relative h-10">
+        <div className="absolute top-1/2 -translate-y-1/2 w-full h-2.5 bg-zinc-200 dark:bg-zinc-700/70 rounded-full overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all duration-700"
+            style={{
+              width: `${pctRound}%`,
+              background: pct >= 1
+                ? 'linear-gradient(to right, #34d399, #2dd4bf)'
+                : pct >= 0.5
+                  ? 'linear-gradient(to right, #fbbf24, #f97316)'
+                  : 'linear-gradient(to right, #a78bfa, #8b5cf6)',
+            }}
+          />
+        </div>
+
+        {/* Cat */}
+        <div
+          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 transition-all duration-700 select-none"
+          style={{ left: `${clampedLeft}%` }}
+        >
+          <span
+            className={`text-2xl inline-block ${isWalking ? 'cat-walking' : 'cat-sleeping'}`}
+            style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.25))' }}
+          >
+            🐱
+          </span>
+
+          {/* Floating zzz when sleeping */}
+          {!isWalking && (
+            <span className="absolute pointer-events-none" style={{ top: '-10px', right: '-6px', lineHeight: 1 }}>
+              <span className="zzz-1 absolute text-[9px] font-black text-zinc-400 dark:text-zinc-500">z</span>
+              <span className="zzz-2 absolute text-[7px] font-black text-zinc-300 dark:text-zinc-600" style={{ left: '6px', top: '-4px' }}>z</span>
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const DAY_LABELS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
 const GOAL_COLORS = ['#8b5cf6','#3b82f6','#10b981','#f97316','#ec4899','#14b8a6']
 
@@ -720,48 +786,27 @@ export default function MemberProfile() {
             </div>
           </div>
 
-          <div className="flex items-end justify-between gap-3">
-            <div className="min-w-0">
-              <h2 className="text-xl font-black text-zinc-900 dark:text-white leading-none">{nickname || name}</h2>
-              {status && <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400 leading-snug">{status}</p>}
-              {bio && <p className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500 leading-snug">{bio}</p>}
-              <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-1">{formatWeekLabel(weekId)}</p>
-            </div>
+          <h2 className="text-xl font-black text-zinc-900 dark:text-white leading-none">{nickname || name}</h2>
+          {status && <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400 leading-snug">{status}</p>}
+          {bio && <p className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500 leading-snug">{bio}</p>}
+          <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-1">{formatWeekLabel(weekId)}</p>
 
-            {/* Overall completion ring */}
-            {myGoals.length > 0 && (() => {
-              const pct = myGoals.reduce((sum, g) => {
-                if (g.type === 'habit') {
-                  return sum + Object.values(logs).filter(d => d.habits?.[g.text]).length / 7
-                }
-                if (g.subGoals?.length > 0) {
-                  const r = g.subGoals.map(sg => {
-                    const k = `${g.text}::${sg.text}`
-                    const done = Object.values(logs).reduce((s, d) => s + (Number(d.counts?.[k]) || 0), 0)
-                    return Math.min(1, done / (Number(sg.target) || 1))
-                  })
-                  return sum + r.reduce((s, v) => s + v, 0) / r.length
-                }
-                const done = Object.values(logs).reduce((s, d) => s + (Number(d.counts?.[g.text]) || 0), 0)
-                return sum + Math.min(1, done / (Number(g.target) || 1))
-              }, 0) / myGoals.length
-              const pctRound = Math.round(pct * 100)
-              const hex = pct >= 1 ? '#34d399' : pct >= 0.5 ? '#fbbf24' : '#8b5cf6'
-              return (
-                <div className="relative w-14 h-14 shrink-0">
-                  <svg width="56" height="56" viewBox="0 0 56 56" className="-rotate-90">
-                    <circle cx="28" cy="28" r="22" fill="none" stroke="currentColor" strokeWidth="5" className="text-zinc-200 dark:text-zinc-700" />
-                    <circle cx="28" cy="28" r="22" fill="none" stroke={hex} strokeWidth="5" strokeLinecap="round"
-                      strokeDasharray={`${Math.round(pct * 138.2)} 138.2`} />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-sm font-black text-zinc-800 dark:text-zinc-100 leading-none">{pctRound}%</span>
-                    <span className="text-[8px] text-zinc-400 font-semibold leading-none mt-0.5">done</span>
-                  </div>
-                </div>
-              )
-            })()}
-          </div>
+          {myGoals.length > 0 && (() => {
+            const pct = myGoals.reduce((sum, g) => {
+              if (g.type === 'habit') return sum + Object.values(logs).filter(d => d.habits?.[g.text]).length / 7
+              if (g.subGoals?.length > 0) {
+                const r = g.subGoals.map(sg => {
+                  const k = `${g.text}::${sg.text}`
+                  const done = Object.values(logs).reduce((s, d) => s + (Number(d.counts?.[k]) || 0), 0)
+                  return Math.min(1, done / (Number(sg.target) || 1))
+                })
+                return sum + r.reduce((s, v) => s + v, 0) / r.length
+              }
+              const done = Object.values(logs).reduce((s, d) => s + (Number(d.counts?.[g.text]) || 0), 0)
+              return sum + Math.min(1, done / (Number(g.target) || 1))
+            }, 0) / myGoals.length
+            return <CatProgressBar pct={pct} />
+          })()}
         </div>
       </div>
 
