@@ -64,7 +64,7 @@ function CatProgressBar({ pct, atlasUrl }) {
       : 'linear-gradient(to right,#a78bfa,#8b5cf6)'
 
   // Rows: 0=walk-right, 1=walk-left, 2=sleep-left, 3=sleep-right
-  const bgRow = isWalking ? (facingRight ? 0 : 1) : (facingRight ? 3 : 2)
+  const bgRow = isWalking ? (facingRight ? 0 : 1) : (facingRight ? 2 : 3)
   const bgX   = frame * FRAME_W
   const bgY   = bgRow * FRAME_H
 
