@@ -21,9 +21,9 @@ const DISP_H = 96         // 32 × 3
 const BG_W   = 1056       // 352 × 3
 const BG_H   = 5088       // 1696 × 3
 // Displayed y offsets (source y × 3)
-const WALK_RIGHT_Y = 576  // 192 × 3
-const WALK_LEFT_Y  = 672  // 224 × 3
-const SLEEP_Y      = 1152 // 384 × 3
+const WALK_RIGHT_Y = 576  // 192 × 3  — walk right animation
+const WALK_LEFT_Y  = 672  // 224 × 3  — walk left animation
+const SLEEP_Y      = 1728 // 576 × 3  — sleep4l: flat lying cat
 const WALK_FRAME_COUNT = 8
 
 function CatProgressBar({ pct }) {
