@@ -33,6 +33,9 @@ const AVATAR_HEX = [
 
 const DAY_LABELS_STATIC = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
 
+const toLocalKey = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
 const getAvatarColor = (name, members) =>
   AVATAR_COLORS[members.indexOf(name) % AVATAR_COLORS.length]
 
@@ -173,7 +176,7 @@ export default function Home() {
     for (let i = 7; i >= 0; i--) {
       const d = new Date(monday)
       d.setDate(monday.getDate() - i * 7)
-      ids.push(d.toISOString().split('T')[0])
+      ids.push(toLocalKey(d))
     }
     return ids
   }, [weekId])
@@ -277,18 +280,18 @@ export default function Home() {
         const progPerGoal = goals.map(g => {
           if (g.type === 'habit') {
             // checked days out of 7 total — cumulative, never drops
-            const checked = daysUpTo.filter(d => logs[d.toISOString().split('T')[0]]?.habits?.[g.text]).length
+            const checked = daysUpTo.filter(d => logs[toLocalKey(d)]?.habits?.[g.text]).length
             return checked / 7
           }
           if (g.subGoals?.length > 0) {
             const ratios = g.subGoals.map(sg => {
               const k = `${g.text}::${sg.text}`
-              const done = daysUpTo.reduce((s, d) => s + (Number(logs[d.toISOString().split('T')[0]]?.counts?.[k]) || 0), 0)
+              const done = daysUpTo.reduce((s, d) => s + (Number(logs[toLocalKey(d)]?.counts?.[k]) || 0), 0)
               return Math.min(1, done / (Number(sg.target) || 1))
             })
             return ratios.reduce((s, r) => s + r, 0) / ratios.length
           }
-          const done = daysUpTo.reduce((s, d) => s + (Number(logs[d.toISOString().split('T')[0]]?.counts?.[g.text]) || 0), 0)
+          const done = daysUpTo.reduce((s, d) => s + (Number(logs[toLocalKey(d)]?.counts?.[g.text]) || 0), 0)
           return Math.min(1, done / (Number(g.target) || 1))
         })
         return progPerGoal.reduce((s, v) => s + v, 0) / progPerGoal.length
@@ -430,8 +433,8 @@ export default function Home() {
                 ? e.goalItems.reduce((sum, g) => sum + getGoalProgress(e.id, g).pct, 0) / e.goalItems.length
                 : null
 
-              const isToday = (d) => d.toISOString().split('T')[0] === todayKey
-              const isPast = (d) => d.toISOString().split('T')[0] <= todayKey
+              const isToday = (d) => toLocalKey(d) === todayKey
+              const isPast = (d) => toLocalKey(d) <= todayKey
 
               return (
                 <div
@@ -492,7 +495,7 @@ export default function Home() {
                         const prog = getGoalProgress(e.id, g)
                         if (g.type === 'habit') {
                           const checkedDays = weekDays.map(day => {
-                            const k = day.toISOString().split('T')[0]
+                            const k = toLocalKey(day)
                             return !!logs[k]?.habits?.[g.text]
                           })
                           const doneCount = checkedDays.filter(Boolean).length
