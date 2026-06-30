@@ -18,9 +18,9 @@ import catAtlas from '../assets/cat-atlas.png'
 // row 1 = walk-left (8×48px), row 2 = sleep (96×96px flat lying cat).
 // All integer coordinates — no guesswork.
 const ATLAS_W = 384, ATLAS_H = 288
-const WALK_W = 48, WALK_H = 96   // per walking frame
-const SLEEP_W = 96, SLEEP_H = 96 // full lying cat (2 cells wide)
-const WALK_FRAME_COUNT = 8
+const WALK_W = 96, WALK_H = 96   // each frame is 96×96 (32 source px × 3)
+const SLEEP_W = 96, SLEEP_H = 96
+const WALK_FRAME_COUNT = 4
 
 function CatProgressBar({ pct }) {
   const [isWalking, setIsWalking] = useState(false)
