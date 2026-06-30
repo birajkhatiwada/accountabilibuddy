@@ -16,23 +16,19 @@ import confetti from 'canvas-confetti'
 function CatProgressBar({ pct }) {
   const [isWalking, setIsWalking] = useState(false)
   const [facingRight, setFacingRight] = useState(true)
-  const [hasMounted, setHasMounted] = useState(false)
   const prevRef = useRef(pct)
   const timerRef = useRef(null)
 
-  useEffect(() => { setHasMounted(true) }, [])
-
   useEffect(() => {
-    if (!hasMounted) return
     if (pct !== prevRef.current) {
       setFacingRight(pct > prevRef.current)
       setIsWalking(true)
       clearTimeout(timerRef.current)
       timerRef.current = setTimeout(() => setIsWalking(false), 1800)
+      prevRef.current = pct
     }
-    prevRef.current = pct
     return () => clearTimeout(timerRef.current)
-  }, [pct, hasMounted])
+  }, [pct])
 
   const pctRound = Math.round(pct * 100)
   const clampedLeft = Math.min(Math.max(pctRound, 9), 91)
@@ -52,13 +48,13 @@ function CatProgressBar({ pct }) {
       <div className="relative h-16">
         {/* Ground track */}
         <div className="absolute bottom-0 w-full h-2.5 bg-zinc-200 dark:bg-zinc-700/70 rounded-full overflow-hidden">
-          <div className="h-full rounded-full" style={{ width: `${pctRound}%`, background: trackColor, transition: hasMounted ? 'width 0.7s ease' : 'none' }} />
+          <div className="h-full rounded-full" style={{ width: `${pctRound}%`, background: trackColor, transition: 'width 0.7s ease' }} />
         </div>
 
         {/* Cat */}
         <div
           className="absolute select-none"
-          style={{ left: `${clampedLeft}%`, bottom: '6px', transform: 'translateX(-50%)', transition: hasMounted ? 'left 0.7s ease' : 'none' }}
+          style={{ left: `${clampedLeft}%`, bottom: '6px', transform: 'translateX(-50%)', transition: 'left 0.7s ease' }}
         >
           {/* ZZZ — only when sleeping, floats above the head */}
           {!isWalking && (
@@ -220,6 +216,7 @@ export default function MemberProfile() {
   const [entry, setEntry] = useState(undefined)
   const [allEntries, setAllEntries] = useState([])
   const [logs, setLogs] = useState({})
+  const [logsLoaded, setLogsLoaded] = useState(false)
   const [avatars, setAvatars] = useState({})
   const [penalty, setPenalty] = useState(15)
   const [goalsInput, setGoalsInput] = useState([])
@@ -319,6 +316,7 @@ export default function MemberProfile() {
       const data = {}
       snap.docs.forEach(d => { data[d.id] = d.data() })
       setLogs(data)
+      setLogsLoaded(true)
     })
   }, [entry?.id])
 
@@ -853,7 +851,7 @@ export default function MemberProfile() {
           {bio && <p className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500 leading-snug">{bio}</p>}
           <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-1">{formatWeekLabel(weekId)}</p>
 
-          {myGoals.length > 0 && (() => {
+          {myGoals.length > 0 && logsLoaded && (() => {
             const pct = myGoals.reduce((sum, g) => {
               if (g.type === 'habit') return sum + Object.values(logs).filter(d => d.habits?.[g.text]).length / 7
               if (g.subGoals?.length > 0) {
