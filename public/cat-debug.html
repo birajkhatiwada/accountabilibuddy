@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Cat Atlas Debug</title>
+<style>
+  body { background: #18181b; color: white; font-family: monospace; padding: 20px; }
+  h2 { color: #a1a1aa; font-size: 12px; margin: 16px 0 6px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .frame { position: relative; }
+  .frame span { display: block; text-align: center; font-size: 9px; color: #71717a; margin-top: 2px; }
+  .sprite {
+    image-rendering: pixelated;
+    background-image: url('/cat-atlas.png');
+    background-repeat: no-repeat;
+    background-size: 384px 288px;
+    outline: 1px solid #3f3f46;
+  }
+</style>
+</head>
+<body>
+<h1 style="font-size:14px;color:#e4e4e7">Cat Atlas — 384×288px</h1>
+
+<h2>Row 0: Walk Right (8 frames, 48×96 each)</h2>
+<div class="row" id="walk-right"></div>
+
+<h2>Row 1: Walk Left (8 frames, 48×96 each)</h2>
+<div class="row" id="walk-left"></div>
+
+<h2>Row 2: Sleep (96×96)</h2>
+<div class="row" id="sleep"></div>
+
+<script>
+const ATLAS = '/cat-atlas.png'
+
+function makeSprite(x, y, w, h, label) {
+  const d = document.createElement('div')
+  d.className = 'frame'
+  const s = document.createElement('div')
+  s.className = 'sprite'
+  s.style.width = w + 'px'
+  s.style.height = h + 'px'
+  s.style.backgroundPosition = `-${x}px -${y}px`
+  const lbl = document.createElement('span')
+  lbl.textContent = label
+  d.appendChild(s)
+  d.appendChild(lbl)
+  return d
+}
+
+// Walk right: row 0 (y=0), 8 frames of 48×96
+const wr = document.getElementById('walk-right')
+for (let f = 0; f < 8; f++) wr.appendChild(makeSprite(f*48, 0, 48, 96, `f${f}`))
+
+// Walk left: row 1 (y=96), 8 frames of 48×96
+const wl = document.getElementById('walk-left')
+for (let f = 0; f < 8; f++) wl.appendChild(makeSprite(f*48, 96, 48, 96, `f${f}`))
+
+// Sleep: row 2 (y=192), 96×96
+const sl = document.getElementById('sleep')
+sl.appendChild(makeSprite(0, 192, 96, 96, 'sleep'))
+</script>
+</body>
+</html>
