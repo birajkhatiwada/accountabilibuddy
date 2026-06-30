@@ -237,6 +237,35 @@ export default function MemberProfile() {
 
   // ── logging helpers ────────────────────────────────────────────────────────
 
+  // After any log save, recompute and store daily cumulative % on the entry doc.
+  // Home chart reads entry.weekProgress directly instead of recomputing.
+  const saveWeekProgress = async (updatedLogs) => {
+    if (!entry?.id || !entry?.goalItems?.length) return
+    const goals = entry.goalItems
+    const progress = {}
+    weekDays.forEach((day, i) => {
+      const daysUpTo = weekDays.slice(0, i + 1)
+      const scores = goals.map(g => {
+        if (g.type === 'habit') {
+          const checked = daysUpTo.filter(d => updatedLogs[dateKey(d)]?.habits?.[g.text]).length
+          return checked / 7
+        }
+        if (g.subGoals?.length > 0) {
+          const ratios = g.subGoals.map(sg => {
+            const k = `${g.text}::${sg.text}`
+            const done = daysUpTo.reduce((s, d) => s + (Number(updatedLogs[dateKey(d)]?.counts?.[k]) || 0), 0)
+            return Math.min(1, done / (Number(sg.target) || 1))
+          })
+          return ratios.reduce((s, r) => s + r, 0) / ratios.length
+        }
+        const done = daysUpTo.reduce((s, d) => s + (Number(updatedLogs[dateKey(d)]?.counts?.[g.text]) || 0), 0)
+        return Math.min(1, done / (Number(g.target) || 1))
+      })
+      progress[dateKey(day)] = Math.round((scores.reduce((s, v) => s + v, 0) / scores.length) * 100)
+    })
+    await updateDoc(doc(db, 'entries', entry.id), { weekProgress: progress })
+  }
+
   const getDayLog = (key) => logs[key] || {}
 
   const toggleHabit = async (goalText) => {
@@ -244,7 +273,9 @@ export default function MemberProfile() {
     const current = getDayLog(selectedDay)
     const habits = { ...(current.habits || {}) }
     habits[goalText] = !habits[goalText]
-    await setDoc(doc(db, 'entries', entry.id, 'dailyLogs', selectedDay), { ...current, habits })
+    const updated = { ...current, habits }
+    await setDoc(doc(db, 'entries', entry.id, 'dailyLogs', selectedDay), updated)
+    await saveWeekProgress({ ...logs, [selectedDay]: updated })
   }
 
   const setDayCount = (key, value) => {
@@ -255,9 +286,9 @@ export default function MemberProfile() {
     clearTimeout(saveTimers.current[localKey])
     saveTimers.current[localKey] = setTimeout(async () => {
       const current = getDayLog(selectedDay)
-      await setDoc(doc(db, 'entries', entry.id, 'dailyLogs', selectedDay), {
-        ...current, counts: { ...(current.counts || {}), [key]: newVal },
-      })
+      const updated = { ...current, counts: { ...(current.counts || {}), [key]: newVal } }
+      await setDoc(doc(db, 'entries', entry.id, 'dailyLogs', selectedDay), updated)
+      await saveWeekProgress({ ...logs, [selectedDay]: updated })
     }, 300)
   }
 
@@ -269,9 +300,9 @@ export default function MemberProfile() {
     clearTimeout(saveTimers.current[localKey])
     saveTimers.current[localKey] = setTimeout(async () => {
       const current = getDayLog(selectedDay)
-      await setDoc(doc(db, 'entries', entry.id, 'dailyLogs', selectedDay), {
-        ...current, totals: { ...(current.totals || {}), [key]: newVal },
-      })
+      const updated = { ...current, totals: { ...(current.totals || {}), [key]: newVal } }
+      await setDoc(doc(db, 'entries', entry.id, 'dailyLogs', selectedDay), updated)
+      await saveWeekProgress({ ...logs, [selectedDay]: updated })
     }, 300)
   }
 
