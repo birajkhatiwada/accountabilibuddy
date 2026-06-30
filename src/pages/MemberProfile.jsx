@@ -19,30 +19,33 @@ import catAtlasWhite  from '../assets/cat-atlas-white.png'
 export const CAT_ATLASES = [catAtlasOrange, catAtlasDark, catAtlasWhite]
 export const CAT_LABELS  = ['Orange', 'Dark', 'White']
 
-// Atlas: 864×1056px (9 cols × 11 rows), built at 3× source (96px per cell).
+// Atlas: 1056×1248px (11 cols × 13 rows), built at 3× source (96px per cell).
 // Displayed at SCALE=½ → 48×48 per frame.
 const SCALE   = 1 / 2
-const ATLAS_W = Math.round(864 * SCALE)   // 432
-const ATLAS_H = Math.round(1056 * SCALE)  // 528
+const ATLAS_W = Math.round(1056 * SCALE)  // 528
+const ATLAS_H = Math.round(1248 * SCALE)  // 624
 const FRAME_W = Math.round(96 * SCALE)    // 48
 const FRAME_H = Math.round(96 * SCALE)    // 48
 
 // Atlas row layout:
 // 0=walk-right  1=walk-left
-// 2=sleep4-L    3=sleep4-R   (flat lying, directional)
-// 4=sleep1-L    5=sleep1-R   (curled, directional)
-// 6=meow-sit    7=yawn-sit   8=wash-sit
+// 2=sleep4-L    3=sleep4-R   (flat, directional)  ← sleep behaviors (idx 0-1)
+// 4=sleep1-L    5=sleep1-R   (curl, directional)
+// 6=meow-sit    7=yawn-sit   8=wash-sit            ← active rest (idx 2+)
 // 9=yawn-lie    10=wash-lie
+// 11=scratch-L  12=scratch-R (directional)
 const WALK_FRAME_COUNT = 4
 const REST_BEHAVIORS = [
-  { rows: [2, 3], frames: 2, frameMs: 700, zzz: true  }, // sleep flat
-  { rows: [4, 5], frames: 2, frameMs: 700, zzz: true  }, // sleep curl
-  { rows: [6],    frames: 3, frameMs: 220, zzz: false }, // meow
-  { rows: [7],    frames: 8, frameMs: 150, zzz: false }, // yawn sitting
-  { rows: [8],    frames: 9, frameMs: 130, zzz: false }, // wash sitting
-  { rows: [9],    frames: 8, frameMs: 150, zzz: false }, // yawn lying
-  { rows: [10],   frames: 7, frameMs: 130, zzz: false }, // wash lying
+  { rows: [2, 3],   frames: 2,  frameMs: 700, zzz: true  }, // 0 sleep flat
+  { rows: [4, 5],   frames: 2,  frameMs: 700, zzz: true  }, // 1 sleep curl
+  { rows: [6],      frames: 3,  frameMs: 220, zzz: false }, // 2 meow
+  { rows: [7],      frames: 8,  frameMs: 150, zzz: false }, // 3 yawn sitting
+  { rows: [8],      frames: 9,  frameMs: 130, zzz: false }, // 4 wash sitting
+  { rows: [9],      frames: 8,  frameMs: 150, zzz: false }, // 5 yawn lying
+  { rows: [10],     frames: 7,  frameMs: 130, zzz: false }, // 6 wash lying
+  { rows: [11, 12], frames: 11, frameMs: 100, zzz: false }, // 7 scratch (directional)
 ]
+const SLEEP_COUNT = 2 // first N behaviors are sleep
 
 function CatProgressBar({ pct, atlasUrl }) {
   const [isWalking, setIsWalking]       = useState(false)
@@ -58,7 +61,8 @@ function CatProgressBar({ pct, atlasUrl }) {
       setIsWalking(true)
       clearTimeout(timerRef.current)
       timerRef.current = setTimeout(() => {
-        setBehaviorIdx(Math.floor(Math.random() * REST_BEHAVIORS.length))
+        // Pick a random active-rest behavior (not sleep)
+        setBehaviorIdx(SLEEP_COUNT + Math.floor(Math.random() * (REST_BEHAVIORS.length - SLEEP_COUNT)))
         setIsWalking(false)
       }, 750)
       prevRef.current = pct
@@ -68,10 +72,30 @@ function CatProgressBar({ pct, atlasUrl }) {
 
   useEffect(() => {
     setFrame(0)
-    const b     = REST_BEHAVIORS[behaviorIdx]
-    const count = isWalking ? WALK_FRAME_COUNT : b.frames
-    const ms    = isWalking ? 120 : b.frameMs
-    const id    = setInterval(() => setFrame(f => (f + 1) % count), ms)
+    if (isWalking) {
+      const id = setInterval(() => setFrame(f => (f + 1) % WALK_FRAME_COUNT), 120)
+      return () => clearInterval(id)
+    }
+    const b = REST_BEHAVIORS[behaviorIdx]
+    if (b.zzz) {
+      // Sleep: loop forever
+      const id = setInterval(() => setFrame(f => (f + 1) % b.frames), b.frameMs)
+      return () => clearInterval(id)
+    }
+    // Active rest: play 2–3 cycles then transition to a sleep behavior
+    const targetCycles = 2 + Math.floor(Math.random() * 2)
+    let localFrame = 0, cycles = 0
+    const id = setInterval(() => {
+      localFrame = (localFrame + 1) % b.frames
+      setFrame(localFrame)
+      if (localFrame === 0) {
+        cycles++
+        if (cycles >= targetCycles) {
+          clearInterval(id)
+          setBehaviorIdx(Math.floor(Math.random() * SLEEP_COUNT))
+        }
+      }
+    }, b.frameMs)
     return () => clearInterval(id)
   }, [isWalking, behaviorIdx])
 
