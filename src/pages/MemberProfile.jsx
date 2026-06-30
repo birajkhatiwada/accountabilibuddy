@@ -16,22 +16,19 @@ import catAtlasOrange from '../assets/cat-atlas.png'
 import catAtlasDark   from '../assets/cat-atlas-dark.png'
 import catAtlasWhite  from '../assets/cat-atlas-white.png'
 
-const CAT_ATLASES = [catAtlasOrange, catAtlasDark, catAtlasWhite]
-const pickAtlas = (name = '') => {
-  const hash = [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) & 0xffff, 0)
-  return CAT_ATLASES[hash % CAT_ATLASES.length]
-}
+export const CAT_ATLASES = [catAtlasOrange, catAtlasDark, catAtlasWhite]
+export const CAT_LABELS  = ['Orange', 'Dark', 'White']
 
-// Atlas is 384×288 (built at 3×). SCALE controls display size.
-const SCALE = 1 / 2        // 1.5× source → 48×48 per frame
-const ATLAS_W = Math.round(384 * SCALE)   // 192
-const ATLAS_H = Math.round(288 * SCALE)   // 144
-const WALK_W  = Math.round(96 * SCALE)    // 48
-const WALK_H  = Math.round(96 * SCALE)    // 48
-const SLEEP_W = WALK_W, SLEEP_H = WALK_H
+// Atlas: 4 rows (walk-right, walk-left, sleep-left, sleep-right), 4 cols, built at 3×.
+// Display at SCALE × 3× source = 1.5× source → 48×48 per frame.
+const SCALE    = 1 / 2
+const ATLAS_W  = Math.round(384 * SCALE)  // 192
+const ATLAS_H  = Math.round(384 * SCALE)  // 192  (4 rows × 96px × SCALE)
+const FRAME_W  = Math.round(96 * SCALE)   // 48
+const FRAME_H  = Math.round(96 * SCALE)   // 48
 const WALK_FRAME_COUNT = 4
 
-function CatProgressBar({ pct, name }) {
+function CatProgressBar({ pct, atlasUrl }) {
   const [isWalking, setIsWalking] = useState(false)
   const [facingRight, setFacingRight] = useState(true)
   const [frame, setFrame] = useState(0)
@@ -64,11 +61,12 @@ function CatProgressBar({ pct, name }) {
       ? 'linear-gradient(to right,#fbbf24,#f97316)'
       : 'linear-gradient(to right,#a78bfa,#8b5cf6)'
 
-  const atlas = pickAtlas(name)
-  const catW = isWalking ? WALK_W : SLEEP_W
-  const catH = isWalking ? WALK_H : SLEEP_H
-  const bgX  = isWalking ? frame * WALK_W : 0
-  const bgY  = isWalking ? (facingRight ? 0 : WALK_H) : WALK_H * 2
+  // Rows: 0=walk-right, 1=walk-left, 2=sleep-left, 3=sleep-right
+  const bgRow = isWalking
+    ? (facingRight ? 0 : 1)
+    : (facingRight ? 3 : 2)
+  const bgX = isWalking ? frame * FRAME_W : 0
+  const bgY = bgRow * FRAME_H
 
   return (
     <div className="w-full mt-3">
@@ -94,9 +92,9 @@ function CatProgressBar({ pct, name }) {
           )}
 
           <div style={{
-            width: catW,
-            height: catH,
-            backgroundImage: `url(${atlas})`,
+            width: FRAME_W,
+            height: FRAME_H,
+            backgroundImage: `url(${atlasUrl})`,
             backgroundSize: `${ATLAS_W}px ${ATLAS_H}px`,
             backgroundPosition: `-${bgX}px -${bgY}px`,
             backgroundRepeat: 'no-repeat',
@@ -836,7 +834,38 @@ export default function MemberProfile() {
               const done = Object.values(logs).reduce((s, d) => s + (Number(d.counts?.[g.text]) || 0), 0)
               return sum + Math.min(1, done / (Number(g.target) || 1))
             }, 0) / myGoals.length
-            return <CatProgressBar pct={pct} name={name} />
+            const catIdx = typeof entry?.catColor === 'number' ? entry.catColor : 0
+            const atlasUrl = CAT_ATLASES[catIdx]
+            return (
+              <div>
+                <CatProgressBar pct={pct} atlasUrl={atlasUrl} />
+                {isOwner && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold">Cat</span>
+                    {CAT_ATLASES.map((a, i) => (
+                      <button key={i} onClick={async () => {
+                        if (!entry?.id) return
+                        await updateDoc(doc(db, 'entries', entry.id), { catColor: i })
+                      }}
+                        className={`relative w-8 h-8 rounded-lg overflow-hidden border-2 transition-all ${catIdx === i ? 'border-emerald-400 scale-110' : 'border-zinc-300 dark:border-zinc-700 opacity-60 hover:opacity-100'}`}
+                        title={CAT_LABELS[i]}
+                      >
+                        <div style={{
+                          width: FRAME_W, height: FRAME_H,
+                          backgroundImage: `url(${a})`,
+                          backgroundSize: `${ATLAS_W}px ${ATLAS_H}px`,
+                          backgroundPosition: `0px -${FRAME_H * 2}px`,
+                          backgroundRepeat: 'no-repeat',
+                          imageRendering: 'pixelated',
+                          transform: `scale(${32/FRAME_W})`,
+                          transformOrigin: 'top left',
+                        }} />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
           })()}
         </div>
       </div>
