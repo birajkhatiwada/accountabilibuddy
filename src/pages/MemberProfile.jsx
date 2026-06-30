@@ -29,50 +29,104 @@ function CatProgressBar({ pct }) {
   }, [pct])
 
   const pctRound = Math.round(pct * 100)
-  const clampedLeft = Math.min(Math.max(pctRound, 4), 96)
+  const clampedLeft = Math.min(Math.max(pctRound, 9), 91)
+  const trackColor = pct >= 1
+    ? 'linear-gradient(to right,#34d399,#2dd4bf)'
+    : pct >= 0.5
+      ? 'linear-gradient(to right,#fbbf24,#f97316)'
+      : 'linear-gradient(to right,#a78bfa,#8b5cf6)'
 
   return (
-    <div className="w-full mt-2">
-      <div className="flex items-center justify-between mb-1.5">
+    <div className="w-full mt-3">
+      <div className="flex items-center justify-between mb-1">
         <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">This week</span>
         <span className="text-xs font-black text-zinc-700 dark:text-zinc-200">{pctRound}%</span>
       </div>
 
-      {/* Track */}
-      <div className="relative h-10">
-        <div className="absolute top-1/2 -translate-y-1/2 w-full h-2.5 bg-zinc-200 dark:bg-zinc-700/70 rounded-full overflow-hidden">
-          <div
-            className="h-full rounded-full transition-all duration-700"
-            style={{
-              width: `${pctRound}%`,
-              background: pct >= 1
-                ? 'linear-gradient(to right, #34d399, #2dd4bf)'
-                : pct >= 0.5
-                  ? 'linear-gradient(to right, #fbbf24, #f97316)'
-                  : 'linear-gradient(to right, #a78bfa, #8b5cf6)',
-            }}
-          />
+      <div className="relative h-16">
+        {/* Ground track */}
+        <div className="absolute bottom-0 w-full h-2.5 bg-zinc-200 dark:bg-zinc-700/70 rounded-full overflow-hidden">
+          <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pctRound}%`, background: trackColor }} />
         </div>
 
         {/* Cat */}
         <div
-          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 transition-all duration-700 select-none"
-          style={{ left: `${clampedLeft}%` }}
+          className="absolute transition-all duration-700 select-none"
+          style={{ left: `${clampedLeft}%`, bottom: '6px', transform: 'translateX(-50%)' }}
         >
-          <span
-            className={`text-2xl inline-block ${isWalking ? 'cat-walking' : 'cat-sleeping'}`}
-            style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.25))' }}
-          >
-            🐱
-          </span>
-
-          {/* Floating zzz when sleeping */}
+          {/* ZZZ — only when sleeping */}
           {!isWalking && (
-            <span className="absolute pointer-events-none" style={{ top: '-10px', right: '-6px', lineHeight: 1 }}>
-              <span className="zzz-1 absolute text-[9px] font-black text-zinc-400 dark:text-zinc-500">z</span>
-              <span className="zzz-2 absolute text-[7px] font-black text-zinc-300 dark:text-zinc-600" style={{ left: '6px', top: '-4px' }}>z</span>
-            </span>
+            <div className="absolute pointer-events-none" style={{ top: '-10px', right: '-4px' }}>
+              <span className="zzz-1 absolute text-[10px] font-black text-zinc-400 dark:text-zinc-500">z</span>
+              <span className="zzz-2 absolute text-[8px] font-black text-zinc-300 dark:text-zinc-600" style={{ left: '8px', top: '-5px' }}>z</span>
+            </div>
           )}
+
+          <svg viewBox="0 0 72 44" width="72" height="44" overflow="visible" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.18))' }}>
+            {/* Tail — behind body */}
+            <g className={isWalking ? 'cat-tail-w' : 'cat-tail-i'}>
+              <path d="M 57 26 C 66 18 70 10 63 6" stroke="#d4804a" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+            </g>
+
+            {/* Body + head group bobs while walking */}
+            <g className={isWalking ? 'cat-bob' : ''}>
+              {/* Body */}
+              <g className={!isWalking ? 'cat-breathe' : ''}>
+                <ellipse cx="38" cy="26" rx="20" ry="11" fill="#f0a060" />
+              </g>
+
+              {/* Head */}
+              <circle cx="16" cy="20" r="12" fill="#f0a060" />
+
+              {/* Ears */}
+              <polygon points="7,13 11,4 17,13"  fill="#f0a060" />
+              <polygon points="15,13 21,4 26,13" fill="#f0a060" />
+              <polygon points="8,13 11,7 16,13"  fill="#e87090" />
+              <polygon points="16,13 21,7 25,13" fill="#e87090" />
+
+              {/* Eyes */}
+              {isWalking ? (
+                <>
+                  <ellipse cx="12" cy="19" rx="2.3" ry="2.3" fill="#1e1e1e" />
+                  <ellipse cx="21" cy="19" rx="2.3" ry="2.3" fill="#1e1e1e" />
+                  <circle cx="12.9" cy="18.1" r="0.75" fill="white" />
+                  <circle cx="21.9" cy="18.1" r="0.75" fill="white" />
+                </>
+              ) : (
+                <>
+                  <path d="M 9 20 Q 12 16.5 15 20" stroke="#1e1e1e" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+                  <path d="M 18 20 Q 21 16.5 24 20" stroke="#1e1e1e" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+                </>
+              )}
+
+              {/* Nose */}
+              <polygon points="15,24 17,24 16,26.5" fill="#e87090" />
+              {/* Mouth */}
+              <path d="M 13.5 26.5 Q 16 29 18.5 26.5" stroke="#c05070" strokeWidth="1" fill="none" strokeLinecap="round" />
+              {/* Whiskers */}
+              <line x1="4"  y1="22" x2="13" y2="23" stroke="#bbb" strokeWidth="0.8" />
+              <line x1="4"  y1="25" x2="13" y2="25" stroke="#bbb" strokeWidth="0.8" />
+              <line x1="19" y1="23" x2="28" y2="22" stroke="#bbb" strokeWidth="0.8" />
+              <line x1="19" y1="25" x2="28" y2="25" stroke="#bbb" strokeWidth="0.8" />
+
+              {/* Front-left leg (phase A) */}
+              <g className={`cat-leg-group ${isWalking ? 'cat-leg-a' : ''}`}>
+                <rect x="23" y="35" width="6" height="10" rx="3" fill="#e0895a" />
+              </g>
+              {/* Front-right leg (phase B) */}
+              <g className={`cat-leg-group ${isWalking ? 'cat-leg-b' : ''}`}>
+                <rect x="31" y="35" width="6" height="10" rx="3" fill="#e0895a" />
+              </g>
+              {/* Back-left leg (phase B — diagonal gait) */}
+              <g className={`cat-leg-group ${isWalking ? 'cat-leg-b' : ''}`}>
+                <rect x="42" y="35" width="6" height="10" rx="3" fill="#e0895a" />
+              </g>
+              {/* Back-right leg (phase A) */}
+              <g className={`cat-leg-group ${isWalking ? 'cat-leg-a' : ''}`}>
+                <rect x="50" y="35" width="6" height="10" rx="3" fill="#e0895a" />
+              </g>
+            </g>
+          </svg>
         </div>
       </div>
     </div>
