@@ -257,7 +257,8 @@ export default function Home() {
       Object.values(log.counts || {}).some(v => v > 0) ||
       Object.values(log.totals || {}).some(v => v > 0))
 
-  // Per-member cumulative goal progress per day this week (for multi-line chart)
+  // Per-member daily goal completion per day this week (for multi-line chart)
+  // Each point = % of goals where something was logged that day
   const getMemberDailyProgress = (name) => {
     const e = getEntry(name)
     if (!e?.goalItems?.length) return []
@@ -266,23 +267,24 @@ export default function Home() {
     const today = new Date(); today.setHours(23, 59, 59, 0)
     return weekDays
       .filter(day => day <= today)
-      .map((_, dayIdx) => {
-        const daysUpTo = weekDays.slice(0, dayIdx + 1)
+      .map(day => {
+        const key = day.toISOString().split('T')[0]
+        const log = logs[key] || {}
         const progPerGoal = goals.map(g => {
           if (g.type === 'habit') {
-            const checked = daysUpTo.filter(d => logs[d.toISOString().split('T')[0]]?.habits?.[g.text]).length
-            return checked / 7
+            return log.habits?.[g.text] ? 1 : 0
           }
           if (g.subGoals?.length > 0) {
             const ratios = g.subGoals.map(sg => {
               const k = `${g.text}::${sg.text}`
-              const done = daysUpTo.reduce((s, d) => s + (Number(logs[d.toISOString().split('T')[0]]?.counts?.[k]) || 0), 0)
-              return Math.min(1, done / (Number(sg.target) || 1))
+              const done = Number(log.counts?.[k]) || 0
+              // daily contribution = done / (target / 7), capped at 1
+              return Math.min(1, done / ((Number(sg.target) || 7) / 7))
             })
             return ratios.reduce((s, r) => s + r, 0) / ratios.length
           }
-          const done = daysUpTo.reduce((s, d) => s + (Number(logs[d.toISOString().split('T')[0]]?.counts?.[g.text]) || 0), 0)
-          return Math.min(1, done / (Number(g.target) || 1))
+          const done = Number(log.counts?.[g.text]) || 0
+          return g.target ? Math.min(1, done / ((Number(g.target)) / 7)) : (done > 0 ? 1 : 0)
         })
         return progPerGoal.reduce((s, v) => s + v, 0) / progPerGoal.length
       })
