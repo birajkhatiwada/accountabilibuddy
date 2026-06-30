@@ -409,12 +409,44 @@ export default function Home() {
           </div>
 
           {/* Goals this week */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide px-1">This week's goals</p>
             {members.map(name => {
               const e = getEntry(name)
               const color = getAvatarColor(name, members)
+              const hex = getAvatarHex(name, members)
               const streak = getStreak(name)
+              const logs = e ? (memberLogs[e.id] || {}) : {}
+
+              // Overall completion % across all goals
+              const overallPct = e?.goalItems?.length
+                ? e.goalItems.reduce((sum, g) => sum + getGoalProgress(e.id, g).pct, 0) / e.goalItems.length
+                : null
+
+              // Per-day activity score (0–1) for the 7 days of this week
+              const dayScores = weekDays.map(day => {
+                const key = day.toISOString().split('T')[0]
+                const log = logs[key]
+                if (!log || !e?.goalItems?.length) return null
+                const goalScores = e.goalItems.map(g => {
+                  if (g.type === 'habit') return log.habits?.[g.text] ? 1 : 0
+                  if (g.subGoals?.length > 0) {
+                    const ratios = g.subGoals.map(sg => {
+                      const k = `${g.text}::${sg.text}`
+                      const done = Number(log.counts?.[k]) || 0
+                      return Math.min(1, done / (Number(sg.target) || 1))
+                    })
+                    return ratios.reduce((s, r) => s + r, 0) / ratios.length
+                  }
+                  const done = Number(log.counts?.[g.text]) || 0
+                  return g.target ? Math.min(1, done / Number(g.target)) : (done > 0 ? 1 : 0)
+                })
+                return goalScores.reduce((s, v) => s + v, 0) / goalScores.length
+              })
+
+              const isToday = (d) => d.toISOString().split('T')[0] === todayKey
+              const isPast = (d) => d.toISOString().split('T')[0] <= todayKey
+
               return (
                 <div
                   key={name}
@@ -422,89 +454,95 @@ export default function Home() {
                   role="button"
                   tabIndex={0}
                   onKeyDown={ev => ev.key === 'Enter' && navigate(`/${sessionId}/member/${encodeURIComponent(name)}`)}
-                  className="flex gap-3 px-2 py-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/60 cursor-pointer transition-colors"
+                  className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-3 cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
                 >
-                  {/* Avatar */}
-                  <div className="relative shrink-0">
-                    <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${color} flex items-center justify-center`}>
-                      {avatars[name]
-                        ? <span className="text-2xl">{avatars[name]}</span>
-                        : <span className="text-white font-black text-lg">{name[0].toUpperCase()}</span>
-                      }
+                  {/* Top row: avatar + name + ring */}
+                  <div className="flex items-center gap-3">
+                    <div className="relative shrink-0">
+                      <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${color} flex items-center justify-center`}>
+                        {avatars[name]
+                          ? <span className="text-xl">{avatars[name]}</span>
+                          : <span className="text-white font-black text-base">{name[0].toUpperCase()}</span>
+                        }
+                      </div>
+                      {(e?.status === 'completed' || e?.status === 'failed' || !e) && (
+                        <span className="absolute -bottom-0.5 -right-0.5 text-xs leading-none">
+                          {e?.status === 'completed' ? '✅' : e?.status === 'failed' ? '❌' : '💤'}
+                        </span>
+                      )}
                     </div>
-                    {(e?.status === 'completed' || e?.status === 'failed' || !e) && (
-                      <span className="absolute -bottom-0.5 -right-0.5 text-sm leading-none">
-                        {e?.status === 'completed' ? '✅' : e?.status === 'failed' ? '❌' : '💤'}
-                      </span>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className={`font-bold text-sm leading-tight ${!e ? 'text-zinc-400' : 'text-zinc-900 dark:text-white'}`}>{nicknames[name] || name}</p>
+                        {streak >= 2 && <span className="text-[10px] text-zinc-400 dark:text-zinc-500">🔥 {streak}w</span>}
+                        {!e && <span className="text-[10px] text-zinc-400 italic">no goals yet</span>}
+                      </div>
+                      {e?.goalItems?.length > 0 && (
+                        <p className="text-[10px] text-zinc-400 mt-0.5">{e.goalItems.length} goal{e.goalItems.length !== 1 ? 's' : ''}</p>
+                      )}
+                    </div>
+
+                    {/* Completion ring */}
+                    {overallPct !== null && (
+                      <div className="relative w-10 h-10 shrink-0">
+                        <svg width="40" height="40" viewBox="0 0 40 40" className="-rotate-90">
+                          <circle cx="20" cy="20" r="16" fill="none" stroke="currentColor" strokeWidth="4" className="text-zinc-200 dark:text-zinc-700" />
+                          <circle cx="20" cy="20" r="16" fill="none" stroke={overallPct >= 1 ? '#34d399' : overallPct >= 0.5 ? '#fbbf24' : hex}
+                            strokeWidth="4" strokeLinecap="round"
+                            strokeDasharray={`${Math.round(overallPct * 100.53)} 100.53`} />
+                        </svg>
+                        <span className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-zinc-700 dark:text-zinc-200">
+                          {Math.round((overallPct ?? 0) * 100)}%
+                        </span>
+                      </div>
                     )}
                   </div>
 
-                  {/* Right content */}
-                  <div className="flex-1 min-w-0 space-y-1.5">
-                    {/* Name + streak */}
-                    <div className="flex items-baseline gap-2">
-                      <p className={`font-bold text-sm leading-tight ${!e ? 'text-zinc-400' : 'text-zinc-900 dark:text-white'}`}>{nicknames[name] || name}</p>
-                      {streak >= 2 && <span className="text-[10px] text-zinc-400 dark:text-zinc-500">🔥 {streak}w</span>}
-                      {!e && <span className="text-[10px] text-zinc-400 italic">no goals yet</span>}
+                  {/* 7-day bar chart */}
+                  {e?.goalItems?.length > 0 && (
+                    <div className="mt-3">
+                      <div className="flex items-end gap-1 h-8">
+                        {weekDays.map((day, i) => {
+                          const score = dayScores[i]
+                          const past = isPast(day)
+                          const today = isToday(day)
+                          const barH = score != null && past ? Math.max(4, Math.round(score * 32)) : 4
+                          return (
+                            <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                              <div className="w-full rounded-sm transition-all" style={{
+                                height: barH,
+                                backgroundColor: !past
+                                  ? 'transparent'
+                                  : score === null || score === 0
+                                    ? (today ? '#fbbf24' : '#e4e4e7')
+                                    : score >= 1
+                                      ? '#34d399'
+                                      : hex,
+                                border: !past ? '1px dashed #d4d4d8' : 'none',
+                                opacity: !past ? 0.4 : 1,
+                              }} />
+                            </div>
+                          )
+                        })}
+                      </div>
+                      <div className="flex gap-1 mt-1">
+                        {['M','T','W','T','F','S','S'].map((d, i) => (
+                          <div key={i} className={`flex-1 text-center text-[9px] font-bold ${isToday(weekDays[i]) ? 'text-amber-400' : 'text-zinc-400 dark:text-zinc-600'}`}>{d}</div>
+                        ))}
+                      </div>
                     </div>
+                  )}
 
-                    {/* Goals */}
-                    {e?.goalItems?.length > 0 && e.goalItems.map((g, i) => {
-                      const logs = memberLogs[e.id] || {}
-                      const prog = getGoalProgress(e?.id, g)
-                      if (g.subGoals?.length > 0) {
-                        return (
-                          <div key={i} className="space-y-1">
-                            <p className="text-xs text-zinc-600 dark:text-zinc-400 font-medium truncate">{g.text}</p>
-                            {g.subGoals.map((sg, si) => {
-                              const k = `${g.text}::${sg.text}`
-                              const done = Object.values(logs).reduce((s, d) => s + (Number(d.counts?.[k]) || 0), 0)
-                              const tgt = Number(sg.target) || null
-                              const pct = tgt ? Math.min(1, done / tgt) : null
-                              return (
-                                <div key={si} className="flex items-center gap-2 pl-2">
-                                  <span className="text-[10px] text-zinc-400 flex-1 truncate">{sg.text}</span>
-                                  <span className="text-[10px] text-zinc-400 shrink-0">{tgt ? `${done}/${tgt}` : done}</span>
-                                  {pct !== null && (
-                                    <div className="w-12 bg-zinc-200 dark:bg-zinc-700 rounded-full h-1 overflow-hidden shrink-0">
-                                      <div className={`h-full rounded-full ${pct >= 1 ? 'bg-emerald-400' : 'bg-zinc-400'}`} style={{ width: `${Math.round(pct * 100)}%` }} />
-                                    </div>
-                                  )}
-                                </div>
-                              )
-                            })}
-                          </div>
-                        )
-                      }
-                      const label = g.type === 'habit'
-                        ? `${prog.done}/7`
-                        : prog.total ? `${prog.done}/${prog.total}` : `${prog.done}`
-                      return (
-                        <div key={i} className="space-y-0.5">
-                          <span className="text-xs text-zinc-600 dark:text-zinc-400 block truncate">{g.text}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] text-zinc-400 font-medium shrink-0">{label}</span>
-                            {prog.pct !== null && (
-                              <div className="flex-1 bg-zinc-200 dark:bg-zinc-700 rounded-full h-1 overflow-hidden">
-                                <div className={`h-full rounded-full transition-all ${prog.pct >= 1 ? 'bg-emerald-400' : prog.pct >= 0.5 ? 'bg-amber-400' : 'bg-zinc-400'}`}
-                                  style={{ width: `${Math.round(prog.pct * 100)}%` }} />
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )
-                    })}
-
-                    {/* Log today */}
-                    {e?.status === 'active' && e?.goalItems?.length > 0 && e?.name?.toLowerCase() === user?.displayName?.toLowerCase() && (
-                      <button
-                        onClick={ev => { ev.stopPropagation(); setQuickLogEntry(e) }}
-                        className="mt-1 px-3 py-1 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-bold transition-all"
-                      >
-                        + Log today
-                      </button>
-                    )}
-                  </div>
+                  {/* Log today button */}
+                  {e?.status === 'active' && e?.goalItems?.length > 0 && e?.name?.toLowerCase() === user?.displayName?.toLowerCase() && (
+                    <button
+                      onClick={ev => { ev.stopPropagation(); setQuickLogEntry(e) }}
+                      className="mt-3 w-full px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-bold transition-all"
+                    >
+                      + Log today
+                    </button>
+                  )}
                 </div>
               )
             })}
