@@ -15,14 +15,15 @@ import confetti from 'canvas-confetti'
 import catWalk from '../assets/cat-walk.png'
 
 // Source: 352×1696, cells are 16×32 px (16 wide, 2 pixel-rows tall per frame).
-// Render at integer 2× via CSS scale to avoid sub-pixel bleed.
-const FRAME_W = 16        // source px per frame
-const FRAME_H = 32        // source px per frame (2 × 16-px rows)
-const CAT_SCALE = 2       // CSS scale factor (integer = no bleed)
-// Source y positions for each animation row
-const WALK_RIGHT_SRC_Y = 192   // pixel row 12 × 16
-const WALK_LEFT_SRC_Y  = 224   // pixel row 14 × 16
-const SLEEP_SRC_Y      = 384   // pixel row 24 × 16
+// Display at 3× by setting background-size to 3× source — integer math, no bleed.
+const DISP_W = 48         // 16 × 3
+const DISP_H = 96         // 32 × 3
+const BG_W   = 1056       // 352 × 3
+const BG_H   = 5088       // 1696 × 3
+// Displayed y offsets (source y × 3)
+const WALK_RIGHT_Y = 576  // 192 × 3
+const WALK_LEFT_Y  = 672  // 224 × 3
+const SLEEP_Y      = 1152 // 384 × 3
 const WALK_FRAME_COUNT = 8
 
 function CatProgressBar({ pct }) {
@@ -58,8 +59,8 @@ function CatProgressBar({ pct }) {
       ? 'linear-gradient(to right,#fbbf24,#f97316)'
       : 'linear-gradient(to right,#a78bfa,#8b5cf6)'
 
-  const srcY = isWalking ? (facingRight ? WALK_RIGHT_SRC_Y : WALK_LEFT_SRC_Y) : SLEEP_SRC_Y
-  const srcX = isWalking ? frame * FRAME_W : 0   // sleep = static frame 0
+  const bgY = isWalking ? (facingRight ? WALK_RIGHT_Y : WALK_LEFT_Y) : SLEEP_Y
+  const bgX = isWalking ? frame * DISP_W : 0   // sleep = static frame 0
 
   return (
     <div className="w-full mt-3">
@@ -68,7 +69,7 @@ function CatProgressBar({ pct }) {
         <span className="text-xs font-black text-zinc-700 dark:text-zinc-200">{pctRound}%</span>
       </div>
 
-      <div className="relative h-20">
+      <div className="relative h-28">
         <div className="absolute bottom-0 w-full h-2.5 bg-zinc-200 dark:bg-zinc-700/70 rounded-full overflow-hidden">
           <div className="h-full rounded-full" style={{ width: `${pctRound}%`, background: trackColor, transition: 'width 0.7s ease' }} />
         </div>
@@ -85,15 +86,13 @@ function CatProgressBar({ pct }) {
           )}
 
           <div style={{
-            width: FRAME_W,
-            height: FRAME_H,
+            width: DISP_W,
+            height: DISP_H,
             backgroundImage: `url(${catWalk})`,
-            backgroundSize: '352px 1696px',
-            backgroundPosition: `-${srcX}px -${srcY}px`,
+            backgroundSize: `${BG_W}px ${BG_H}px`,
+            backgroundPosition: `-${bgX}px -${bgY}px`,
             backgroundRepeat: 'no-repeat',
             imageRendering: 'pixelated',
-            transform: `scale(${CAT_SCALE})`,
-            transformOrigin: 'bottom center',
           }} />
         </div>
       </div>
