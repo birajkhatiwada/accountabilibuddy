@@ -18,7 +18,7 @@ import catAtlas from '../assets/cat-atlas.png'
 // row 1 = walk-left (8×48px), row 2 = sleep (96×96px flat lying cat).
 // All integer coordinates — no guesswork.
 // Atlas is 384×288 (built at 3×). Scale factor controls display size.
-const SCALE = 2 / 3  // display at 2× source instead of 3×
+const SCALE = 1 / 2  // display at 1.5× source
 const ATLAS_W = Math.round(384 * SCALE), ATLAS_H = Math.round(288 * SCALE)  // 256×192
 const WALK_W = Math.round(96 * SCALE), WALK_H = Math.round(96 * SCALE)      // 64×64
 const SLEEP_W = Math.round(96 * SCALE), SLEEP_H = Math.round(96 * SCALE)    // 64×64
@@ -69,7 +69,7 @@ function CatProgressBar({ pct }) {
         <span className="text-xs font-black text-zinc-700 dark:text-zinc-200">{pctRound}%</span>
       </div>
 
-      <div className="relative h-20">
+      <div className="relative h-16">
         <div className="absolute bottom-0 w-full h-2.5 bg-zinc-200 dark:bg-zinc-700/70 rounded-full overflow-hidden">
           <div className="h-full rounded-full" style={{ width: `${pctRound}%`, background: trackColor, transition: 'width 0.7s ease' }} />
         </div>
