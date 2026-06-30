@@ -65,70 +65,86 @@ function CatProgressBar({ pct }) {
             </div>
           )}
 
-          <svg viewBox="0 0 72 44" width="72" height="44" overflow="visible"
-            style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.18))', transform: facingRight ? 'scaleX(-1)' : 'none' }}>
-            {/* Tail — behind body */}
+          <svg viewBox="0 0 80 52" width="80" height="52" overflow="visible"
+            style={{ filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.2))', transform: facingRight ? 'scaleX(-1)' : 'none' }}>
+
+            {/* Tail — drawn first so everything is on top */}
             <g className={isWalking ? 'cat-tail-w' : 'cat-tail-i'}>
-              <path d="M 57 26 C 66 18 70 10 63 6" stroke="#d4804a" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+              <path d="M 62 27 C 73 18 76 8 68 4" stroke="#d07438" strokeWidth="4" fill="none" strokeLinecap="round" />
             </g>
 
-            {/* Body + head group bobs while walking */}
+            {/* Legs — drawn BEFORE body so body covers tops, making them look attached */}
             <g className={isWalking ? 'cat-bob' : ''}>
-              {/* Body */}
-              <g className={!isWalking ? 'cat-breathe' : ''}>
-                <ellipse cx="38" cy="26" rx="20" ry="11" fill="#f0a060" />
+              {/* Back-right (phase A) */}
+              <g className={`cat-leg-group ${isWalking ? 'cat-leg-a' : ''}`}>
+                <rect x="55" y="22" width="7" height="26" rx="3.5" fill="#f0a060" />
+              </g>
+              {/* Back-left (phase B) */}
+              <g className={`cat-leg-group ${isWalking ? 'cat-leg-b' : ''}`}>
+                <rect x="46" y="22" width="7" height="26" rx="3.5" fill="#f0a060" />
+              </g>
+              {/* Front-right (phase B) */}
+              <g className={`cat-leg-group ${isWalking ? 'cat-leg-b' : ''}`}>
+                <rect x="31" y="22" width="7" height="26" rx="3.5" fill="#f0a060" />
+              </g>
+              {/* Front-left (phase A) */}
+              <g className={`cat-leg-group ${isWalking ? 'cat-leg-a' : ''}`}>
+                <rect x="22" y="22" width="7" height="26" rx="3.5" fill="#f0a060" />
               </g>
 
-              {/* Head */}
-              <circle cx="16" cy="20" r="12" fill="#f0a060" />
+              {/* Body — on top of legs, same color so join is seamless */}
+              <g className={!isWalking ? 'cat-breathe' : ''}>
+                <ellipse cx="42" cy="25" rx="22" ry="12" fill="#f0a060" />
+                {/* Belly patch */}
+                <ellipse cx="42" cy="27" rx="13" ry="7" fill="#fac898" opacity="0.55" />
+              </g>
 
-              {/* Ears */}
-              <polygon points="7,13 11,4 17,13"  fill="#f0a060" />
-              <polygon points="15,13 21,4 26,13" fill="#f0a060" />
-              <polygon points="8,13 11,7 16,13"  fill="#e87090" />
-              <polygon points="16,13 21,7 25,13" fill="#e87090" />
+              {/* Ears — before head so head covers their bases */}
+              <polygon points="6,11 11,1 18,11"  fill="#f0a060" />
+              <polygon points="16,11 22,1 28,11" fill="#f0a060" />
+              <polygon points="8,11 11,4 17,11"  fill="#e8608a" />
+              <polygon points="17,11 22,4 27,11" fill="#e8608a" />
+
+              {/* Head */}
+              <circle cx="17" cy="19" r="14" fill="#f0a060" />
 
               {/* Eyes */}
               {isWalking ? (
                 <>
-                  <ellipse cx="12" cy="19" rx="2.3" ry="2.3" fill="#1e1e1e" />
-                  <ellipse cx="21" cy="19" rx="2.3" ry="2.3" fill="#1e1e1e" />
-                  <circle cx="12.9" cy="18.1" r="0.75" fill="white" />
-                  <circle cx="21.9" cy="18.1" r="0.75" fill="white" />
+                  {/* Almond eyes */}
+                  <ellipse cx="12" cy="18" rx="3.2" ry="2.6" fill="#1a1a1a" />
+                  <ellipse cx="22" cy="18" rx="3.2" ry="2.6" fill="#1a1a1a" />
+                  {/* Amber iris */}
+                  <ellipse cx="12" cy="18" rx="2" ry="2.2" fill="#c07820" />
+                  <ellipse cx="22" cy="18" rx="2" ry="2.2" fill="#c07820" />
+                  {/* Slit pupil */}
+                  <ellipse cx="12" cy="18" rx="0.9" ry="2" fill="#111" />
+                  <ellipse cx="22" cy="18" rx="0.9" ry="2" fill="#111" />
+                  {/* Eye shine */}
+                  <circle cx="13.2" cy="16.8" r="0.9" fill="white" />
+                  <circle cx="23.2" cy="16.8" r="0.9" fill="white" />
                 </>
               ) : (
                 <>
-                  <path d="M 9 20 Q 12 16.5 15 20" stroke="#1e1e1e" strokeWidth="1.6" fill="none" strokeLinecap="round" />
-                  <path d="M 18 20 Q 21 16.5 24 20" stroke="#1e1e1e" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+                  {/* Curved closed eyes with lash */}
+                  <path d="M 8.5 19 Q 12 15 15.5 19" stroke="#1a1a1a" strokeWidth="2" fill="none" strokeLinecap="round" />
+                  <path d="M 18.5 19 Q 22 15 25.5 19" stroke="#1a1a1a" strokeWidth="2" fill="none" strokeLinecap="round" />
                 </>
               )}
 
-              {/* Nose */}
-              <polygon points="15,24 17,24 16,26.5" fill="#e87090" />
-              {/* Mouth */}
-              <path d="M 13.5 26.5 Q 16 29 18.5 26.5" stroke="#c05070" strokeWidth="1" fill="none" strokeLinecap="round" />
-              {/* Whiskers */}
-              <line x1="4"  y1="22" x2="13" y2="23" stroke="#bbb" strokeWidth="0.8" />
-              <line x1="4"  y1="25" x2="13" y2="25" stroke="#bbb" strokeWidth="0.8" />
-              <line x1="19" y1="23" x2="28" y2="22" stroke="#bbb" strokeWidth="0.8" />
-              <line x1="19" y1="25" x2="28" y2="25" stroke="#bbb" strokeWidth="0.8" />
+              {/* Nose — small heart shape */}
+              <path d="M 16 23 Q 17 21.5 18 23 Q 17 25 16 23 Z" fill="#e8608a" />
 
-              {/* Front-left leg (phase A) */}
-              <g className={`cat-leg-group ${isWalking ? 'cat-leg-a' : ''}`}>
-                <rect x="23" y="35" width="6" height="10" rx="3" fill="#e0895a" />
-              </g>
-              {/* Front-right leg (phase B) */}
-              <g className={`cat-leg-group ${isWalking ? 'cat-leg-b' : ''}`}>
-                <rect x="31" y="35" width="6" height="10" rx="3" fill="#e0895a" />
-              </g>
-              {/* Back-left leg (phase B — diagonal gait) */}
-              <g className={`cat-leg-group ${isWalking ? 'cat-leg-b' : ''}`}>
-                <rect x="42" y="35" width="6" height="10" rx="3" fill="#e0895a" />
-              </g>
-              {/* Back-right leg (phase A) */}
-              <g className={`cat-leg-group ${isWalking ? 'cat-leg-a' : ''}`}>
-                <rect x="50" y="35" width="6" height="10" rx="3" fill="#e0895a" />
-              </g>
+              {/* Mouth */}
+              <path d="M 14 25 Q 17 28.5 20 25" stroke="#c04870" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+
+              {/* Whiskers — 3 per side, fanning out */}
+              <line x1="1"  y1="20" x2="11" y2="22" stroke="#ccc" strokeWidth="0.9" />
+              <line x1="1"  y1="23" x2="11" y2="23" stroke="#ccc" strokeWidth="0.9" />
+              <line x1="1"  y1="26" x2="11" y2="24" stroke="#ccc" strokeWidth="0.9" />
+              <line x1="23" y1="22" x2="33" y2="20" stroke="#ccc" strokeWidth="0.9" />
+              <line x1="23" y1="23" x2="33" y2="23" stroke="#ccc" strokeWidth="0.9" />
+              <line x1="23" y1="24" x2="33" y2="26" stroke="#ccc" strokeWidth="0.9" />
             </g>
           </svg>
         </div>
