@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { collection, query, where, onSnapshot, doc, updateDoc, setDoc } from 'firebase/firestore'
 import { db } from '../firebase'
@@ -59,7 +59,7 @@ export default function Home() {
   const [qlLocalCounts, setQlLocalCounts] = useState({})
   const qlSaveTimers = useRef({})
 
-  const entries = allEntries.filter(e => e.weekId === weekId)
+  const entries = useMemo(() => allEntries.filter(e => e.weekId === weekId), [allEntries, weekId])
 
   useEffect(() => {
     if (!sessionId) return
@@ -178,7 +178,7 @@ export default function Home() {
     return e.status // 'active' | 'completed' | 'failed'
   }
 
-  const activeEntries = entries.filter(e => e.status === 'active')
+  const activeEntries = useMemo(() => entries.filter(e => e.status === 'active'), [entries])
 
   const openCloseWeek = () => {
     const initial = {}
@@ -198,28 +198,27 @@ export default function Home() {
     setCloseWeekOpen(false)
   }
 
-  const todayKey = new Date().toISOString().split('T')[0]
-  const potTotal = allEntries.filter(e => e.status === 'failed').length * penalty
-  const doneThisWeek = entries.filter(e => e.status === 'completed').length
-  const activeThisWeek = entries.filter(e => e.status === 'active').length
+  const todayKey = useMemo(() => new Date().toISOString().split('T')[0], [])
+  const potTotal = useMemo(() => allEntries.filter(e => e.status === 'failed').length * penalty, [allEntries, penalty])
+  const doneThisWeek = useMemo(() => entries.filter(e => e.status === 'completed').length, [entries])
+  const activeThisWeek = useMemo(() => entries.filter(e => e.status === 'active').length, [entries])
 
   // Completion rate per member over last 8 weeks
-  const getMemberRate = (name) => {
+  const getMemberRate = useCallback((name) => {
     const relevant = weekHistory.map(wId => getMemberWeekStatus(name, wId)).filter(s => s !== 'none' && s !== 'active')
     if (relevant.length === 0) return null
     return relevant.filter(s => s === 'completed').length / relevant.length
-  }
+  }, [weekHistory, allEntries])
 
   // 7 days of the current week (Mon–Sun) as Date objects
-  const getWeekDays = () => {
+  const weekDays = useMemo(() => {
     const d = new Date(weekId)
     return Array.from({ length: 7 }, (_, i) => {
       const day = new Date(d)
       day.setDate(d.getDate() + i)
       return day
     })
-  }
-  const weekDays = getWeekDays()
+  }, [weekId])
 
   // Compute goal progress from daily logs
   const getGoalProgress = (entryId, goal) => {
@@ -281,20 +280,23 @@ export default function Home() {
       })
   }
 
-  // Build recharts-compatible data array: [{day:'Mon', Name1: 0.4, Name2: 0.7}, ...]
   const DAY_LABELS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
-  const today = new Date(); today.setHours(23,59,59,0)
-  const daysElapsed = weekDays.filter(d => d <= today).length
+  const daysElapsed = useMemo(() => {
+    const today = new Date(); today.setHours(23,59,59,0)
+    return weekDays.filter(d => d <= today).length
+  }, [weekDays])
 
-  const chartData = DAY_LABELS.slice(0, daysElapsed).map((label, dayIdx) => {
-    const point = { day: label }
-    members.forEach(name => {
-      const pts = getMemberDailyProgress(name)
-      const val = pts[dayIdx] ?? 0
-      point[name] = Math.round(val * 100)
+  const chartData = useMemo(() => {
+    return DAY_LABELS.slice(0, daysElapsed).map((label, dayIdx) => {
+      const point = { day: label }
+      members.forEach(name => {
+        const pts = getMemberDailyProgress(name)
+        const val = pts[dayIdx] ?? 0
+        point[name] = Math.round(val * 100)
+      })
+      return point
     })
-    return point
-  })
+  }, [daysElapsed, members, memberLogs, allEntries])
 
   if (loading) return (
     <div className="flex items-center justify-center mt-24">
