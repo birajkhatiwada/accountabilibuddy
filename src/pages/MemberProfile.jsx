@@ -26,7 +26,8 @@ const ATLAS_W  = Math.round(384 * SCALE)  // 192
 const ATLAS_H  = Math.round(384 * SCALE)  // 192  (4 rows × 96px × SCALE)
 const FRAME_W  = Math.round(96 * SCALE)   // 48
 const FRAME_H  = Math.round(96 * SCALE)   // 48
-const WALK_FRAME_COUNT = 4
+const WALK_FRAME_COUNT  = 4
+const SLEEP_FRAME_COUNT = 2
 
 function CatProgressBar({ pct, atlasUrl }) {
   const [isWalking, setIsWalking] = useState(false)
@@ -47,9 +48,10 @@ function CatProgressBar({ pct, atlasUrl }) {
   }, [pct])
 
   useEffect(() => {
-    if (!isWalking) { setFrame(0); return }
     setFrame(0)
-    const id = setInterval(() => setFrame(f => (f + 1) % WALK_FRAME_COUNT), 120)
+    const count = isWalking ? WALK_FRAME_COUNT : SLEEP_FRAME_COUNT
+    const ms    = isWalking ? 120 : 700
+    const id = setInterval(() => setFrame(f => (f + 1) % count), ms)
     return () => clearInterval(id)
   }, [isWalking])
 
@@ -62,11 +64,9 @@ function CatProgressBar({ pct, atlasUrl }) {
       : 'linear-gradient(to right,#a78bfa,#8b5cf6)'
 
   // Rows: 0=walk-right, 1=walk-left, 2=sleep-left, 3=sleep-right
-  const bgRow = isWalking
-    ? (facingRight ? 0 : 1)
-    : (facingRight ? 3 : 2)
-  const bgX = isWalking ? frame * FRAME_W : 0
-  const bgY = bgRow * FRAME_H
+  const bgRow = isWalking ? (facingRight ? 0 : 1) : (facingRight ? 3 : 2)
+  const bgX   = frame * FRAME_W
+  const bgY   = bgRow * FRAME_H
 
   return (
     <div className="w-full mt-3">
@@ -834,38 +834,8 @@ export default function MemberProfile() {
               const done = Object.values(logs).reduce((s, d) => s + (Number(d.counts?.[g.text]) || 0), 0)
               return sum + Math.min(1, done / (Number(g.target) || 1))
             }, 0) / myGoals.length
-            const catIdx = typeof entry?.catColor === 'number' ? entry.catColor : 0
-            const atlasUrl = CAT_ATLASES[catIdx]
-            return (
-              <div>
-                <CatProgressBar pct={pct} atlasUrl={atlasUrl} />
-                {isOwner && (
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold">Cat</span>
-                    {CAT_ATLASES.map((a, i) => (
-                      <button key={i} onClick={async () => {
-                        if (!entry?.id) return
-                        await updateDoc(doc(db, 'entries', entry.id), { catColor: i })
-                      }}
-                        className={`relative w-8 h-8 rounded-lg overflow-hidden border-2 transition-all ${catIdx === i ? 'border-emerald-400 scale-110' : 'border-zinc-300 dark:border-zinc-700 opacity-60 hover:opacity-100'}`}
-                        title={CAT_LABELS[i]}
-                      >
-                        <div style={{
-                          width: FRAME_W, height: FRAME_H,
-                          backgroundImage: `url(${a})`,
-                          backgroundSize: `${ATLAS_W}px ${ATLAS_H}px`,
-                          backgroundPosition: `0px -${FRAME_H * 2}px`,
-                          backgroundRepeat: 'no-repeat',
-                          imageRendering: 'pixelated',
-                          transform: `scale(${32/FRAME_W})`,
-                          transformOrigin: 'top left',
-                        }} />
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )
+            const atlasUrl = CAT_ATLASES[typeof entry?.catColor === 'number' ? entry.catColor : 0]
+            return <CatProgressBar pct={pct} atlasUrl={atlasUrl} />
           })()}
         </div>
       </div>
@@ -1427,6 +1397,30 @@ export default function MemberProfile() {
                       {e}
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* Cat color */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">Cat Color</label>
+                <div className="flex gap-3">
+                  {CAT_ATLASES.map((a, i) => {
+                    const catIdx = typeof entry?.catColor === 'number' ? entry.catColor : 0
+                    return (
+                      <button key={i} onClick={() => entry?.id && updateDoc(doc(db, 'entries', entry.id), { catColor: i })}
+                        className={`flex flex-col items-center gap-1 p-2 rounded-xl border-2 transition-all ${catIdx === i ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-950/30' : 'border-zinc-200 dark:border-zinc-700 opacity-60 hover:opacity-100'}`}>
+                        <div style={{
+                          width: FRAME_W, height: FRAME_H,
+                          backgroundImage: `url(${a})`,
+                          backgroundSize: `${ATLAS_W}px ${ATLAS_H}px`,
+                          backgroundPosition: `0px -${FRAME_H * 2}px`,
+                          backgroundRepeat: 'no-repeat',
+                          imageRendering: 'pixelated',
+                        }} />
+                        <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">{CAT_LABELS[i]}</span>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 
