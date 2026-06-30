@@ -265,7 +265,9 @@ export default function Home() {
       Object.values(log.counts || {}).some(v => v > 0) ||
       Object.values(log.totals || {}).some(v => v > 0))
 
-  // Per-member per-day goal completion (each day is independent, not cumulative)
+  // Per-member cumulative goal progress per day:
+  // Each point = fraction of goals that have had ANY activity from Mon through that day.
+  // Once a goal is touched it stays counted → line only goes up or stays flat, never drops.
   const getMemberDailyProgress = (name) => {
     const e = getEntry(name)
     if (!e?.goalItems?.length) return []
@@ -274,27 +276,15 @@ export default function Home() {
     const today = new Date(); today.setHours(23, 59, 59, 0)
     return weekDays
       .filter(day => day <= today)
-      .map(day => {
-        const key = toLocalKey(day)
-        const log = logs[key] || {}
-        const scores = goals.map(g => {
-          if (g.type === 'habit') {
-            return log.habits?.[g.text] ? 1 : 0
-          }
-          if (g.subGoals?.length > 0) {
-            const ratios = g.subGoals.map(sg => {
-              const k = `${g.text}::${sg.text}`
-              const done = Number(log.counts?.[k]) || 0
-              const dailyTarget = (Number(sg.target) || 7) / 7
-              return Math.min(1, done / dailyTarget)
-            })
-            return ratios.reduce((s, r) => s + r, 0) / ratios.length
-          }
-          const done = Number(log.counts?.[g.text]) || 0
-          const dailyTarget = (Number(g.target) || 7) / 7
-          return Math.min(1, done / dailyTarget)
-        })
-        return scores.reduce((s, v) => s + v, 0) / scores.length
+      .map((_, dayIdx) => {
+        const daysUpTo = weekDays.slice(0, dayIdx + 1)
+        const touched = goals.filter(g => daysUpTo.some(d => {
+          const log = logs[toLocalKey(d)] || {}
+          if (g.type === 'habit') return !!log.habits?.[g.text]
+          if (g.subGoals?.length > 0) return g.subGoals.some(sg => Number(log.counts?.[`${g.text}::${sg.text}`]) > 0)
+          return Number(log.counts?.[g.text]) > 0
+        }))
+        return touched.length / goals.length
       })
   }
 
