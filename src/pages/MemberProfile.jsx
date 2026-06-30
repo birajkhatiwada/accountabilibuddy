@@ -19,21 +19,37 @@ import catAtlasWhite  from '../assets/cat-atlas-white.png'
 export const CAT_ATLASES = [catAtlasOrange, catAtlasDark, catAtlasWhite]
 export const CAT_LABELS  = ['Orange', 'Dark', 'White']
 
-// Atlas: 4 rows (walk-right, walk-left, sleep-left, sleep-right), 4 cols, built at 3×.
-// Display at SCALE × 3× source = 1.5× source → 48×48 per frame.
-const SCALE    = 1 / 2
-const ATLAS_W  = Math.round(384 * SCALE)  // 192
-const ATLAS_H  = Math.round(384 * SCALE)  // 192  (4 rows × 96px × SCALE)
-const FRAME_W  = Math.round(96 * SCALE)   // 48
-const FRAME_H  = Math.round(96 * SCALE)   // 48
-const WALK_FRAME_COUNT  = 4
-const SLEEP_FRAME_COUNT = 2
+// Atlas: 864×1056px (9 cols × 11 rows), built at 3× source (96px per cell).
+// Displayed at SCALE=½ → 48×48 per frame.
+const SCALE   = 1 / 2
+const ATLAS_W = Math.round(864 * SCALE)   // 432
+const ATLAS_H = Math.round(1056 * SCALE)  // 528
+const FRAME_W = Math.round(96 * SCALE)    // 48
+const FRAME_H = Math.round(96 * SCALE)    // 48
+
+// Atlas row layout:
+// 0=walk-right  1=walk-left
+// 2=sleep4-L    3=sleep4-R   (flat lying, directional)
+// 4=sleep1-L    5=sleep1-R   (curled, directional)
+// 6=meow-sit    7=yawn-sit   8=wash-sit
+// 9=yawn-lie    10=wash-lie
+const WALK_FRAME_COUNT = 4
+const REST_BEHAVIORS = [
+  { rows: [2, 3], frames: 2, frameMs: 700, zzz: true  }, // sleep flat
+  { rows: [4, 5], frames: 2, frameMs: 700, zzz: true  }, // sleep curl
+  { rows: [6],    frames: 3, frameMs: 220, zzz: false }, // meow
+  { rows: [7],    frames: 8, frameMs: 150, zzz: false }, // yawn sitting
+  { rows: [8],    frames: 9, frameMs: 130, zzz: false }, // wash sitting
+  { rows: [9],    frames: 8, frameMs: 150, zzz: false }, // yawn lying
+  { rows: [10],   frames: 7, frameMs: 130, zzz: false }, // wash lying
+]
 
 function CatProgressBar({ pct, atlasUrl }) {
-  const [isWalking, setIsWalking] = useState(false)
-  const [facingRight, setFacingRight] = useState(true)
-  const [frame, setFrame] = useState(0)
-  const prevRef = useRef(pct)
+  const [isWalking, setIsWalking]       = useState(false)
+  const [facingRight, setFacingRight]   = useState(true)
+  const [frame, setFrame]               = useState(0)
+  const [behaviorIdx, setBehaviorIdx]   = useState(0)
+  const prevRef  = useRef(pct)
   const timerRef = useRef(null)
 
   useEffect(() => {
@@ -41,7 +57,10 @@ function CatProgressBar({ pct, atlasUrl }) {
       setFacingRight(pct > prevRef.current)
       setIsWalking(true)
       clearTimeout(timerRef.current)
-      timerRef.current = setTimeout(() => setIsWalking(false), 750)
+      timerRef.current = setTimeout(() => {
+        setBehaviorIdx(Math.floor(Math.random() * REST_BEHAVIORS.length))
+        setIsWalking(false)
+      }, 750)
       prevRef.current = pct
     }
     return () => clearTimeout(timerRef.current)
@@ -49,11 +68,12 @@ function CatProgressBar({ pct, atlasUrl }) {
 
   useEffect(() => {
     setFrame(0)
-    const count = isWalking ? WALK_FRAME_COUNT : SLEEP_FRAME_COUNT
-    const ms    = isWalking ? 120 : 700
-    const id = setInterval(() => setFrame(f => (f + 1) % count), ms)
+    const b     = REST_BEHAVIORS[behaviorIdx]
+    const count = isWalking ? WALK_FRAME_COUNT : b.frames
+    const ms    = isWalking ? 120 : b.frameMs
+    const id    = setInterval(() => setFrame(f => (f + 1) % count), ms)
     return () => clearInterval(id)
-  }, [isWalking])
+  }, [isWalking, behaviorIdx])
 
   const pctRound = Math.round(pct * 100)
   const clampedLeft = Math.min(Math.max(pctRound, 9), 91)
@@ -63,10 +83,13 @@ function CatProgressBar({ pct, atlasUrl }) {
       ? 'linear-gradient(to right,#fbbf24,#f97316)'
       : 'linear-gradient(to right,#a78bfa,#8b5cf6)'
 
-  // Rows: 0=walk-right, 1=walk-left, 2=sleep-left, 3=sleep-right
-  const bgRow = isWalking ? (facingRight ? 0 : 1) : (facingRight ? 2 : 3)
-  const bgX   = frame * FRAME_W
-  const bgY   = bgRow * FRAME_H
+  const behavior = REST_BEHAVIORS[behaviorIdx]
+  const bgRow = isWalking
+    ? (facingRight ? 0 : 1)
+    : behavior.rows.length > 1 ? behavior.rows[facingRight ? 0 : 1] : behavior.rows[0]
+  const bgX = frame * FRAME_W
+  const bgY = bgRow * FRAME_H
+  const showZzz = !isWalking && behavior.zzz
 
   return (
     <div className="w-full mt-3">
@@ -84,7 +107,7 @@ function CatProgressBar({ pct, atlasUrl }) {
           className="absolute select-none"
           style={{ left: `${clampedLeft}%`, bottom: '6px', transform: 'translateX(-50%)', transition: 'left 0.7s ease' }}
         >
-          {!isWalking && (
+          {showZzz && (
             <div className="absolute pointer-events-none" style={{ top: '-14px', left: '50%', transform: 'translateX(-50%)' }}>
               <span className="zzz-1 absolute text-[10px] font-black text-zinc-400 dark:text-zinc-500">z</span>
               <span className="zzz-2 absolute text-[8px] font-black text-zinc-300 dark:text-zinc-600" style={{ left: '9px', top: '-5px' }}>z</span>
@@ -1413,7 +1436,7 @@ export default function MemberProfile() {
                           width: FRAME_W, height: FRAME_H,
                           backgroundImage: `url(${a})`,
                           backgroundSize: `${ATLAS_W}px ${ATLAS_H}px`,
-                          backgroundPosition: `0px -${FRAME_H * 2}px`,
+                          backgroundPosition: `0px -${FRAME_H * 2}px`, // row 2 = sleep4-L
                           backgroundRepeat: 'no-repeat',
                           imageRendering: 'pixelated',
                         }} />
