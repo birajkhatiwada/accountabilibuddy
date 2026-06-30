@@ -12,18 +12,14 @@ import DailyNote from '../components/DailyNote'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 import confetti from 'canvas-confetti'
-import catWalk from '../assets/cat-walk.png'
+import catAtlas from '../assets/cat-atlas.png'
 
-// Source: 352×1696, cells are 16×32 px (16 wide, 2 pixel-rows tall per frame).
-// Display at 3× by setting background-size to 3× source — integer math, no bleed.
-const DISP_W = 48         // 16 × 3
-const DISP_H = 96         // 32 × 3
-const BG_W   = 1056       // 352 × 3
-const BG_H   = 5088       // 1696 × 3
-// Displayed y offsets (source y × 3)
-const WALK_RIGHT_Y = 576  // 192 × 3  — walk right animation
-const WALK_LEFT_Y  = 672  // 224 × 3  — walk left animation
-const SLEEP_Y      = 1728 // 576 × 3  — sleep4l: flat lying cat
+// Custom atlas (384×288): row 0 = walk-right (8×48px frames),
+// row 1 = walk-left (8×48px), row 2 = sleep (96×96px flat lying cat).
+// All integer coordinates — no guesswork.
+const ATLAS_W = 384, ATLAS_H = 288
+const WALK_W = 48, WALK_H = 96   // per walking frame
+const SLEEP_W = 96, SLEEP_H = 96 // full lying cat (2 cells wide)
 const WALK_FRAME_COUNT = 8
 
 function CatProgressBar({ pct }) {
@@ -59,8 +55,10 @@ function CatProgressBar({ pct }) {
       ? 'linear-gradient(to right,#fbbf24,#f97316)'
       : 'linear-gradient(to right,#a78bfa,#8b5cf6)'
 
-  const bgY = isWalking ? (facingRight ? WALK_RIGHT_Y : WALK_LEFT_Y) : SLEEP_Y
-  const bgX = isWalking ? frame * DISP_W : 0   // sleep = static frame 0
+  const catW = isWalking ? WALK_W : SLEEP_W
+  const catH = isWalking ? WALK_H : SLEEP_H
+  const bgX  = isWalking ? frame * WALK_W : 0
+  const bgY  = isWalking ? (facingRight ? 0 : WALK_H) : WALK_H * 2
 
   return (
     <div className="w-full mt-3">
@@ -86,10 +84,10 @@ function CatProgressBar({ pct }) {
           )}
 
           <div style={{
-            width: DISP_W,
-            height: DISP_H,
-            backgroundImage: `url(${catWalk})`,
-            backgroundSize: `${BG_W}px ${BG_H}px`,
+            width: catW,
+            height: catH,
+            backgroundImage: `url(${catAtlas})`,
+            backgroundSize: `${ATLAS_W}px ${ATLAS_H}px`,
             backgroundPosition: `-${bgX}px -${bgY}px`,
             backgroundRepeat: 'no-repeat',
             imageRendering: 'pixelated',
