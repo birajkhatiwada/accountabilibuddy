@@ -206,7 +206,10 @@ export default function Home() {
     setCloseWeekOpen(false)
   }
 
-  const todayKey = useMemo(() => new Date().toISOString().split('T')[0], [])
+  const todayKey = useMemo(() => {
+    const n = new Date()
+    return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`
+  }, [])
   const potTotal = useMemo(() => allEntries.filter(e => e.status === 'failed').length * penalty, [allEntries, penalty])
   const doneThisWeek = useMemo(() => entries.filter(e => e.status === 'completed').length, [entries])
   const activeThisWeek = useMemo(() => entries.filter(e => e.status === 'active').length, [entries])
@@ -218,12 +221,14 @@ export default function Home() {
     return relevant.filter(s => s === 'completed').length / relevant.length
   }, [weekHistory, allEntries])
 
-  // 7 days of the current week (Mon–Sun) as Date objects
+  // 7 days of the current week (Mon–Sun) as local Date objects
+  // Must parse weekId as local time (not UTC) to avoid timezone day shift
   const weekDays = useMemo(() => {
-    const d = new Date(weekId)
+    const [y, m, d] = weekId.split('-').map(Number)
+    const monday = new Date(y, m - 1, d) // local midnight — no UTC shift
     return Array.from({ length: 7 }, (_, i) => {
-      const day = new Date(d)
-      day.setDate(d.getDate() + i)
+      const day = new Date(monday)
+      day.setDate(monday.getDate() + i)
       return day
     })
   }, [weekId])
@@ -271,10 +276,9 @@ export default function Home() {
         const daysUpTo = weekDays.slice(0, dayIdx + 1)
         const progPerGoal = goals.map(g => {
           if (g.type === 'habit') {
-            // % of days elapsed where habit was done (not out of 7, but out of days so far)
-            const elapsed = daysUpTo.length
+            // checked days out of 7 total — cumulative, never drops
             const checked = daysUpTo.filter(d => logs[d.toISOString().split('T')[0]]?.habits?.[g.text]).length
-            return checked / elapsed
+            return checked / 7
           }
           if (g.subGoals?.length > 0) {
             const ratios = g.subGoals.map(sg => {
