@@ -14,17 +14,16 @@ import HighchartsReact from 'highcharts-react-official'
 import confetti from 'canvas-confetti'
 import catWalk from '../assets/cat-walk.png'
 
-// Free pack "cat 1.6.png": 352×1696, 16×16 source cells displayed as 16×32 pairs.
-// We render at 1.5× → 24×48 px per sprite, fitting the 64px-tall progress bar.
-const SPRITE_W = 24           // display px wide  (16 × 1.5)
-const SPRITE_H = 48           // display px tall  (32 × 1.5)
-const BG_W = 528              // 352 × 1.5
-const BG_H = 2544             // 1696 × 1.5
-const WALK_RIGHT_Y = 288      // source y=192 × 1.5
-const WALK_LEFT_Y  = 336      // source y=224 × 1.5
-const SLEEP_Y      = 576      // source y=384 × 1.5
-const WALK_FRAME_COUNT = 8    // use first 8 of 16 walk frames
-const SLEEP_FRAME_COUNT = 4
+// Source: 352×1696, cells are 16×32 px (16 wide, 2 pixel-rows tall per frame).
+// Render at integer 2× via CSS scale to avoid sub-pixel bleed.
+const FRAME_W = 16        // source px per frame
+const FRAME_H = 32        // source px per frame (2 × 16-px rows)
+const CAT_SCALE = 2       // CSS scale factor (integer = no bleed)
+// Source y positions for each animation row
+const WALK_RIGHT_SRC_Y = 192   // pixel row 12 × 16
+const WALK_LEFT_SRC_Y  = 224   // pixel row 14 × 16
+const SLEEP_SRC_Y      = 384   // pixel row 24 × 16
+const WALK_FRAME_COUNT = 8
 
 function CatProgressBar({ pct }) {
   const [isWalking, setIsWalking] = useState(false)
@@ -45,10 +44,9 @@ function CatProgressBar({ pct }) {
   }, [pct])
 
   useEffect(() => {
-    const count = isWalking ? WALK_FRAME_COUNT : SLEEP_FRAME_COUNT
-    const ms = isWalking ? 120 : 600
+    if (!isWalking) { setFrame(0); return }
     setFrame(0)
-    const id = setInterval(() => setFrame(f => (f + 1) % count), ms)
+    const id = setInterval(() => setFrame(f => (f + 1) % WALK_FRAME_COUNT), 120)
     return () => clearInterval(id)
   }, [isWalking])
 
@@ -60,7 +58,8 @@ function CatProgressBar({ pct }) {
       ? 'linear-gradient(to right,#fbbf24,#f97316)'
       : 'linear-gradient(to right,#a78bfa,#8b5cf6)'
 
-  const bgY = isWalking ? (facingRight ? WALK_RIGHT_Y : WALK_LEFT_Y) : SLEEP_Y
+  const srcY = isWalking ? (facingRight ? WALK_RIGHT_SRC_Y : WALK_LEFT_SRC_Y) : SLEEP_SRC_Y
+  const srcX = isWalking ? frame * FRAME_W : 0   // sleep = static frame 0
 
   return (
     <div className="w-full mt-3">
@@ -69,7 +68,7 @@ function CatProgressBar({ pct }) {
         <span className="text-xs font-black text-zinc-700 dark:text-zinc-200">{pctRound}%</span>
       </div>
 
-      <div className="relative h-16">
+      <div className="relative h-20">
         <div className="absolute bottom-0 w-full h-2.5 bg-zinc-200 dark:bg-zinc-700/70 rounded-full overflow-hidden">
           <div className="h-full rounded-full" style={{ width: `${pctRound}%`, background: trackColor, transition: 'width 0.7s ease' }} />
         </div>
@@ -79,20 +78,22 @@ function CatProgressBar({ pct }) {
           style={{ left: `${clampedLeft}%`, bottom: '6px', transform: 'translateX(-50%)', transition: 'left 0.7s ease' }}
         >
           {!isWalking && (
-            <div className="absolute pointer-events-none" style={{ top: '-10px', left: '50%', transform: 'translateX(-50%)' }}>
+            <div className="absolute pointer-events-none" style={{ top: '-14px', left: '50%', transform: 'translateX(-50%)' }}>
               <span className="zzz-1 absolute text-[10px] font-black text-zinc-400 dark:text-zinc-500">z</span>
               <span className="zzz-2 absolute text-[8px] font-black text-zinc-300 dark:text-zinc-600" style={{ left: '9px', top: '-5px' }}>z</span>
             </div>
           )}
 
           <div style={{
-            width: SPRITE_W,
-            height: SPRITE_H,
+            width: FRAME_W,
+            height: FRAME_H,
             backgroundImage: `url(${catWalk})`,
-            backgroundSize: `${BG_W}px ${BG_H}px`,
-            backgroundPosition: `-${frame * SPRITE_W}px -${bgY}px`,
+            backgroundSize: '352px 1696px',
+            backgroundPosition: `-${srcX}px -${srcY}px`,
             backgroundRepeat: 'no-repeat',
             imageRendering: 'pixelated',
+            transform: `scale(${CAT_SCALE})`,
+            transformOrigin: 'bottom center',
           }} />
         </div>
       </div>
