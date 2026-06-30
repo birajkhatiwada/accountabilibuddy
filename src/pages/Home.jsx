@@ -265,14 +265,35 @@ export default function Home() {
       Object.values(log.counts || {}).some(v => v > 0) ||
       Object.values(log.totals || {}).some(v => v > 0))
 
-  // Read pre-computed daily progress stored on the entry by MemberProfile on each log save
+  // Chart uses the same formula as the completion ring, filtered to logs up to each day.
+  // Today's point always equals the ring %. Never drops — only adds as the week progresses.
   const getMemberDailyProgress = (name) => {
     const e = getEntry(name)
-    if (!e?.weekProgress) return []
+    if (!e?.goalItems?.length) return []
+    const logs = memberLogs[e.id] || {}
     const today = new Date(); today.setHours(23, 59, 59, 0)
     return weekDays
       .filter(day => day <= today)
-      .map(day => (e.weekProgress[toLocalKey(day)] ?? 0) / 100)
+      .map((_, dayIdx) => {
+        const upToKey = toLocalKey(weekDays[dayIdx])
+        const logsUpTo = Object.fromEntries(Object.entries(logs).filter(([k]) => k <= upToKey))
+        const scores = e.goalItems.map(g => {
+          if (g.type === 'habit') {
+            return Object.values(logsUpTo).filter(d => d.habits?.[g.text]).length / 7
+          }
+          if (g.subGoals?.length > 0) {
+            const ratios = g.subGoals.map(sg => {
+              const k = `${g.text}::${sg.text}`
+              const done = Object.values(logsUpTo).reduce((s, d) => s + (Number(d.counts?.[k]) || 0), 0)
+              return Math.min(1, done / (Number(sg.target) || 1))
+            })
+            return ratios.reduce((s, r) => s + r, 0) / ratios.length
+          }
+          const done = Object.values(logsUpTo).reduce((s, d) => s + (Number(d.counts?.[g.text]) || 0), 0)
+          return Math.min(1, done / (Number(g.target) || 1))
+        })
+        return scores.reduce((s, v) => s + v, 0) / scores.length
+      })
   }
 
   const daysElapsed = useMemo(() => {
