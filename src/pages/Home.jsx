@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { collection, query, where, onSnapshot, doc, updateDoc, setDoc } from 'firebase/firestore'
 import { db } from '../firebase'
@@ -30,6 +30,8 @@ const AVATAR_HEX = [
   '#8b5cf6', '#3b82f6', '#10b981', '#f97316',
   '#ec4899', '#6366f1', '#14b8a6', '#d946ef',
 ]
+
+const DAY_LABELS_STATIC = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
 
 const getAvatarColor = (name, members) =>
   AVATAR_COLORS[members.indexOf(name) % AVATAR_COLORS.length]
@@ -155,20 +157,19 @@ export default function Home() {
   const showBanner = todayIsMonday && missingGoals.length > 0 && !bannerDismissed
 
   // Build last 8 week IDs (oldest → newest)
-  const getLastWeekIds = (n) => {
+  const weekHistory = useMemo(() => {
     const ids = []
     const today = new Date()
     const day = today.getDay()
     const monday = new Date(today)
     monday.setDate(today.getDate() - (day === 0 ? 6 : day - 1))
-    for (let i = n - 1; i >= 0; i--) {
+    for (let i = 7; i >= 0; i--) {
       const d = new Date(monday)
       d.setDate(monday.getDate() - i * 7)
       ids.push(d.toISOString().split('T')[0])
     }
     return ids
-  }
-  const weekHistory = getLastWeekIds(8)
+  }, [weekId])
 
   const getMemberWeekStatus = (name, wId) => {
     const e = allEntries.find(e =>
@@ -280,14 +281,13 @@ export default function Home() {
       })
   }
 
-  const DAY_LABELS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
   const daysElapsed = useMemo(() => {
     const today = new Date(); today.setHours(23,59,59,0)
     return weekDays.filter(d => d <= today).length
   }, [weekDays])
 
   const chartData = useMemo(() => {
-    return DAY_LABELS.slice(0, daysElapsed).map((label, dayIdx) => {
+    return DAY_LABELS_STATIC.slice(0, daysElapsed).map((label, dayIdx) => {
       const point = { day: label }
       members.forEach(name => {
         const pts = getMemberDailyProgress(name)
@@ -389,64 +389,7 @@ export default function Home() {
           {/* Per-member goal progress line chart (Highcharts) */}
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4">
             <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-2">Goal progress this week</p>
-            <HighchartsReact
-              key={members.join(',')}
-              immutable={true}
-              highcharts={Highcharts}
-              options={{
-                chart: {
-                  type: 'spline',
-                  backgroundColor: 'transparent',
-                  height: 200,
-                  style: { fontFamily: 'inherit' },
-                  spacing: [8, 8, 8, 0],
-                },
-                title: { text: null },
-                credits: { enabled: false },
-                legend: { enabled: false },
-                xAxis: {
-                  categories: DAY_LABELS.slice(0, daysElapsed),
-                  labels: { style: { color: '#71717a', fontSize: '10px' } },
-                  lineColor: '#27272a',
-                  tickColor: '#27272a',
-                  gridLineColor: '#27272a',
-                },
-                yAxis: {
-                  min: 0, max: 100,
-                  title: { text: null },
-                  labels: { format: '{value}%', style: { color: '#71717a', fontSize: '10px' } },
-                  gridLineColor: '#27272a',
-                  tickPositions: [0, 25, 50, 75, 100],
-                },
-                tooltip: {
-                  backgroundColor: '#18181b',
-                  borderColor: '#3f3f46',
-                  borderRadius: 12,
-                  style: { color: '#e4e4e7', fontSize: '12px' },
-                  pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}%</b><br/>',
-                },
-                plotOptions: {
-                  spline: {
-                    lineWidth: 2.5,
-                    marker: { enabled: true, radius: 4, lineWidth: 0 },
-                    states: { hover: { lineWidth: 3 } },
-                  },
-                },
-                series: members.map(name => ({
-                  name,
-                  color: getAvatarHex(name, members),
-                  data: chartData.map(d => d[name] ?? 0),
-                })),
-              }}
-            />
-            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
-              {members.map(name => (
-                <div key={name} className="flex items-center gap-1.5">
-                  <div className="w-3 h-0.5 rounded-full" style={{ backgroundColor: getAvatarHex(name, members) }} />
-                  <span className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">{name}</span>
-                </div>
-              ))}
-            </div>
+            <ChartSection members={members} daysElapsed={daysElapsed} chartData={chartData} />
           </div>
 
           {/* Goals this week */}
@@ -678,6 +621,68 @@ export default function Home() {
     </div>
   )
 }
+
+const ChartSection = memo(function ChartSection({ members, daysElapsed, chartData }) {
+  const options = useMemo(() => ({
+    chart: {
+      type: 'spline',
+      backgroundColor: 'transparent',
+      height: 200,
+      style: { fontFamily: 'inherit' },
+      spacing: [8, 8, 8, 0],
+    },
+    title: { text: null },
+    credits: { enabled: false },
+    legend: { enabled: false },
+    xAxis: {
+      categories: DAY_LABELS_STATIC.slice(0, daysElapsed),
+      labels: { style: { color: '#71717a', fontSize: '10px' } },
+      lineColor: '#27272a',
+      tickColor: '#27272a',
+      gridLineColor: '#27272a',
+    },
+    yAxis: {
+      min: 0, max: 100,
+      title: { text: null },
+      labels: { format: '{value}%', style: { color: '#71717a', fontSize: '10px' } },
+      gridLineColor: '#27272a',
+      tickPositions: [0, 25, 50, 75, 100],
+    },
+    tooltip: {
+      backgroundColor: '#18181b',
+      borderColor: '#3f3f46',
+      borderRadius: 12,
+      style: { color: '#e4e4e7', fontSize: '12px' },
+      pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}%</b><br/>',
+    },
+    plotOptions: {
+      spline: {
+        lineWidth: 2.5,
+        marker: { enabled: true, radius: 4, lineWidth: 0 },
+        states: { hover: { lineWidth: 3 } },
+      },
+    },
+    series: members.map((name, i) => ({
+      name,
+      color: AVATAR_HEX[i % AVATAR_HEX.length],
+      data: chartData.map(d => d[name] ?? 0),
+    })),
+  }), [members, daysElapsed, chartData])
+
+  return (
+    <>
+      <HighchartsReact key={members.join(',')} highcharts={Highcharts} options={options} />
+      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+        {members.map((name, i) => (
+          <div key={name} className="flex items-center gap-1.5">
+            <div className="w-3 h-0.5 rounded-full" style={{ backgroundColor: AVATAR_HEX[i % AVATAR_HEX.length] }} />
+            <span className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">{name}</span>
+          </div>
+        ))}
+      </div>
+    </>
+  )
+})
 
 function QlCounter({ value, onChange }) {
   return (
