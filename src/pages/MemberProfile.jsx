@@ -113,7 +113,6 @@ function CatProgressBar({ pct }) {
               <path d="M 29 22 Q 32 18 35 22" stroke="#fff" strokeWidth="2" fill="none" strokeLinecap="round" />
             </svg>
           }
-          </svg>
         </div>
       </div>
     </div>
