@@ -17,9 +17,11 @@ import catAtlas from '../assets/cat-atlas.png'
 // Custom atlas (384×288): row 0 = walk-right (8×48px frames),
 // row 1 = walk-left (8×48px), row 2 = sleep (96×96px flat lying cat).
 // All integer coordinates — no guesswork.
-const ATLAS_W = 384, ATLAS_H = 288
-const WALK_W = 96, WALK_H = 96   // each frame is 96×96 (32 source px × 3)
-const SLEEP_W = 96, SLEEP_H = 96
+// Atlas is 384×288 (built at 3×). Scale factor controls display size.
+const SCALE = 2 / 3  // display at 2× source instead of 3×
+const ATLAS_W = Math.round(384 * SCALE), ATLAS_H = Math.round(288 * SCALE)  // 256×192
+const WALK_W = Math.round(96 * SCALE), WALK_H = Math.round(96 * SCALE)      // 64×64
+const SLEEP_W = Math.round(96 * SCALE), SLEEP_H = Math.round(96 * SCALE)    // 64×64
 const WALK_FRAME_COUNT = 4
 
 function CatProgressBar({ pct }) {
@@ -67,7 +69,7 @@ function CatProgressBar({ pct }) {
         <span className="text-xs font-black text-zinc-700 dark:text-zinc-200">{pctRound}%</span>
       </div>
 
-      <div className="relative h-28">
+      <div className="relative h-20">
         <div className="absolute bottom-0 w-full h-2.5 bg-zinc-200 dark:bg-zinc-700/70 rounded-full overflow-hidden">
           <div className="h-full rounded-full" style={{ width: `${pctRound}%`, background: trackColor, transition: 'width 0.7s ease' }} />
         </div>
