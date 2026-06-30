@@ -153,6 +153,16 @@ export default function Home() {
   const missingGoals = members.filter(m => !getEntry(m))
   const showBanner = todayIsMonday && missingGoals.length > 0 && !bannerDismissed
 
+  const dayContextLine = useMemo(() => {
+    const day = new Date().getDay() // 0=Sun,1=Mon,...,6=Sat
+    const daysLeft = day === 0 ? 0 : 7 - day
+    if (day === 1) return 'Fresh week 🚀'
+    if (day <= 3) return `${daysLeft} days left`
+    if (day === 4) return 'Halfway there'
+    if (day === 5) return 'Last push 💪'
+    return 'Final stretch'
+  }, [])
+
   // Build last 8 week IDs (oldest → newest)
   const weekHistory = useMemo(() => {
     const ids = []
@@ -332,7 +342,7 @@ export default function Home() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-black text-zinc-900 dark:text-white">This Week</h2>
-          <p className="text-xs text-zinc-500 font-medium mt-0.5">{formatWeekLabel(weekId)}</p>
+          <p className="text-xs text-zinc-500 font-medium mt-0.5">{formatWeekLabel(weekId)} · {dayContextLine}</p>
         </div>
         {activeEntries.length > 0 && (
           <button onClick={openCloseWeek}
@@ -372,6 +382,45 @@ export default function Home() {
           <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4">
             <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-2">Goal progress this week</p>
             <ChartSection members={members} daysElapsed={daysElapsed} chartData={chartData} />
+          </div>
+
+          {/* Today's check-in strip */}
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl px-4 py-3">
+            <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-3">Logged today</p>
+            <div className="flex items-center gap-3 flex-wrap">
+              {members.map((name, i) => {
+                const e = getEntry(name)
+                const logs = e ? (memberLogs[e.id] || {}) : {}
+                const todayLog = logs[todayKey]
+                const hasLogged = todayLog && (
+                  todayLog.note ||
+                  Object.values(todayLog.habits || {}).some(Boolean) ||
+                  Object.values(todayLog.counts || {}).some(v => v > 0)
+                )
+                const color = getAvatarColor(name, members)
+                return (
+                  <div key={name} className="flex flex-col items-center gap-1.5"
+                    onClick={() => navigate(`/${sessionId}/member/${encodeURIComponent(name)}`)}>
+                    <div className="relative">
+                      <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${color} flex items-center justify-center ${hasLogged ? 'ring-2 ring-emerald-400 ring-offset-2 ring-offset-white dark:ring-offset-zinc-900' : 'opacity-40'}`}>
+                        {avatars[name]
+                          ? <span className="text-xl">{avatars[name]}</span>
+                          : <span className="text-white font-black text-base">{name[0].toUpperCase()}</span>
+                        }
+                      </div>
+                      {hasLogged && (
+                        <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-emerald-400 rounded-full flex items-center justify-center">
+                          <svg width="8" height="6" viewBox="0 0 8 6" fill="none"><path d="M1 3L3 5L7 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        </span>
+                      )}
+                    </div>
+                    <span className={`text-[10px] font-semibold ${hasLogged ? 'text-zinc-700 dark:text-zinc-300' : 'text-zinc-400 dark:text-zinc-600'}`}>
+                      {nicknames[name] || name.split(' ')[0]}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
           </div>
 
           {/* Goals this week */}
