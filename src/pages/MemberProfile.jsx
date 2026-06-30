@@ -720,10 +720,48 @@ export default function MemberProfile() {
             </div>
           </div>
 
-          <h2 className="text-xl font-black text-zinc-900 dark:text-white leading-none">{nickname || name}</h2>
-          {status && <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400 leading-snug">{status}</p>}
-          {bio && <p className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500 leading-snug">{bio}</p>}
-          <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-1">{formatWeekLabel(weekId)}</p>
+          <div className="flex items-end justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="text-xl font-black text-zinc-900 dark:text-white leading-none">{nickname || name}</h2>
+              {status && <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400 leading-snug">{status}</p>}
+              {bio && <p className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500 leading-snug">{bio}</p>}
+              <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-1">{formatWeekLabel(weekId)}</p>
+            </div>
+
+            {/* Overall completion ring */}
+            {myGoals.length > 0 && (() => {
+              const pct = myGoals.reduce((sum, g) => {
+                if (g.type === 'habit') {
+                  return sum + Object.values(logs).filter(d => d.habits?.[g.text]).length / 7
+                }
+                if (g.subGoals?.length > 0) {
+                  const r = g.subGoals.map(sg => {
+                    const k = `${g.text}::${sg.text}`
+                    const done = Object.values(logs).reduce((s, d) => s + (Number(d.counts?.[k]) || 0), 0)
+                    return Math.min(1, done / (Number(sg.target) || 1))
+                  })
+                  return sum + r.reduce((s, v) => s + v, 0) / r.length
+                }
+                const done = Object.values(logs).reduce((s, d) => s + (Number(d.counts?.[g.text]) || 0), 0)
+                return sum + Math.min(1, done / (Number(g.target) || 1))
+              }, 0) / myGoals.length
+              const pctRound = Math.round(pct * 100)
+              const hex = pct >= 1 ? '#34d399' : pct >= 0.5 ? '#fbbf24' : '#8b5cf6'
+              return (
+                <div className="relative w-14 h-14 shrink-0">
+                  <svg width="56" height="56" viewBox="0 0 56 56" className="-rotate-90">
+                    <circle cx="28" cy="28" r="22" fill="none" stroke="currentColor" strokeWidth="5" className="text-zinc-200 dark:text-zinc-700" />
+                    <circle cx="28" cy="28" r="22" fill="none" stroke={hex} strokeWidth="5" strokeLinecap="round"
+                      strokeDasharray={`${Math.round(pct * 138.2)} 138.2`} />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-sm font-black text-zinc-800 dark:text-zinc-100 leading-none">{pctRound}%</span>
+                    <span className="text-[8px] text-zinc-400 font-semibold leading-none mt-0.5">done</span>
+                  </div>
+                </div>
+              )
+            })()}
+          </div>
         </div>
       </div>
 
