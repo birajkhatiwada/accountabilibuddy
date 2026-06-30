@@ -12,23 +12,24 @@ import DailyNote from '../components/DailyNote'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 import confetti from 'canvas-confetti'
-import catSprites from '../assets/cat-sprites.png'
+import catWalk from '../assets/cat-walk.png'
 
-// Sprite sheet: 7 cols × 4 rows (2816/7 ≈ 402px per source cell).
-// Display each cell at W×H px; background-size: 7*W × 4*H scales sheet to align cells.
-const CAT_W = 70
-const CAT_H = 76
-const CAT_COLS = 7
-const CAT_ROWS = 4
-// Walk frames: row 1, cols 2–3 (clean 2-frame walk cycle — avoids the row-0 running pose)
-const WALK_FRAMES = [[2,1],[3,1]]
-// Sleep frame: row 3, col 5 (curled ball sleeping cat)
-const SLEEP_FRAME = [5, 3]
+// Free pack "cat 1.6.png": 352×1696, 16×16 source cells displayed as 16×32 pairs.
+// We render at 1.5× → 24×48 px per sprite, fitting the 64px-tall progress bar.
+const SPRITE_W = 24           // display px wide  (16 × 1.5)
+const SPRITE_H = 48           // display px tall  (32 × 1.5)
+const BG_W = 528              // 352 × 1.5
+const BG_H = 2544             // 1696 × 1.5
+const WALK_RIGHT_Y = 288      // source y=192 × 1.5
+const WALK_LEFT_Y  = 336      // source y=224 × 1.5
+const SLEEP_Y      = 576      // source y=384 × 1.5
+const WALK_FRAME_COUNT = 8    // use first 8 of 16 walk frames
+const SLEEP_FRAME_COUNT = 4
 
 function CatProgressBar({ pct }) {
   const [isWalking, setIsWalking] = useState(false)
   const [facingRight, setFacingRight] = useState(true)
-  const [walkFrame, setWalkFrame] = useState(0)
+  const [frame, setFrame] = useState(0)
   const prevRef = useRef(pct)
   const timerRef = useRef(null)
 
@@ -43,10 +44,11 @@ function CatProgressBar({ pct }) {
     return () => clearTimeout(timerRef.current)
   }, [pct])
 
-  // Cycle through walking frames while walking
   useEffect(() => {
-    if (!isWalking) { setWalkFrame(0); return }
-    const id = setInterval(() => setWalkFrame(f => (f + 1) % WALK_FRAMES.length), 150)
+    const count = isWalking ? WALK_FRAME_COUNT : SLEEP_FRAME_COUNT
+    const ms = isWalking ? 120 : 600
+    setFrame(0)
+    const id = setInterval(() => setFrame(f => (f + 1) % count), ms)
     return () => clearInterval(id)
   }, [isWalking])
 
@@ -58,6 +60,8 @@ function CatProgressBar({ pct }) {
       ? 'linear-gradient(to right,#fbbf24,#f97316)'
       : 'linear-gradient(to right,#a78bfa,#8b5cf6)'
 
+  const bgY = isWalking ? (facingRight ? WALK_RIGHT_Y : WALK_LEFT_Y) : SLEEP_Y
+
   return (
     <div className="w-full mt-3">
       <div className="flex items-center justify-between mb-1">
@@ -66,17 +70,14 @@ function CatProgressBar({ pct }) {
       </div>
 
       <div className="relative h-16">
-        {/* Ground track */}
         <div className="absolute bottom-0 w-full h-2.5 bg-zinc-200 dark:bg-zinc-700/70 rounded-full overflow-hidden">
           <div className="h-full rounded-full" style={{ width: `${pctRound}%`, background: trackColor, transition: 'width 0.7s ease' }} />
         </div>
 
-        {/* Cat */}
         <div
           className="absolute select-none"
           style={{ left: `${clampedLeft}%`, bottom: '6px', transform: 'translateX(-50%)', transition: 'left 0.7s ease' }}
         >
-          {/* ZZZ floats above sleeping cat */}
           {!isWalking && (
             <div className="absolute pointer-events-none" style={{ top: '-10px', left: '50%', transform: 'translateX(-50%)' }}>
               <span className="zzz-1 absolute text-[10px] font-black text-zinc-400 dark:text-zinc-500">z</span>
@@ -84,22 +85,15 @@ function CatProgressBar({ pct }) {
             </div>
           )}
 
-          {/* Sprite */}
-          {(() => {
-            const [col, row] = isWalking ? WALK_FRAMES[walkFrame] : SLEEP_FRAME
-            return (
-              <div style={{
-                width: CAT_W,
-                height: CAT_H,
-                backgroundImage: `url(${catSprites})`,
-                backgroundSize: `${CAT_COLS * CAT_W}px ${CAT_ROWS * CAT_H}px`,
-                backgroundPosition: `-${col * CAT_W}px -${row * CAT_H}px`,
-                backgroundRepeat: 'no-repeat',
-                imageRendering: 'pixelated',
-                transform: !facingRight ? 'scaleX(-1)' : 'none',
-              }} />
-            )
-          })()}
+          <div style={{
+            width: SPRITE_W,
+            height: SPRITE_H,
+            backgroundImage: `url(${catWalk})`,
+            backgroundSize: `${BG_W}px ${BG_H}px`,
+            backgroundPosition: `-${frame * SPRITE_W}px -${bgY}px`,
+            backgroundRepeat: 'no-repeat',
+            imageRendering: 'pixelated',
+          }} />
         </div>
       </div>
     </div>
