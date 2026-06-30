@@ -16,10 +16,14 @@ import confetti from 'canvas-confetti'
 function CatProgressBar({ pct }) {
   const [isWalking, setIsWalking] = useState(false)
   const [facingRight, setFacingRight] = useState(true)
+  const [hasMounted, setHasMounted] = useState(false)
   const prevRef = useRef(pct)
   const timerRef = useRef(null)
 
+  useEffect(() => { setHasMounted(true) }, [])
+
   useEffect(() => {
+    if (!hasMounted) return
     if (pct !== prevRef.current) {
       setFacingRight(pct > prevRef.current)
       setIsWalking(true)
@@ -28,7 +32,7 @@ function CatProgressBar({ pct }) {
     }
     prevRef.current = pct
     return () => clearTimeout(timerRef.current)
-  }, [pct])
+  }, [pct, hasMounted])
 
   const pctRound = Math.round(pct * 100)
   const clampedLeft = Math.min(Math.max(pctRound, 9), 91)
@@ -48,13 +52,13 @@ function CatProgressBar({ pct }) {
       <div className="relative h-16">
         {/* Ground track */}
         <div className="absolute bottom-0 w-full h-2.5 bg-zinc-200 dark:bg-zinc-700/70 rounded-full overflow-hidden">
-          <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pctRound}%`, background: trackColor }} />
+          <div className="h-full rounded-full" style={{ width: `${pctRound}%`, background: trackColor, transition: hasMounted ? 'width 0.7s ease' : 'none' }} />
         </div>
 
         {/* Cat */}
         <div
-          className="absolute transition-all duration-700 select-none"
-          style={{ left: `${clampedLeft}%`, bottom: '6px', transform: 'translateX(-50%)' }}
+          className="absolute select-none"
+          style={{ left: `${clampedLeft}%`, bottom: '6px', transform: 'translateX(-50%)', transition: hasMounted ? 'left 0.7s ease' : 'none' }}
         >
           {/* ZZZ — only when sleeping, floats above the head */}
           {!isWalking && (
