@@ -127,17 +127,16 @@ function CatProgressBar({ pct, atlasUrl, sheetOpen, compact = false }) {
     const s = 2 / 3  // 48px → 32px
     return (
       <div className="w-full relative" style={{ height: 46 }}>
-        {/* Track */}
-        <div className="absolute bottom-0 w-full" style={{ height: 7 }}>
-          <div className="absolute inset-0 rounded-sm bg-zinc-200/80 dark:bg-zinc-800 ring-1 ring-inset ring-black/5 dark:ring-white/5" />
-          <div className="absolute inset-y-0 left-0 rounded-sm overflow-hidden cat-bar-fill"
-            style={{ width: `${pctRound}%`, background: trackColor, transition: 'width 2s cubic-bezier(0.4,0,0.2,1)', boxShadow: `0 0 8px ${glowColor}` }}>
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent cat-bar-shimmer" />
+        {/* Track: border + gap + fill */}
+        <div className="absolute bottom-0 w-full"
+          style={{ height: 11, border: `1.5px solid ${dotColor}`, borderRadius: 3, padding: 2, boxSizing: 'border-box' }}>
+          <div className="relative h-full overflow-hidden" style={{ borderRadius: 1 }}>
+            <div className="absolute inset-0 bg-zinc-100 dark:bg-zinc-800/60" />
+            <div className="absolute inset-y-0 left-0 h-full cat-bar-fill"
+              style={{ width: `${pctRound}%`, background: trackColor, transition: 'width 2s cubic-bezier(0.4,0,0.2,1)', boxShadow: `0 0 6px ${glowColor}` }}>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent cat-bar-shimmer" />
+            </div>
           </div>
-          {pctRound > 3 && (
-            <div className="absolute top-1/2 rounded-full"
-              style={{ left: `${pctRound}%`, width: 6, height: 6, transform: 'translate(-50%,-50%)', background: 'white', boxShadow: `0 0 5px 2px ${glowColor}` }} />
-          )}
         </div>
         {/* Cat (32px) on top of track */}
         <div className="absolute select-none"
@@ -169,28 +168,23 @@ function CatProgressBar({ pct, atlasUrl, sheetOpen, compact = false }) {
       </div>
 
       <div className="relative h-16">
-        {/* Track */}
-        <div className="absolute bottom-0 w-full" style={{ height: 10 }}>
-          {/* Background */}
-          <div className="absolute inset-0 rounded-sm bg-zinc-200/80 dark:bg-zinc-800 ring-1 ring-inset ring-black/5 dark:ring-white/5" />
-
-          {/* Fill */}
-          <div className="absolute inset-y-0 left-0 rounded-sm overflow-hidden cat-bar-fill"
-            style={{ width: `${pctRound}%`, background: trackColor, transition: 'width 2s cubic-bezier(0.4,0,0.2,1)', boxShadow: `0 0 10px ${glowColor}` }}>
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent cat-bar-shimmer" />
+        {/* Track: outer border + inner gap + fill */}
+        <div className="absolute bottom-0 w-full"
+          style={{ height: 14, border: `1.5px solid ${dotColor}`, borderRadius: 3, padding: 2, boxSizing: 'border-box' }}>
+          <div className="relative h-full overflow-hidden cat-bar-fill" style={{ borderRadius: 1 }}>
+            {/* Empty bg */}
+            <div className="absolute inset-0 bg-zinc-100 dark:bg-zinc-800/60" />
+            {/* Fill */}
+            <div className="absolute inset-y-0 left-0 h-full cat-bar-fill"
+              style={{ width: `${pctRound}%`, background: trackColor, transition: 'width 2s cubic-bezier(0.4,0,0.2,1)', boxShadow: `0 0 8px ${glowColor}` }}>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent cat-bar-shimmer" />
+            </div>
+            {/* Milestone ticks */}
+            {[25, 50, 75].map(m => (
+              <div key={m} className="absolute top-0 bottom-0 w-px"
+                style={{ left: `${m}%`, background: pctRound >= m ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.08)' }} />
+            ))}
           </div>
-
-          {/* Milestone ticks */}
-          {[25, 50, 75].map(m => (
-            <div key={m} className="absolute top-1/2 -translate-y-1/2 w-px"
-              style={{ left: `${m}%`, height: 14, background: pctRound >= m ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.12)' }} />
-          ))}
-
-          {/* Trailing glow dot */}
-          {pctRound > 3 && (
-            <div className="absolute top-1/2 -translate-y-1/2 rounded-full"
-              style={{ left: `${pctRound}%`, width: 8, height: 8, transform: 'translate(-50%,-50%)', background: 'white', boxShadow: `0 0 6px 2px ${glowColor}, 0 0 2px white` }} />
-          )}
         </div>
 
         {/* Cat */}
