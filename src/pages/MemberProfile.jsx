@@ -128,7 +128,7 @@ function CatProgressBar({ pct, atlasUrl, sheetOpen, compact = false }) {
     return (
       <div className="w-full relative" style={{ height: 46 }}>
         {/* Track: border + gap + fill */}
-        <div className="absolute bottom-0 w-full border-zinc-300 dark:border-zinc-600"
+        <div className="absolute bottom-0 w-full border-white"
           style={{ height: 11, borderWidth: '1.5px', borderStyle: 'solid', borderRadius: 3, padding: 2, boxSizing: 'border-box' }}>
           <div className="relative h-full overflow-hidden" style={{ borderRadius: 1 }}>
             <div className="absolute inset-0 bg-zinc-100 dark:bg-zinc-800/60" />
@@ -169,7 +169,7 @@ function CatProgressBar({ pct, atlasUrl, sheetOpen, compact = false }) {
 
       <div className="relative h-16">
         {/* Track: outer border + inner gap + fill */}
-        <div className="absolute bottom-0 w-full border-zinc-300 dark:border-zinc-600"
+        <div className="absolute bottom-0 w-full border-white"
           style={{ height: 14, borderWidth: '1.5px', borderStyle: 'solid', borderRadius: 3, padding: 2, boxSizing: 'border-box' }}>
           <div className="relative h-full overflow-hidden" style={{ borderRadius: 1 }}>
             <div className="absolute inset-0 bg-zinc-100 dark:bg-zinc-800/60" />
@@ -749,7 +749,7 @@ export default function MemberProfile() {
               })}
               <div className="relative">
                 <button onClick={() => setReactionPickerOpen(reactionPickerOpen === goalText ? null : goalText)}
-                  className="flex items-center gap-0.5 px-2 py-0.5 rounded-full text-xs border border-dashed border-zinc-300 dark:border-zinc-600 text-zinc-400 hover:text-emerald-500 hover:border-emerald-400 transition-all">
+                  className="flex items-center gap-0.5 px-2 py-0.5 rounded-full text-xs border border-dashed border-white text-zinc-400 hover:text-emerald-500 hover:border-emerald-400 transition-all">
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
                   +
                 </button>
@@ -1451,7 +1451,7 @@ export default function MemberProfile() {
                         return (
                           <button key={emoji} onClick={() => toggleReaction(emoji)}
                             className={`flex items-center gap-1 px-2 py-1 rounded-lg border text-sm transition-all active:scale-95 ${
-                              count > 0 ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-600' : 'border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-600 hover:border-zinc-300 dark:hover:border-zinc-600'
+                              count > 0 ? 'bg-zinc-100 dark:bg-zinc-800 border-white' : 'border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-600 hover:border-zinc-300 dark:hover:border-zinc-600'
                             }`}>
                             {emoji}
                             {count > 0 && <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">{count}</span>}
