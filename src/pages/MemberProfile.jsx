@@ -34,7 +34,7 @@ const FRAME_H = Math.round(96 * SCALE)    // 48
 // 6=meow-sit    7=yawn-sit   8=wash-sit            ← active rest (idx 2+)
 // 9=yawn-lie    10=wash-lie
 // 11=scratch-L  12=scratch-R (directional)
-const WALK_FRAME_COUNT = 4
+const WALK_FRAME_COUNT = 8
 const REST_BEHAVIORS = [
   { rows: [2, 3],   frames: 2,  frameMs: 700, zzz: true  }, // 0 sleep flat
   { rows: [4, 5],   frames: 2,  frameMs: 700, zzz: true  }, // 1 sleep curl
@@ -78,7 +78,7 @@ function CatProgressBar({ pct, atlasUrl, sheetOpen }) {
   useEffect(() => {
     setFrame(0)
     if (isWalking) {
-      const id = setInterval(() => setFrame(f => (f + 1) % WALK_FRAME_COUNT), 120)
+      const id = setInterval(() => setFrame(f => (f + 1) % WALK_FRAME_COUNT), 150)
       return () => clearInterval(id)
     }
     const b = REST_BEHAVIORS[behaviorIdx]
