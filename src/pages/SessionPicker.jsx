@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { doc, getDoc, setDoc, updateDoc, arrayUnion, Timestamp, getCountFromServer, collection } from 'firebase/firestore'
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, Timestamp, getCountFromServer, collection, addDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuth } from '../AuthContext'
-import { Plus, Users, ChevronRight, Home, LogIn } from 'lucide-react'
+import { Plus, Users, ChevronRight, Home, MessageSquare, Send, Check } from 'lucide-react'
 
 const SESSION_EMOJIS = ['💼','👨‍👩‍👧‍👦','🏋️','📚','🎯','🚀','🌱','🎮','🏠','✈️']
 const SAVED_KEY = 'accountabili_sessions'
@@ -33,6 +33,65 @@ function daysLeftInWeek() {
   const day = now.getDay() // 0=Sun
   const toSunday = day === 0 ? 0 : 7 - day
   return toSunday
+}
+
+function FeedbackSection({ user }) {
+  const [text, setText] = useState('')
+  const [name, setName] = useState(user?.displayName || '')
+  const [sent, setSent] = useState(false)
+  const [sending, setSending] = useState(false)
+
+  const submit = async () => {
+    if (!text.trim()) return
+    setSending(true)
+    await addDoc(collection(db, 'feedback'), {
+      text: text.trim(),
+      name: name.trim() || 'Anonymous',
+      createdAt: Timestamp.now(),
+      uid: user?.uid || null,
+    })
+    setSent(true)
+    setSending(false)
+  }
+
+  return (
+    <div className="border border-zinc-800 rounded-2xl p-5 space-y-3">
+      <div className="flex items-center gap-2">
+        <MessageSquare size={14} className="text-zinc-500" />
+        <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Beta Feedback</p>
+      </div>
+
+      {sent ? (
+        <div className="flex flex-col items-center gap-2 py-4 text-center">
+          <div className="w-9 h-9 rounded-full bg-emerald-500/15 flex items-center justify-center">
+            <Check size={16} className="text-emerald-400" />
+          </div>
+          <p className="text-sm font-semibold text-white">Thanks for the feedback!</p>
+          <button onClick={() => { setSent(false); setText('') }}
+            className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors">
+            Send more
+          </button>
+        </div>
+      ) : (
+        <>
+          {!user?.displayName && (
+            <input value={name} onChange={e => setName(e.target.value)}
+              placeholder="Your name (optional)" maxLength={40} style={{ fontSize: 16 }}
+              className="w-full bg-zinc-800 rounded-xl px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-zinc-600 transition-all" />
+          )}
+          <textarea value={text} onChange={e => setText(e.target.value)}
+            placeholder="What's working? What's broken? What's missing?" rows={3}
+            maxLength={500} style={{ fontSize: 16 }}
+            className="w-full bg-zinc-800 rounded-xl px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-zinc-600 transition-all resize-none" />
+          <button onClick={submit} disabled={sending || !text.trim()}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-zinc-700 hover:bg-zinc-600 disabled:opacity-40 text-white text-sm font-bold transition-all">
+            <Send size={13} />
+            {sending ? 'Sending…' : 'Send feedback'}
+          </button>
+        </>
+      )}
+    </div>
+  )
 }
 
 export default function SessionPicker() {
@@ -245,6 +304,9 @@ export default function SessionPicker() {
             </div>
           </div>
         )}
+        {/* Feedback */}
+        <FeedbackSection user={user} />
+
       </div>
 
       {/* Pill nav */}
