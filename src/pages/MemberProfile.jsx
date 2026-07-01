@@ -935,27 +935,46 @@ export default function MemberProfile() {
         const checked = daysUpTo.filter(d => logs[dateKey(d)]?.habits?.[goal.text]).length
         return Math.round(checked / 7 * 100)
       }
-      if (goal.subGoals?.length > 0) {
-        const ratios = goal.subGoals.map(sg => {
-          const k = `${goal.text}::${sg.text}`
-          const done = daysUpTo.reduce((s, d) => s + (Number(logs[dateKey(d)]?.counts?.[k]) || 0), 0)
-          return Math.min(1, done / (Number(sg.target) || 1))
-        })
-        return Math.round(ratios.reduce((s, r) => s + r, 0) / ratios.length * 100)
-      }
       const done = daysUpTo.reduce((s, d) => s + (Number(logs[dateKey(d)]?.counts?.[goal.text]) || 0), 0)
       return Math.round(Math.min(1, done / (Number(goal.target) || 1)) * 100)
     })
 
+  const getSubGoalDailyPct = (goalText, sg) =>
+    elapsed.map((_, dayIdx) => {
+      const daysUpTo = weekDays.slice(0, dayIdx + 1)
+      const k = `${goalText}::${sg.text}`
+      const done = daysUpTo.reduce((s, d) => s + (Number(logs[dateKey(d)]?.counts?.[k]) || 0), 0)
+      return Math.round(Math.min(1, done / (Number(sg.target) || 1)) * 100)
+    })
+
+  const chartSeries = useMemo(() => {
+    let colorIdx = 0
+    return myGoals.flatMap(g => {
+      if (g.subGoals?.length > 0) {
+        return g.subGoals.map(sg => ({
+          name: sg.text,
+          color: GOAL_COLORS[colorIdx++ % GOAL_COLORS.length],
+          data: getSubGoalDailyPct(g.text, sg),
+        }))
+      }
+      return [{ name: g.text, color: GOAL_COLORS[colorIdx++ % GOAL_COLORS.length], data: getGoalDailyPct(g) }]
+    })
+  }, [logs, myGoals])
+
   const chartOptions = useMemo(() => ({
     chart: { type: 'areaspline', backgroundColor: 'transparent', height: 160, spacing: [8,8,8,0], style: { fontFamily: 'inherit' } },
-    title: { text: null }, credits: { enabled: false }, legend: { enabled: false },
+    title: { text: null }, credits: { enabled: false },
+    legend: {
+      enabled: chartSeries.length > 1,
+      itemStyle: { color: '#a1a1aa', fontSize: '10px', fontWeight: '500' },
+      itemHoverStyle: { color: '#e4e4e7' },
+    },
     xAxis: { categories: chartCategories, labels: { style: { color: '#71717a', fontSize: '10px' } }, lineColor: '#27272a', tickColor: 'transparent', gridLineColor: 'transparent' },
     yAxis: { min: 0, max: 100, title: { text: null }, labels: { format: '{value}%', style: { color: '#71717a', fontSize: '10px' } }, gridLineColor: '#27272a', tickPositions: [0, 50, 100] },
     tooltip: { shared: true, backgroundColor: '#18181b', borderColor: '#3f3f46', borderRadius: 12, style: { color: '#e4e4e7', fontSize: '11px' }, pointFormat: '<span style="color:{series.color}">●</span> {series.name}: <b>{point.y}%</b><br/>' },
     plotOptions: { areaspline: { fillOpacity: 0.12, lineWidth: 2, marker: { enabled: true, radius: 3, lineWidth: 0 } } },
-    series: myGoals.map((g, i) => ({ name: g.text, color: GOAL_COLORS[i % GOAL_COLORS.length], data: getGoalDailyPct(g) })),
-  }), [logs, myGoals])
+    series: chartSeries,
+  }), [chartSeries, chartCategories])
 
   // ── cat bar shared state (used by main bar + sticky strip) ──────────────
   const catPct = useMemo(() => {
