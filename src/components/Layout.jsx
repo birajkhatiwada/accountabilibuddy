@@ -36,12 +36,12 @@ export default function Layout() {
   }
 
   const pillTab = (isActive) =>
-    `flex items-center gap-1.5 px-3 py-2 rounded-full transition-all duration-200 ${
+    `flex flex-col items-center gap-0.5 px-3.5 py-1.5 rounded-full transition-all duration-200 ${
       isActive
         ? gaming
           ? 'bg-[#00ff88]/15 text-[#00ff88]'
           : 'bg-zinc-700 dark:bg-zinc-700 text-white'
-        : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-200 dark:hover:text-zinc-300'
+        : 'text-zinc-500 dark:text-zinc-500 hover:text-zinc-200 dark:hover:text-zinc-300'
     }`
 
   return (
@@ -107,50 +107,52 @@ export default function Layout() {
       )}
 
       <main className="flex-1 px-4 py-3 overflow-y-auto pb-24" style={{ overflowAnchor: 'none' }}>
-        <Outlet />
+        <div key={location.pathname} className="page-slide">
+          <Outlet />
+        </div>
       </main>
 
       {/* Pill nav */}
       <div className="fixed left-1/2 -translate-x-1/2 z-40 flex justify-center"
         style={{ bottom: 'max(16px, env(safe-area-inset-bottom))' }}>
-        <nav className="flex items-center gap-0.5 bg-zinc-900/95 backdrop-blur-2xl rounded-full px-2 py-2 shadow-2xl shadow-black/60 border border-white/[0.06]">
+        <nav className="flex items-center gap-0.5 bg-zinc-900/95 backdrop-blur-2xl rounded-full px-2 py-1.5 shadow-2xl shadow-black/60 border border-white/[0.06]">
           <NavLink to={`/${sessionId}`} end>
             {({ isActive }) => (
               <div className={pillTab(isActive)}>
-                <Target size={15} strokeWidth={isActive ? 2.5 : 2} />
-                <span className="text-[10px] font-semibold">Week</span>
+                <Target size={16} strokeWidth={isActive ? 2.5 : 2} />
+                <span className="text-[9px] font-semibold tracking-wide">Week</span>
               </div>
             )}
           </NavLink>
           <NavLink to={`/${sessionId}/history`}>
             {({ isActive }) => (
               <div className={pillTab(isActive)}>
-                <Clock size={15} strokeWidth={isActive ? 2.5 : 2} />
-                <span className="text-[10px] font-semibold">History</span>
+                <Clock size={16} strokeWidth={isActive ? 2.5 : 2} />
+                <span className="text-[9px] font-semibold tracking-wide">History</span>
               </div>
             )}
           </NavLink>
           <NavLink to={`/${sessionId}/pot`}>
             {({ isActive }) => (
               <div className={pillTab(isActive)}>
-                <DollarSign size={15} strokeWidth={isActive ? 2.5 : 2} />
-                <span className="text-[10px] font-semibold">Pot</span>
+                <DollarSign size={16} strokeWidth={isActive ? 2.5 : 2} />
+                <span className="text-[9px] font-semibold tracking-wide">Pot</span>
               </div>
             )}
           </NavLink>
           <NavLink to={`/${sessionId}/feed`}>
             {({ isActive }) => (
               <div className={pillTab(isActive)}>
-                <Rss size={15} strokeWidth={isActive ? 2.5 : 2} />
-                <span className="text-[10px] font-semibold">Feed</span>
+                <Rss size={16} strokeWidth={isActive ? 2.5 : 2} />
+                <span className="text-[9px] font-semibold tracking-wide">Feed</span>
               </div>
             )}
           </NavLink>
           <NavLink to={user ? `/${sessionId}/member/${encodeURIComponent(user.displayName)}` : `/${sessionId}/members`}>
             {({ isActive }) => (
               <div className={pillTab(isActive)}>
-                <Users size={15} strokeWidth={isActive ? 2.5 : 2} />
-                <span className="text-[10px] font-semibold">Me</span>
+                <Users size={16} strokeWidth={isActive ? 2.5 : 2} />
+                <span className="text-[9px] font-semibold tracking-wide">Me</span>
               </div>
             )}
           </NavLink>
