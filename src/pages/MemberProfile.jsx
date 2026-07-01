@@ -297,7 +297,7 @@ export default function MemberProfile() {
   const [activeClosing, setActiveClosing]     = useState(false)
   const [loggingSheet, setLoggingSheet]       = useState(null)
   const [loggingClosing, setLoggingClosing]   = useState(false)
-  const catBarRef   = useRef(null)
+  const [catBarEl, setCatBarEl] = useState(null)
   const [catBarInView, setCatBarInView] = useState(true)
   const [uploadingPhoto, setUploadingPhoto] = useState({})
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
@@ -879,12 +879,11 @@ export default function MemberProfile() {
   [entry?.catColor])
 
   useEffect(() => {
-    const el = catBarRef.current
-    if (!el) return
+    if (!catBarEl) return
     const obs = new IntersectionObserver(([e]) => setCatBarInView(e.isIntersecting), { threshold: 0.1 })
-    obs.observe(el)
+    obs.observe(catBarEl)
     return () => obs.disconnect()
-  }, [])
+  }, [catBarEl])
 
   // ── loading skeleton ──────────────────────────────────────────────────────
 
@@ -966,7 +965,7 @@ export default function MemberProfile() {
           {bio && <p className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500 leading-snug">{bio}</p>}
           <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-1">{formatWeekLabel(weekId)}</p>
 
-          <div ref={catBarRef}>
+          <div ref={setCatBarEl}>
             {myGoals.length > 0 && logsLoaded && (
               <CatProgressBar pct={catPct} atlasUrl={catAtlasUrl} sheetOpen={!!(loggingSheet || activeGoalSheet)} />
             )}
