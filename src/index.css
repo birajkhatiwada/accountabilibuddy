@@ -9,6 +9,90 @@
   }
 }
 
+/* ═══════════════════════════════════════════════
+   GAMING THEME — applied via html.gaming class
+   ═══════════════════════════════════════════════ */
+
+html.gaming body {
+  background-color: #020202;
+  background-image:
+    linear-gradient(rgba(0,255,136,0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,136,0.035) 1px, transparent 1px);
+  background-size: 28px 28px;
+  color: #d1fae5;
+}
+
+/* Page shells */
+html.gaming .dark\:bg-zinc-950 { background-color: #020202 !important; }
+html.gaming .bg-zinc-50        { background-color: #020202 !important; }
+html.gaming .dark\:bg-zinc-900 { background-color: #0a0a0a !important; }
+html.gaming .bg-white          { background-color: #0a0a0a !important; }
+html.gaming .dark\:bg-zinc-800 { background-color: #111    !important; }
+html.gaming .bg-zinc-100       { background-color: #0f0f0f !important; }
+html.gaming .dark\:bg-zinc-800\/60 { background-color: rgba(17,17,17,0.6) !important; }
+html.gaming .bg-zinc-50        { background-color: #020202 !important; }
+html.gaming .dark\:bg-zinc-800\/40 { background-color: rgba(17,17,17,0.4) !important; }
+html.gaming .bg-zinc-100\/40   { background-color: rgba(10,10,10,0.4) !important; }
+
+/* Borders → neon tint */
+html.gaming .dark\:border-zinc-800    { border-color: rgba(0,255,136,0.14) !important; }
+html.gaming .dark\:border-zinc-700    { border-color: rgba(0,255,136,0.2)  !important; }
+html.gaming .border-zinc-200          { border-color: rgba(0,255,136,0.12) !important; }
+html.gaming .dark\:divide-zinc-800\/60 > * + * { border-color: rgba(0,255,136,0.1) !important; }
+
+/* Card hover glow */
+html.gaming .hover\:border-zinc-300:hover      { border-color: rgba(0,255,136,0.4) !important; box-shadow: 0 0 14px rgba(0,255,136,0.1); }
+html.gaming .dark\:hover\:border-zinc-700:hover { border-color: rgba(0,255,136,0.4) !important; box-shadow: 0 0 14px rgba(0,255,136,0.1); }
+
+/* Nav */
+html.gaming nav {
+  background-color: rgba(2,2,2,0.98) !important;
+  border-top-color: rgba(0,255,136,0.15) !important;
+}
+
+/* Accent: emerald/teal → #00ff88 */
+html.gaming .text-emerald-500,
+html.gaming .text-emerald-600           { color: #00ff88 !important; }
+html.gaming .dark\:text-emerald-400,
+html.gaming .dark\:text-emerald-300     { color: #00ff88 !important; }
+html.gaming .text-emerald-700           { color: #00cc6a !important; }
+html.gaming .text-teal-600              { color: #00e5ff !important; }
+html.gaming .border-emerald-400,
+html.gaming .dark\:border-emerald-600,
+html.gaming .dark\:border-emerald-500   { border-color: #00ff88 !important; }
+html.gaming .border-emerald-500         { border-color: #00ff88 !important; }
+html.gaming .bg-emerald-500             { background-color: #00ff88 !important; color: #000 !important; }
+html.gaming .from-emerald-500           { --tw-gradient-from: #00ff88 !important; }
+html.gaming .from-emerald-600           { --tw-gradient-from: #00cc6a !important; }
+html.gaming .to-teal-600,
+html.gaming .to-teal-500                { --tw-gradient-to: #00ccff !important; }
+html.gaming .hover\:bg-emerald-400:hover,
+html.gaming .hover\:from-emerald-500:hover { background-color: #00cc6a !important; }
+html.gaming .bg-emerald-500\/10,
+html.gaming .dark\:bg-emerald-500\/20,
+html.gaming .dark\:bg-emerald-950\/30   { background-color: rgba(0,255,136,0.08) !important; }
+html.gaming .dark\:bg-emerald-400\/25   { background-color: rgba(0,255,136,0.12) !important; }
+html.gaming .dark\:bg-emerald-900\/30   { background-color: rgba(0,255,136,0.08) !important; }
+
+/* Text */
+html.gaming .dark\:text-white     { color: #e0ffe8 !important; }
+html.gaming .dark\:text-zinc-100  { color: #d1fae5 !important; }
+html.gaming .dark\:text-zinc-200  { color: #a7f3d0 !important; }
+html.gaming .dark\:text-zinc-300  { color: #6ee7b7 !important; }
+html.gaming .dark\:text-zinc-400  { color: rgba(110,231,183,0.6) !important; }
+html.gaming .dark\:text-zinc-500  { color: rgba(110,231,183,0.4) !important; }
+
+/* Rounded: make cards sharper */
+html.gaming .rounded-2xl { border-radius: 6px !important; }
+html.gaming .rounded-3xl { border-radius: 8px !important; }
+html.gaming .rounded-xl  { border-radius: 4px !important; }
+
+/* Glow pulse for online dot */
+@keyframes gaming-glow-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 4px #00ff88, 0 0 8px #00ff8866; }
+  50%       { opacity: 0.7; box-shadow: 0 0 8px #00ff88, 0 0 16px #00ff8844; }
+}
+
 @layer utilities {
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
@@ -176,6 +260,28 @@
 .cat-breathe   { transform-box: fill-box; transform-origin: 50% 100%; animation: cat-breathe 2.2s ease-in-out infinite; }
 .zzz-1 { animation: zzz-1 2s ease-out infinite; }
 .zzz-2 { animation: zzz-2 2s ease-out 0.85s infinite; }
+
+@keyframes row-shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-5px); }
+  40%       { transform: translateX(5px); }
+  60%       { transform: translateX(-3px); }
+  80%       { transform: translateX(3px); }
+}
+.row-shake { animation: row-shake 0.35s ease-in-out; }
+
+.goal-gold-fill {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24, #fde68a, #fbbf24, #f59e0b);
+}
+.dark .goal-gold-fill {
+  background: linear-gradient(90deg, #b45309, #d97706, #f59e0b, #d97706, #b45309);
+}
+.goal-green-fill {
+  background: linear-gradient(90deg, #22c55e, #4ade80, #86efac, #4ade80, #22c55e);
+}
+.dark .goal-green-fill {
+  background: linear-gradient(90deg, #064e3b, #065f46, #059669, #065f46, #064e3b);
+}
 
 @keyframes cat-sticky-in {
   from { transform: translateY(-100%); opacity: 0; }

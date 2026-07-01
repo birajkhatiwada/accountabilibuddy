@@ -5,6 +5,7 @@ import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, addDo
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { db, storage } from '../firebase'
 import { useAuth } from '../AuthContext'
+import { useTheme } from '../ThemeContext'
 import { getCurrentWeekId, formatWeekLabel, formatTimestamp } from '../utils'
 import { Pencil, X, Camera } from 'lucide-react'
 import GoalBuilder from '../components/GoalBuilder'
@@ -47,7 +48,7 @@ const REST_BEHAVIORS = [
 ]
 const SLEEP_COUNT = 2 // first N behaviors are sleep
 
-function CatProgressBar({ pct, atlasUrl, sheetOpen, compact = false }) {
+function CatProgressBar({ pct, atlasUrl, sheetOpen, compact = false, gaming = false }) {
   const [displayedPct, setDisplayedPct] = useState(pct)
   const [isWalking, setIsWalking]       = useState(false)
   const [facingRight, setFacingRight]   = useState(true)
@@ -83,11 +84,9 @@ function CatProgressBar({ pct, atlasUrl, sheetOpen, compact = false }) {
     }
     const b = REST_BEHAVIORS[behaviorIdx]
     if (b.zzz) {
-      // Sleep: loop forever
       const id = setInterval(() => setFrame(f => (f + 1) % b.frames), b.frameMs)
       return () => clearInterval(id)
     }
-    // Active rest: play 2–3 cycles then transition to a sleep behavior
     const targetCycles = 2 + Math.floor(Math.random() * 2)
     let localFrame = 0, cycles = 0
     const id = setInterval(() => {
@@ -128,10 +127,13 @@ function CatProgressBar({ pct, atlasUrl, sheetOpen, compact = false }) {
     return (
       <div className="w-full relative" style={{ height: 46 }}>
         {/* Track: border + gap + fill */}
-        <div className="absolute bottom-0 w-full border-white"
-          style={{ height: 11, borderWidth: '1.5px', borderStyle: 'solid', borderRadius: 3, padding: 2, boxSizing: 'border-box' }}>
+        <div className="absolute bottom-0 w-full"
+          style={{ height: 11, borderWidth: '1.5px', borderStyle: 'solid', borderRadius: gaming ? 2 : 3,
+            borderColor: gaming ? dotColor : 'white',
+            boxShadow: gaming ? `0 0 6px ${glowColor}` : 'none',
+            padding: 2, boxSizing: 'border-box' }}>
           <div className="relative h-full overflow-hidden" style={{ borderRadius: 1 }}>
-            <div className="absolute inset-0 bg-zinc-100 dark:bg-zinc-800/60" />
+            <div className={`absolute inset-0 ${gaming ? '' : 'bg-zinc-100 dark:bg-zinc-800/60'}`} style={gaming ? { background: '#050505' } : undefined} />
             <div className="absolute inset-y-0 left-0 h-full cat-bar-fill"
               style={{ width: `${pctRound}%`, background: trackColor, transition: 'width 2s cubic-bezier(0.4,0,0.2,1)', boxShadow: `0 0 6px ${glowColor}` }}>
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent cat-bar-shimmer" />
@@ -140,7 +142,7 @@ function CatProgressBar({ pct, atlasUrl, sheetOpen, compact = false }) {
         </div>
         {/* Cat (32px) on top of track */}
         <div className="absolute select-none"
-          style={{ left: `${clampedLeft}%`, bottom: 3, transform: 'translateX(-50%)', transition: 'left 2s cubic-bezier(0.4,0,0.2,1)' }}>
+          style={{ left: `${clampedLeft}%`, bottom: 11, transform: 'translateX(-50%)', transition: 'left 2s cubic-bezier(0.4,0,0.2,1)' }}>
           {showZzz && (
             <div className="absolute pointer-events-none" style={{ top: '-10px', left: '50%', transform: 'translateX(-50%)' }}>
               <span className="zzz-1 absolute text-[8px] font-black text-zinc-400 dark:text-zinc-500">z</span>
@@ -160,48 +162,111 @@ function CatProgressBar({ pct, atlasUrl, sheetOpen, compact = false }) {
     )
   }
 
+  const gamingLevel = Math.min(10, Math.floor(pctRound / 10) + (pctRound > 0 ? 1 : 0))
+  const gamingBorderColor = dotColor
+  const gamingGlow = `0 0 8px ${glowColor}, 0 0 20px ${glowColor}`
+
   return (
     <div className="w-full mt-3">
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">This week</span>
-        <span className="text-[11px] font-black tabular-nums" style={{ color: dotColor }}>{pctRound}%</span>
+        {gaming ? (
+          <>
+            <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: dotColor, fontVariantNumeric: 'tabular-nums', letterSpacing: '0.15em' }}>⚡ XP BAR</span>
+            <span className="text-[11px] font-black tabular-nums" style={{ color: dotColor }}>LVL {gamingLevel}</span>
+          </>
+        ) : (
+          <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">This week</span>
+        )}
       </div>
 
       <div className="relative h-16">
+        {/* Ruler watermark */}
+        {(() => {
+          const W = 340, midY = 22
+          const labelX = Math.max(22, Math.min(W - 22, (pctRound / 100) * W))
+          return (
+            <svg width="100%" height="100%" viewBox={`0 0 ${W} 64`} preserveAspectRatio="xMidYMid meet"
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                zIndex: 0, opacity: 0.11,
+                color: gaming ? '#00ff88' : 'currentColor',
+                WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 28%, black 72%, transparent 100%)',
+                maskImage: 'linear-gradient(to right, transparent 0%, black 28%, black 72%, transparent 100%)',
+              }}>
+              <line x1="0" y1={midY} x2={W} y2={midY} stroke="currentColor" strokeWidth="0.5" opacity="0.4" />
+              {Array.from({ length: 51 }, (_, i) => i * 2).map(p => {
+                const x = (p / 100) * W
+                const isMajor = p % 25 === 0
+                const isMid = p % 10 === 0
+                const h = isMajor ? 12 : isMid ? 7 : 4
+                return <line key={p} x1={x} y1={midY - h / 2} x2={x} y2={midY + h / 2}
+                  stroke="currentColor" strokeWidth={isMajor ? 1.4 : isMid ? 0.9 : 0.6}
+                  opacity={isMajor ? 1 : isMid ? 0.7 : 0.45} />
+              })}
+              <rect x={labelX - 40} y={midY - 18} width="80" height="36"
+                fill={gaming ? '#020202' : document.documentElement.classList.contains('dark') ? '#09090b' : '#fafafa'} />
+              <text x={labelX} y={midY + 13} textAnchor="middle" fontSize="32" fontWeight="900"
+                fill="currentColor" letterSpacing="-0.5">{pctRound}%</text>
+            </svg>
+          )
+        })()}
+        {/* Cover for the progress bar area only */}
+        <div className="absolute bottom-0 w-full bg-white dark:bg-zinc-900"
+          style={{ height: 14, zIndex: 3 }} />
         {/* Track: outer border + inner gap + fill */}
-        <div className="absolute bottom-0 w-full border-white"
-          style={{ height: 14, borderWidth: '1.5px', borderStyle: 'solid', borderRadius: 3, padding: 2, boxSizing: 'border-box' }}>
+        <div className="absolute bottom-0 w-full"
+          style={{
+            height: 14, borderWidth: '1.5px', borderStyle: 'solid', borderRadius: gaming ? 2 : 3,
+            borderColor: gaming ? gamingBorderColor : 'rgba(255,255,255,0.45)',
+            boxShadow: gaming ? gamingGlow : 'none',
+            padding: 2, boxSizing: 'border-box', zIndex: 5,
+          }}>
           <div className="relative h-full overflow-hidden" style={{ borderRadius: 1 }}>
-            <div className="absolute inset-0 bg-zinc-100 dark:bg-zinc-800/60" />
+            <div className={`absolute inset-0 ${gaming ? '' : 'bg-zinc-100 dark:bg-zinc-800/60'}`} style={gaming ? { background: '#050505' } : undefined} />
             <div className="absolute inset-y-0 left-0 h-full cat-bar-fill"
               style={{ width: `${pctRound}%`, background: trackColor, transition: 'width 2s cubic-bezier(0.4,0,0.2,1)', boxShadow: `0 0 8px ${glowColor}` }}>
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent cat-bar-shimmer" />
+              {gaming && <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.4) 3px,rgba(0,0,0,0.4) 4px)' }} />}
             </div>
           </div>
         </div>
 
         {/* Post signs at zone boundaries and finish */}
         {[
-          { at: 35, signColor: '#f97316', postColor: '#c2410c' },
-          { at: 65, signColor: '#22c55e', postColor: '#15803d' },
-          { at: 100, signColor: null,     postColor: '#27272a' },
-        ].map(({ at, signColor, postColor }) => (
+          { at: 35, signColor: '#f97316', postColor: '#c2410c', label: gaming ? '▶' : null },
+          { at: 65, signColor: '#22c55e', postColor: '#15803d', label: gaming ? '▶' : null },
+          { at: 100, signColor: null,     postColor: gaming ? dotColor : '#27272a', label: gaming ? 'MAX' : null },
+        ].map(({ at, signColor, postColor, label }) => (
           <div key={at} className="absolute pointer-events-none select-none flex flex-col items-center"
-            style={{ left: `${at}%`, bottom: 14, transform: 'translateX(-50%)', zIndex: 10 }}>
+            style={{ left: `${at}%`, bottom: 6, transform: 'translateX(-50%)', zIndex: 2 }}>
             {signColor ? (
-              <div style={{ width: 16, height: 10, background: signColor, borderRadius: 2, marginBottom: 1, boxShadow: `0 0 4px ${signColor}88` }} />
+              <div style={{ width: gaming ? 14 : 11, height: gaming ? 8 : 7, background: signColor, borderRadius: gaming ? 1 : 1,
+                marginBottom: 1, boxShadow: gaming ? `0 0 6px ${signColor}` : `0 0 4px ${signColor}88`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                {label && <span style={{ fontSize: 5, color: '#fff', fontWeight: 900 }}>{label}</span>}
+              </div>
             ) : (
-              <div style={{ width: 18, height: 11, borderRadius: 2, marginBottom: 1, overflow: 'hidden',
-                background: 'repeating-conic-gradient(#1c1c1e 0% 25%, #e4e4e7 0% 50%) 0 0 / 6px 6px',
-                border: '1px solid #3f3f46' }} />
+              gaming ? (
+                <div style={{ width: 16, height: 8, borderRadius: 1, marginBottom: 1,
+                  background: '#000', border: `1px solid ${dotColor}`,
+                  boxShadow: `0 0 6px ${dotColor}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontSize: 5, fontWeight: 900, color: dotColor, letterSpacing: 1 }}>MAX</span>
+                </div>
+              ) : (
+                <div style={{ width: 12, height: 8, borderRadius: 1, marginBottom: 1, overflow: 'hidden',
+                  background: 'repeating-conic-gradient(#1c1c1e 0% 25%, #e4e4e7 0% 50%) 0 0 / 4px 4px',
+                  border: '1px solid #3f3f46' }} />
+              )
             )}
-            <div style={{ width: 2, height: 16, background: postColor }} />
+            <div style={{ width: 1.5, height: 12, background: postColor,
+              boxShadow: gaming ? `0 0 4px ${postColor}` : 'none' }} />
           </div>
         ))}
 
         {/* Cat */}
         <div className="absolute select-none"
-          style={{ left: `${clampedLeft}%`, bottom: 6, transform: 'translateX(-50%)', transition: 'left 6s linear' }}>
+          style={{ left: `${clampedLeft}%`, bottom: 2, transform: `translateX(-50%) translateY(${!isWalking && behaviorIdx === 1 ? 7 : 0}px)`, transition: 'left 6s linear, transform 0.3s ease', zIndex: 4 }}>
           {showZzz && (
             <div className="absolute pointer-events-none" style={{ top: '-14px', left: '50%', transform: 'translateX(-50%)' }}>
               <span className="zzz-1 absolute text-[10px] font-black text-zinc-400 dark:text-zinc-500">z</span>
@@ -292,6 +357,7 @@ export default function MemberProfile() {
   const { name, sessionId } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { setUiTheme: setGlobalUiTheme } = useTheme()
   const isOwner = user?.displayName?.toLowerCase() === name?.toLowerCase()
   const weekId = getCurrentWeekId()
   const todayKey = dateKey(new Date())
@@ -318,6 +384,11 @@ export default function MemberProfile() {
   const [activeGoalSheet, setActiveGoalSheet] = useState(null)
   const [activeClosing, setActiveClosing]     = useState(false)
   const [loggingSheet, setLoggingSheet]       = useState(null)
+  const [shakingGoals, setShakingGoals]       = useState(new Set())
+  const triggerShake = (key) => {
+    setShakingGoals(s => new Set(s).add(key))
+    setTimeout(() => setShakingGoals(s => { const n = new Set(s); n.delete(key); return n }), 400)
+  }
   const [loggingClosing, setLoggingClosing]   = useState(false)
   const [catBarEl, setCatBarEl] = useState(null)
   const [catBarInView, setCatBarInView] = useState(true)
@@ -337,6 +408,7 @@ export default function MemberProfile() {
   const [nicknameInput, setNicknameInput] = useState('')
   const [bannerColorIdx, setBannerColorIdx] = useState(null)
   const [bannerVibe, setBannerVibe] = useState('')
+  const [uiTheme, setUiTheme] = useState('default')
   const [editBannerOpen, setEditBannerOpen] = useState(false)
   const saveTimers = useRef({})
   const confettiFired = useRef(false)
@@ -379,6 +451,9 @@ export default function MemberProfile() {
         setAvatarPhotoUrl(d.avatarPhotos?.[name] || '')
         setBannerImageUrl(d.bannerImages?.[name] || '')
         setNickname(d.nicknames?.[name] || '')
+        const savedTheme = d.memberThemes?.[name] || 'default'
+        setUiTheme(savedTheme)
+        if (isOwner) setGlobalUiTheme(savedTheme)
         const mg = d.memberGoals?.[name]
         setMemberGoals(mg?.length ? mg : null)
       }
@@ -821,6 +896,7 @@ export default function MemberProfile() {
   const saveStatus = async (val) => { await setDoc(sessionDoc, { statuses: { [name]: val.trim() } }, { merge: true }) }
   const saveNickname = async (val) => { setNickname(val.trim()); await setDoc(sessionDoc, { nicknames: { [name]: val.trim() } }, { merge: true }) }
   const saveBannerColor = async (idx) => { setBannerColorIdx(idx); await setDoc(sessionDoc, { bannerColors: { [name]: idx } }, { merge: true }) }
+  const saveUiTheme    = async (t)   => { setUiTheme(t); setGlobalUiTheme(t); await setDoc(sessionDoc, { memberThemes: { [name]: t } }, { merge: true }) }
   const saveBannerVibe = async (emoji) => { setBannerVibe(emoji); await setDoc(sessionDoc, { bannerVibes: { [name]: emoji } }, { merge: true }) }
 
   const uploadAvatarPhoto = async (file) => {
@@ -989,7 +1065,7 @@ export default function MemberProfile() {
 
           <div ref={setCatBarEl}>
             {myGoals.length > 0 && logsLoaded && (
-              <CatProgressBar pct={catPct} atlasUrl={catAtlasUrl} sheetOpen={!!(loggingSheet || activeGoalSheet)} />
+              <CatProgressBar pct={catPct} atlasUrl={catAtlasUrl} sheetOpen={!!(loggingSheet || activeGoalSheet)} gaming={uiTheme === 'gaming'} />
             )}
           </div>
         </div>
@@ -1082,8 +1158,9 @@ export default function MemberProfile() {
             }
             return (
               <div>
-                <p className="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold uppercase tracking-wider mb-2">
-                  {selectedDay === todayKey ? 'Today' : selectedDayLabel}
+                <p className={`text-[10px] font-semibold uppercase tracking-wider mb-2 ${uiTheme === 'gaming' ? '' : 'text-zinc-400 dark:text-zinc-500'}`}
+                  style={uiTheme === 'gaming' ? { color: '#00ff88', letterSpacing: '0.18em' } : undefined}>
+                  {uiTheme === 'gaming' ? '⚡ ' : ''}{selectedDay === todayKey ? (uiTheme === 'gaming' ? 'ACTIVE MISSIONS' : 'Today') : selectedDayLabel}
                 </p>
 
                 <div className="space-y-1.5">
@@ -1107,15 +1184,13 @@ export default function MemberProfile() {
 
                     const isBreakdown = goal.subGoals?.length > 0
                     const todayVal = !isBreakdown && goal.type !== 'habit' ? getCountVal(goal.text) : 0
-                    const hasBreakdownToday = isBreakdown && goal.subGoals.some(sg => getCountVal(`${goal.text}::${sg.text}`) > 0)
-                    const workedToday = todayVal > 0 || hasBreakdownToday
+                    const breakdownTodayVal = isBreakdown ? goal.subGoals.reduce((s, sg) => s + getCountVal(`${goal.text}::${sg.text}`), 0) : 0
                     // for count goals: check if goal was already complete as of the selected day
                     const doneAsOfSelectedDay = goal.type === 'habit' ? done
                       : goal.subGoals?.length > 0
                         ? goal.subGoals.every(sg => { const k=`${goal.text}::${sg.text}`; return (Number(sg.target)||0)>0 && cumulativeCount(k, selectedDay)>=(Number(sg.target)||0) })
                         : tgt > 0 && cumulativeCount(goal.text, selectedDay) >= tgt
                     const showCheck = goal.type === 'habit' ? done : doneAsOfSelectedDay
-                    const showDot = goal.type === 'habit' ? false : (!showCheck && workedToday)
 
                     const stateColors = (pct, isDone) => {
                       if (isDone || pct >= 1) return {
@@ -1127,6 +1202,7 @@ export default function MemberProfile() {
                         checkFull: 'bg-emerald-500 border-emerald-500',
                         checkOutline: 'border-emerald-400 dark:border-emerald-500',
                         checkStroke: '#10b981',
+                        accent: '#10b981',
                       }
                       if (pct <= 0) return {
                         fill: '',
@@ -1137,6 +1213,7 @@ export default function MemberProfile() {
                         checkFull: 'bg-emerald-500 border-emerald-500',
                         checkOutline: 'border-emerald-400 dark:border-emerald-500',
                         checkStroke: '#10b981',
+                        accent: '#71717a',
                       }
                       if (pct < 0.35) return {
                         fill: 'bg-rose-500/20 dark:bg-rose-500/15',
@@ -1147,6 +1224,7 @@ export default function MemberProfile() {
                         checkFull: 'bg-rose-500 border-rose-500',
                         checkOutline: 'border-rose-400 dark:border-rose-500',
                         checkStroke: '#f43f5e',
+                        accent: '#f43f5e',
                       }
                       if (pct < 0.65) return {
                         fill: 'bg-amber-500/20 dark:bg-amber-500/15',
@@ -1157,6 +1235,7 @@ export default function MemberProfile() {
                         checkFull: 'bg-amber-500 border-amber-500',
                         checkOutline: 'border-amber-400 dark:border-amber-500',
                         checkStroke: '#f59e0b',
+                        accent: '#f59e0b',
                       }
                       return {
                         fill: 'bg-emerald-500/20 dark:bg-emerald-500/15',
@@ -1167,34 +1246,66 @@ export default function MemberProfile() {
                         checkFull: 'bg-emerald-500 border-emerald-500',
                         checkOutline: 'border-emerald-400 dark:border-emerald-500',
                         checkStroke: '#10b981',
+                        accent: '#10b981',
                       }
                     }
 
                     const isDoneForColor = goal.type === 'habit' ? barPct >= 1 : done
-                    const c = stateColors(barPct, isDoneForColor)
+                    const isExceeded = isBreakdown
+                      ? goal.subGoals.every(sg => { const k = `${goal.text}::${sg.text}`; const st = Number(sg.target) || 0; return st > 0 && weeklyCount(k) > st })
+                      : goal.type !== 'habit' && tgt > 0 && weekVal > tgt
+                    const goldColors = {
+                      fill: 'goal-gold-fill',
+                      text: 'text-amber-900 dark:text-amber-100 font-bold',
+                      label: 'text-amber-700 dark:text-amber-300 font-bold',
+                      todayPill: 'text-amber-900 dark:text-amber-100 bg-amber-400/40 font-bold',
+                      checkFull: 'bg-amber-400 border-amber-400',
+                      checkOutline: 'border-amber-400',
+                      checkStroke: '#f59e0b',
+                      chevron: 'text-amber-400',
+                    }
+                    const isGoalMet = !isExceeded && isDoneForColor
+                    const c = isExceeded ? goldColors : stateColors(barPct, isDoneForColor)
+
+                    const canLog = isOwner && !isFutureDay
 
                     return (
                       <div key={goal.text} className="space-y-1">
                         {/* Parent card */}
-                        <div className="relative rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800/60">
-                          <div
-                            className={`absolute inset-y-0 left-0 transition-all duration-700 ${c.fill}`}
-                            style={{ width: `${barPct * 100}%` }}
-                          />
+                        <div className={`relative rounded-xl overflow-hidden ${isExceeded ? 'goal-gold-fill' : isGoalMet ? 'goal-green-fill' : 'bg-zinc-100 dark:bg-zinc-800/60'} ${shakingGoals.has(goal.text) ? 'row-shake' : ''}`}
+                          style={isBreakdown ? { borderLeft: `4px solid ${isExceeded ? '#d97706' : isGoalMet ? '#059669' : c.accent}` } : undefined}>
+                          {!isExceeded && !isGoalMet && <div className={`absolute inset-y-0 left-0 transition-all duration-700 ${c.fill}`} style={{ width: `${Math.min(1, barPct) * 100}%` }} />}
+
+                          {/* Invisible split tap zones for count goals */}
+                          {canLog && goal.type !== 'habit' && !isBreakdown && (
+                            <>
+                              <button aria-label="subtract" onClick={() => setDayCount(goal.text, Math.max(0, todayVal - 1))}
+                                className="absolute inset-y-0 left-0 w-1/2 z-10 active:bg-black/5 dark:active:bg-white/5 transition-colors" />
+                              <button aria-label="add" onClick={() => {
+                                if (tgt > 0 && weekVal >= tgt) triggerShake(goal.text)
+                                setDayCount(goal.text, Math.min(999, todayVal + 1))
+                              }}
+                                className="absolute inset-y-0 right-0 w-1/2 z-10 active:bg-black/5 dark:active:bg-white/5 transition-colors" />
+                            </>
+                          )}
+
+                          {/* Visual content */}
                           <button
-                            onClick={() => !isFutureDay && (goal.type === 'habit' ? toggleHabit(goal.text) : setLoggingSheet(goal))}
-                            disabled={isFutureDay || (goal.type === 'habit' && !isOwner)}
-                            className="relative w-full flex items-center gap-2.5 px-3 py-2.5 text-left disabled:opacity-40">
-                            <div className={`w-3.5 h-3.5 rounded-sm border-2 shrink-0 flex items-center justify-center transition-colors ${showCheck ? c.checkFull : showDot ? c.checkOutline : 'border-zinc-300 dark:border-zinc-500'}`}>
-                              {(showCheck || showDot) && (
-                                <svg width="7" height="5" viewBox="0 0 10 8" fill="none">
-                                  <path d="M1 4L3.5 6.5L9 1" stroke={showCheck ? 'white' : c.checkStroke} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
-                              )}
-                            </div>
-                            <span className={`flex-1 text-sm truncate ${c.text}`}>{goal.text}</span>
-                            {todayVal > 0 && (
-                              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${c.todayPill}`}>+{todayVal} today</span>
+                            onClick={() => !isFutureDay && goal.type === 'habit' && toggleHabit(goal.text)}
+                            disabled={isFutureDay || goal.type !== 'habit'}
+                            className="relative w-full flex items-center gap-2.5 px-3 py-2.5 text-left disabled:pointer-events-none">
+                            {!isBreakdown && (
+                              <div className={`w-3.5 h-3.5 rounded-sm border-2 shrink-0 flex items-center justify-center transition-colors ${showCheck ? c.checkFull : 'border-zinc-300 dark:border-zinc-500'}`}>
+                                {showCheck && (
+                                  <svg width="7" height="5" viewBox="0 0 10 8" fill="none">
+                                    <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                                  </svg>
+                                )}
+                              </div>
+                            )}
+                            <span className={`flex-1 text-sm truncate ${isBreakdown ? 'font-bold uppercase tracking-wide' : ''} ${c.text}`}>{goal.text}</span>
+                            {(todayVal > 0 || breakdownTodayVal > 0) && (
+                              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${c.todayPill}`}>+{todayVal || breakdownTodayVal} today</span>
                             )}
                             {rightLabel && <span className={`text-[11px] tabular-nums shrink-0 ${c.label}`}>{rightLabel}</span>}
                           </button>
@@ -1210,16 +1321,33 @@ export default function MemberProfile() {
                               const st = Number(sg.target) || 0
                               const sp = st ? Math.min(1, sv / st) : 0
                               const sdone = st > 0 && sv >= st
-                              const sc = stateColors(sp, sdone)
+                              const sExceeded = st > 0 && sv > st
+                              const sGoalMet = !sExceeded && sdone
+                              const sc = sExceeded ? goldColors : stateColors(sp, sdone)
                               return (
-                                <div key={si} className="relative rounded-lg overflow-hidden bg-zinc-100 dark:bg-zinc-800/60">
-                                  <div
-                                    className={`absolute inset-y-0 left-0 transition-all duration-700 ${sc.fill}`}
-                                    style={{ width: `${sp * 100}%` }}
-                                  />
-                                  <div className="relative flex items-center gap-2 px-3 py-2">
+                                <div key={si} className={`relative rounded-lg overflow-hidden ${sExceeded ? 'goal-gold-fill' : sGoalMet ? 'goal-green-fill' : 'bg-zinc-100 dark:bg-zinc-800/60'} ${shakingGoals.has(k) ? 'row-shake' : ''}`}>
+                                  {!sExceeded && !sGoalMet && <div className={`absolute inset-y-0 left-0 transition-all duration-700 ${sc.fill}`} style={{ width: `${sp * 100}%` }} />}
+                                  {canLog && (
+                                    <>
+                                      <button aria-label="subtract" onClick={() => setDayCount(k, Math.max(0, todayV - 1))}
+                                        className="absolute inset-y-0 left-0 w-1/2 z-10 active:bg-black/5 dark:active:bg-white/5 transition-colors" />
+                                      <button aria-label="add" onClick={() => {
+                                        if (st > 0 && sv >= st) triggerShake(k)
+                                        setDayCount(k, Math.min(999, todayV + 1))
+                                      }}
+                                        className="absolute inset-y-0 right-0 w-1/2 z-10 active:bg-black/5 dark:active:bg-white/5 transition-colors" />
+                                    </>
+                                  )}
+                                  <div className="relative flex items-center gap-2 px-3 py-2 pointer-events-none">
+                                    <div className={`w-3.5 h-3.5 rounded-sm border-2 shrink-0 flex items-center justify-center transition-colors ${sdone ? sc.checkFull : 'border-zinc-300 dark:border-zinc-500'}`}>
+                                      {sdone && (
+                                        <svg width="7" height="5" viewBox="0 0 10 8" fill="none">
+                                          <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                      )}
+                                    </div>
                                     <span className={`text-xs flex-1 truncate ${sc.text}`}>{sg.text}</span>
-                                    {todayV > 0 && <span className={`text-[10px] font-semibold shrink-0 ${sc.label}`}>+{todayV}</span>}
+                                    {todayV > 0 && <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${sc.todayPill}`}>+{todayV} today</span>}
                                     <span className={`text-[10px] tabular-nums shrink-0 ${sc.label}`}>{sv}{st ? `/${st}` : ''}{sg.unit ? ` ${sg.unit}` : ''}</span>
                                   </div>
                                 </div>
@@ -1251,8 +1379,19 @@ export default function MemberProfile() {
             const isFutureDay = selectedDay > todayKey
             const close = closeLoggingSheet
             const sheetClass = "fixed inset-0 z-50 flex items-end justify-center"
-            const innerClass = `relative bg-white dark:bg-zinc-900 rounded-t-3xl w-full max-w-lg flex flex-col ${loggingClosing ? 'slide-down' : 'slide-up'}`
-            const handle = <div className="flex justify-center pt-3 pb-0 shrink-0"><div className="w-10 h-1 bg-zinc-200 dark:bg-zinc-700 rounded-full" /></div>
+            const innerClass = `relative bg-white dark:bg-zinc-900 rounded-t-3xl w-full max-w-lg flex flex-col shadow-2xl ${loggingClosing ? 'slide-down' : 'slide-up'}`
+            const sheetHeader = (label, title) => (
+              <div className="px-5 pt-4 pb-3 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
+                <div className="w-10 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto mb-4" />
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-base font-black text-zinc-900 dark:text-white">{title}</p>
+                    <p className="text-xs text-zinc-500 mt-0.5">{label}</p>
+                  </div>
+                  <button onClick={close} className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors -mt-0.5"><X size={16} /></button>
+                </div>
+              </div>
+            )
 
             // ── breakdown ──────────────────────────────────────────────────
             if (goal.subGoals?.length > 0) {
@@ -1260,15 +1399,7 @@ export default function MemberProfile() {
                 <div className={sheetClass} onClick={close}>
                   <div className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-[280ms] ${loggingClosing ? 'opacity-0' : ''}`} />
                   <div className={innerClass} style={{ maxHeight: '88vh' }} onClick={e => e.stopPropagation()}>
-                    {handle}
-                    <div className="px-5 pt-4 pb-2 flex items-start justify-between shrink-0">
-                      <div>
-                        <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-0.5">Breakdown</p>
-                        <h2 className="text-xl font-black text-zinc-900 dark:text-white leading-tight">{goal.text}</h2>
-                      </div>
-                      <button onClick={close} className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors mt-0.5"><X size={16} /></button>
-                    </div>
-                    <div className="h-px bg-zinc-100 dark:bg-zinc-800 mx-5" />
+                    {sheetHeader('Breakdown', goal.text)}
                     <div className="px-5 pb-8 pt-4 flex-1 overflow-y-auto overscroll-contain space-y-3">
                       {goal.subGoals.map((sg, si) => {
                         const k = `${goal.text}::${sg.text}`
@@ -1317,14 +1448,7 @@ export default function MemberProfile() {
               <div className={sheetClass} onClick={close}>
                 <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
                 <div className={innerClass} style={{ maxHeight: '88vh' }} onClick={e => e.stopPropagation()}>
-                  {handle}
-                  <div className="px-5 pt-4 pb-2 flex items-start justify-between shrink-0">
-                    <div>
-                      <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-0.5">Log progress</p>
-                      <h2 className="text-xl font-black text-zinc-900 dark:text-white leading-tight">{goal.text}</h2>
-                    </div>
-                    <button onClick={close} className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors mt-0.5"><X size={16} /></button>
-                  </div>
+                  {sheetHeader('Log progress', goal.text)}
                   {tgt > 0 && (
                     <div className="px-5 pt-2 pb-3">
                       <div className="flex items-baseline justify-between mb-2">
@@ -1480,7 +1604,7 @@ export default function MemberProfile() {
               <div className="max-w-lg mx-auto flex items-center gap-2 px-4"
                 style={{ paddingTop: 'max(8px, env(safe-area-inset-top))', paddingBottom: 8 }}>
                 <div className="flex-1">
-                  <CatProgressBar pct={catPct} atlasUrl={catAtlasUrl} sheetOpen={sheetOpen} compact />
+                  <CatProgressBar pct={catPct} atlasUrl={catAtlasUrl} sheetOpen={sheetOpen} compact gaming={uiTheme === 'gaming'} />
                 </div>
                 <span className="text-[11px] font-black tabular-nums shrink-0" style={{ color: dc }}>{r}%</span>
               </div>
@@ -1589,6 +1713,26 @@ export default function MemberProfile() {
                       </button>
                     )
                   })}
+                </div>
+              </div>
+
+              {/* Theme */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">Theme</label>
+                <div className="flex gap-2">
+                  {[
+                    { value: 'default', label: '🎨', name: 'Default' },
+                    { value: 'gaming',  label: '🎮', name: 'Gaming' },
+                  ].map(opt => (
+                    <button key={opt.value} onClick={() => saveUiTheme(opt.value)}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-semibold transition-all ${
+                        uiTheme === opt.value
+                          ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300'
+                          : 'border-zinc-200 dark:border-zinc-700 text-zinc-500 hover:border-zinc-300 dark:hover:border-zinc-600'
+                      }`}>
+                      <span>{opt.label}</span>{opt.name}
+                    </button>
+                  ))}
                 </div>
               </div>
 

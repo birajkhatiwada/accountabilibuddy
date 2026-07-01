@@ -7,7 +7,8 @@ import { useTheme } from '../ThemeContext'
 import { useAuth } from '../AuthContext'
 
 export default function Layout() {
-  const { dark, toggle } = useTheme()
+  const { dark, toggle, uiTheme } = useTheme()
+  const gaming = uiTheme === 'gaming'
   const { user, signOut } = useAuth()
   const [confirmSignOut, setConfirmSignOut] = useState(false)
   const handleSignOut = async () => { await signOut(); navigate('/') }
@@ -36,7 +37,9 @@ export default function Layout() {
 
   const linkClass = ({ isActive }) =>
     `flex flex-col items-center gap-0.5 flex-1 py-1 text-[10px] font-bold uppercase tracking-wide transition-all ${
-      isActive ? 'text-zinc-900 dark:text-white' : 'text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-400'
+      isActive
+        ? gaming ? 'text-[#00ff88]' : 'text-zinc-900 dark:text-white'
+        : 'text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-400'
     }`
 
   return (
@@ -51,7 +54,7 @@ export default function Layout() {
                 ← sessions
               </button>
               <h1 className="text-3xl font-black tracking-tight text-zinc-900 dark:text-white leading-none cursor-pointer" onClick={() => navigate(`/${sessionId}`)}>
-                accountabili<span style={{ background: 'linear-gradient(to right, #34d399, #2dd4bf)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>buddy</span>
+                accountabili<span style={{ background: gaming ? 'linear-gradient(to right, #00ff88, #00e5ff)' : 'linear-gradient(to right, #34d399, #2dd4bf)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>buddy</span>
               </h1>
               {session && (
                 <button onClick={copyCode} className="flex items-center gap-1.5 mt-1 group">
@@ -70,7 +73,7 @@ export default function Layout() {
               <button onClick={() => setConfirmSignOut(true)} className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Sign out">
                 <LogOut size={15} />
               </button>
-              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: gaming ? '#00ff88' : '#34d399', boxShadow: gaming ? '0 0 6px #00ff88' : 'none' }} />
             </div>
           </div>
         </header>
@@ -78,7 +81,7 @@ export default function Layout() {
         <header className="px-4 pt-4 pb-2 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <h1 className="text-lg font-black tracking-tight text-zinc-900 dark:text-white leading-none cursor-pointer shrink-0" onClick={() => navigate(`/${sessionId}`)}>
-              accountabili<span style={{ background: 'linear-gradient(to right, #34d399, #2dd4bf)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>buddy</span>
+              accountabili<span style={{ background: gaming ? 'linear-gradient(to right, #00ff88, #00e5ff)' : 'linear-gradient(to right, #34d399, #2dd4bf)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>buddy</span>
             </h1>
             {session && (
               <button onClick={copyCode} className="flex items-center gap-1 min-w-0 group">
@@ -96,7 +99,7 @@ export default function Layout() {
             <button onClick={() => setConfirmSignOut(true)} className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Sign out">
               <LogOut size={14} />
             </button>
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: gaming ? '#00ff88' : '#34d399', boxShadow: gaming ? '0 0 5px #00ff88' : 'none' }} />
           </div>
         </header>
       )}
@@ -111,7 +114,7 @@ export default function Layout() {
         <NavLink to={`/${sessionId}`} end className={linkClass}>
           {({ isActive }) => (
             <>
-              <div className={`p-1.5 rounded-xl transition-all ${isActive ? 'bg-zinc-100 dark:bg-zinc-800' : ''}`}>
+              <div className={`p-1.5 rounded-xl transition-all ${isActive ? (gaming ? 'bg-[#00ff88]/10' : 'bg-zinc-100 dark:bg-zinc-800') : ''}`}>
                 <Target size={18} />
               </div>
               This Week
@@ -121,7 +124,7 @@ export default function Layout() {
         <NavLink to={`/${sessionId}/history`} className={linkClass}>
           {({ isActive }) => (
             <>
-              <div className={`p-1.5 rounded-xl transition-all ${isActive ? 'bg-zinc-100 dark:bg-zinc-800' : ''}`}>
+              <div className={`p-1.5 rounded-xl transition-all ${isActive ? (gaming ? 'bg-[#00ff88]/10' : 'bg-zinc-100 dark:bg-zinc-800') : ''}`}>
                 <Clock size={18} />
               </div>
               History
@@ -131,7 +134,7 @@ export default function Layout() {
         <NavLink to={`/${sessionId}/pot`} className={linkClass}>
           {({ isActive }) => (
             <>
-              <div className={`p-1.5 rounded-xl transition-all ${isActive ? 'bg-zinc-100 dark:bg-zinc-800' : ''}`}>
+              <div className={`p-1.5 rounded-xl transition-all ${isActive ? (gaming ? 'bg-[#00ff88]/10' : 'bg-zinc-100 dark:bg-zinc-800') : ''}`}>
                 <DollarSign size={18} />
               </div>
               The Pot
@@ -141,7 +144,7 @@ export default function Layout() {
         <NavLink to={`/${sessionId}/feed`} className={linkClass}>
           {({ isActive }) => (
             <>
-              <div className={`p-1.5 rounded-xl transition-all ${isActive ? 'bg-zinc-100 dark:bg-zinc-800' : ''}`}>
+              <div className={`p-1.5 rounded-xl transition-all ${isActive ? (gaming ? 'bg-[#00ff88]/10' : 'bg-zinc-100 dark:bg-zinc-800') : ''}`}>
                 <Rss size={18} />
               </div>
               Feed
@@ -151,7 +154,7 @@ export default function Layout() {
         <NavLink to={user ? `/${sessionId}/member/${encodeURIComponent(user.displayName)}` : `/${sessionId}/members`} className={linkClass}>
           {({ isActive }) => (
             <>
-              <div className={`p-1.5 rounded-xl transition-all ${isActive ? 'bg-zinc-100 dark:bg-zinc-800' : ''}`}>
+              <div className={`p-1.5 rounded-xl transition-all ${isActive ? (gaming ? 'bg-[#00ff88]/10' : 'bg-zinc-100 dark:bg-zinc-800') : ''}`}>
                 <Users size={18} />
               </div>
               My Page

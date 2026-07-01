@@ -66,7 +66,7 @@ function GoalPopup({ goal, onSave, onClose }) {
           <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300 text-sm font-medium transition-colors">
             Cancel
           </button>
-          <h2 className="text-sm font-bold text-white">{goal ? 'Edit goal' : 'New goal'}</h2>
+          <h2 className="text-base font-semibold text-white">{goal ? 'Edit goal' : 'New goal'}</h2>
           <button
             onClick={() => draft.text.trim() && onSave(draft)}
             disabled={!draft.text.trim()}
@@ -82,7 +82,7 @@ function GoalPopup({ goal, onSave, onClose }) {
 
           {/* Goal name */}
           <div>
-            <p className="text-xs font-semibold text-zinc-500 mb-2">Goal</p>
+            <p className="text-xs font-medium uppercase tracking-widest text-zinc-500 mb-2">Goal</p>
             <input
               autoFocus
               type="text"
@@ -90,13 +90,13 @@ function GoalPopup({ goal, onSave, onClose }) {
               value={draft.text}
               onChange={e => update({ text: e.target.value })}
               style={{ fontSize: 16 }}
-              className="w-full bg-transparent text-2xl font-black text-white placeholder-zinc-700 focus:outline-none"
+              className="w-full bg-transparent text-base font-semibold text-white placeholder-zinc-700 focus:outline-none"
             />
           </div>
 
           {/* Type */}
           <div>
-            <p className="text-xs font-semibold text-zinc-500 mb-2">Type</p>
+            <p className="text-xs font-medium uppercase tracking-widest text-zinc-500 mb-2">Type</p>
             <div className="flex gap-2">
               {[
                 { value: 'habit', label: 'Daily habit', desc: 'Do it every day' },
@@ -119,7 +119,7 @@ function GoalPopup({ goal, onSave, onClose }) {
           {/* Count goal: target + unit */}
           {draft.type === 'weekly' && draft.subGoals.length === 0 && (
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-zinc-500">Weekly target</p>
+              <p className="text-xs font-medium uppercase tracking-widest text-zinc-500">Weekly target</p>
               <div className="flex items-center gap-3">
                 <div className="flex items-center bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shrink-0">
                   <button type="button"
@@ -178,7 +178,7 @@ function GoalPopup({ goal, onSave, onClose }) {
           {/* Sub-goals */}
           {draft.type === 'weekly' && (
             <div>
-              <p className="text-xs font-semibold text-zinc-500 mb-2">Breakdowns <span className="font-normal text-zinc-600">(optional)</span></p>
+              <p className="text-xs font-medium uppercase tracking-widest text-zinc-500 mb-2">Breakdowns <span className="font-normal text-zinc-600">(optional)</span></p>
               <div className="space-y-2">
                 {draft.subGoals.map((sg, si) => (
                   <div key={si} className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-2xl px-4" style={{ height: 44 }}>
@@ -238,7 +238,7 @@ function SortableGoalRow({ id, text, type, target, unit, subGoals = [], onEdit, 
 
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-zinc-100 truncate">{text}</p>
+        <p className="text-sm font-medium text-zinc-100 truncate">{text}</p>
         {subtitle && <p className="text-xs text-zinc-500 mt-0.5">{subtitle}</p>}
         {subGoals.length > 0 && (
           <div className="mt-1 space-y-0.5">
@@ -367,7 +367,7 @@ export default function EditGoals() {
           className="flex items-center gap-1.5 text-zinc-500 hover:text-zinc-300 transition-colors text-sm font-semibold mb-3">
           <ArrowLeft size={15} /> Back
         </button>
-        <h1 className="text-3xl font-black text-white">Edit Goals</h1>
+        <h1 className="text-xl font-bold text-white">Edit Goals</h1>
       </div>
 
       <div className="h-px bg-zinc-800 mx-4" />
@@ -400,7 +400,7 @@ export default function EditGoals() {
 
         {/* Add goal */}
         <button onClick={() => setEditingGoal({ index: -1, goal: null })}
-          className="mt-4 w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-95 transition-all">
+          className="mt-4 w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 bg-transparent hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-600 dark:hover:bg-emerald-950/40 dark:hover:border-emerald-700 dark:hover:text-emerald-400 active:scale-95 transition-all">
           <Plus size={14} strokeWidth={2.5} />
           Add goal
         </button>
