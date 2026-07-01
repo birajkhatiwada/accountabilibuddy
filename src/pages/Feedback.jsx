@@ -1,41 +1,41 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { collection, addDoc, Timestamp } from 'firebase/firestore'
+import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuth } from '../AuthContext'
 import { ArrowLeft } from 'lucide-react'
 
-const DRAFT_KEY = 'feedback_draft'
-
 export default function Feedback() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [text, setText] = useState(() => localStorage.getItem(DRAFT_KEY) || '')
+  const [text, setText] = useState('')
+  const [loading, setLoading] = useState(true)
   const [status, setStatus] = useState('')
   const timerRef = useRef(null)
   const savedRef = useRef(false)
 
-  // Persist draft to localStorage on every keystroke
-  const handleChange = (e) => {
-    const val = e.target.value
-    setText(val)
-    localStorage.setItem(DRAFT_KEY, val)
-    savedRef.current = false
-    setStatus('')
-  }
+  const draftRef = user ? doc(db, 'feedback_drafts', user.uid) : null
+
+  // Load draft from Firestore on mount
+  useEffect(() => {
+    if (!draftRef) return
+    getDoc(draftRef).then(snap => {
+      if (snap.exists()) setText(snap.data().text || '')
+      setLoading(false)
+    }).catch(() => setLoading(false))
+  }, [])
 
   const save = async (value) => {
-    if (!value.trim()) return
+    if (!draftRef) return
     setStatus('saving')
     try {
-      await addDoc(collection(db, 'feedback'), {
-        text: value.trim(),
-        name: user?.displayName || 'Anonymous',
-        createdAt: Timestamp.now(),
-        uid: user?.uid || null,
+      await setDoc(draftRef, {
+        text: value,
+        uid: user.uid,
+        name: user.displayName || 'Anonymous',
+        updatedAt: Timestamp.now(),
       })
       savedRef.current = true
-      localStorage.removeItem(DRAFT_KEY)
       setStatus('saved')
     } catch (e) {
       console.error('feedback save failed', e)
@@ -43,17 +43,18 @@ export default function Feedback() {
     }
   }
 
-  // Autosave 2s after stopping
-  useEffect(() => {
-    if (!text.trim() || savedRef.current) return
+  const handleChange = (e) => {
+    const val = e.target.value
+    setText(val)
+    savedRef.current = false
+    setStatus('')
     clearTimeout(timerRef.current)
-    timerRef.current = setTimeout(() => save(text), 2000)
-    return () => clearTimeout(timerRef.current)
-  }, [text])
+    timerRef.current = setTimeout(() => save(val), 1500)
+  }
 
   const handleBack = async () => {
     clearTimeout(timerRef.current)
-    if (text.trim() && !savedRef.current) await save(text)
+    if (!savedRef.current) await save(text)
     navigate(-1)
   }
 
@@ -65,7 +66,7 @@ export default function Feedback() {
           <ArrowLeft size={18} />
         </button>
         <span className={`text-xs transition-opacity ${status === 'error' ? 'text-red-400' : 'text-zinc-400 dark:text-zinc-600'}`}>
-          {status === 'saving' ? 'Saving…' : status === 'saved' ? 'Saved ✓' : status === 'error' ? 'Save failed — check connection' : ''}
+          {status === 'saving' ? 'Saving…' : status === 'saved' ? 'Saved ✓' : status === 'error' ? 'Save failed' : ''}
         </span>
       </div>
 
@@ -74,14 +75,20 @@ export default function Feedback() {
         <p className="text-xs text-zinc-400 dark:text-zinc-600 mb-5">
           {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
         </p>
-        <textarea
-          value={text}
-          onChange={handleChange}
-          placeholder="Write your thoughts here…"
-          style={{ fontSize: 16, lineHeight: '1.75' }}
-          className="flex-1 w-full bg-transparent text-zinc-800 dark:text-zinc-200 placeholder-zinc-300 dark:placeholder-zinc-700 focus:outline-none resize-none"
-          autoFocus
-        />
+        {loading ? (
+          <div className="flex-1 flex items-start pt-2">
+            <div className="w-4 h-4 border-2 border-zinc-300 dark:border-zinc-700 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : (
+          <textarea
+            value={text}
+            onChange={handleChange}
+            placeholder="Write your thoughts here…"
+            style={{ fontSize: 16, lineHeight: '1.75' }}
+            className="flex-1 w-full bg-transparent text-zinc-800 dark:text-zinc-200 placeholder-zinc-300 dark:placeholder-zinc-700 focus:outline-none resize-none"
+            autoFocus
+          />
+        )}
       </div>
     </div>
   )
