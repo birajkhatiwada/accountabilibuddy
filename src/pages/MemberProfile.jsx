@@ -126,21 +126,37 @@ function CatProgressBar({ pct, atlasUrl, sheetOpen, compact = false }) {
   if (compact) {
     const s = 2 / 3  // 48px → 32px
     return (
-      <div style={{ width: 32, height: 32, position: 'relative', flexShrink: 0 }}>
-        {showZzz && (
-          <div className="absolute pointer-events-none" style={{ top: '-10px', left: '50%', transform: 'translateX(-50%)' }}>
-            <span className="zzz-1 absolute text-[8px] font-black text-zinc-400 dark:text-zinc-500">z</span>
-            <span className="zzz-2 absolute text-[7px] font-black text-zinc-300 dark:text-zinc-600" style={{ left: '6px', top: '-3px' }}>z</span>
+      <div className="w-full relative" style={{ height: 46 }}>
+        {/* Track */}
+        <div className="absolute bottom-0 w-full" style={{ height: 7 }}>
+          <div className="absolute inset-0 rounded-full bg-zinc-200/80 dark:bg-zinc-800 ring-1 ring-inset ring-black/5 dark:ring-white/5" />
+          <div className="absolute inset-y-0 left-0 rounded-full overflow-hidden cat-bar-fill"
+            style={{ width: `${pctRound}%`, background: trackColor, transition: 'width 2s cubic-bezier(0.4,0,0.2,1)', boxShadow: `0 0 8px ${glowColor}` }}>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent cat-bar-shimmer" />
           </div>
-        )}
-        <div style={{
-          width: 32, height: 32,
-          backgroundImage: `url(${atlasUrl})`,
-          backgroundSize: `${Math.round(ATLAS_W * s)}px ${Math.round(ATLAS_H * s)}px`,
-          backgroundPosition: `-${Math.round(bgX * s)}px -${Math.round(bgY * s)}px`,
-          backgroundRepeat: 'no-repeat',
-          imageRendering: 'pixelated',
-        }} />
+          {pctRound > 3 && (
+            <div className="absolute top-1/2 rounded-full"
+              style={{ left: `${pctRound}%`, width: 6, height: 6, transform: 'translate(-50%,-50%)', background: 'white', boxShadow: `0 0 5px 2px ${glowColor}` }} />
+          )}
+        </div>
+        {/* Cat (32px) on top of track */}
+        <div className="absolute select-none"
+          style={{ left: `${clampedLeft}%`, bottom: 3, transform: 'translateX(-50%)', transition: 'left 2s cubic-bezier(0.4,0,0.2,1)' }}>
+          {showZzz && (
+            <div className="absolute pointer-events-none" style={{ top: '-10px', left: '50%', transform: 'translateX(-50%)' }}>
+              <span className="zzz-1 absolute text-[8px] font-black text-zinc-400 dark:text-zinc-500">z</span>
+              <span className="zzz-2 absolute text-[7px] font-black text-zinc-300 dark:text-zinc-600" style={{ left: '6px', top: '-3px' }}>z</span>
+            </div>
+          )}
+          <div style={{
+            width: 32, height: 32,
+            backgroundImage: `url(${atlasUrl})`,
+            backgroundSize: `${Math.round(ATLAS_W * s)}px ${Math.round(ATLAS_H * s)}px`,
+            backgroundPosition: `-${Math.round(bgX * s)}px -${Math.round(bgY * s)}px`,
+            backgroundRepeat: 'no-repeat',
+            imageRendering: 'pixelated',
+          }} />
+        </div>
       </div>
     )
   }
@@ -1451,30 +1467,16 @@ export default function MemberProfile() {
       {!catBarInView && myGoals.length > 0 && logsLoaded && createPortal(
         (() => {
           const sheetOpen = !!(loggingSheet || activeGoalSheet)
-          const r = Math.round(catPct * 100)
-          const tc = catPct >= 1
-            ? 'linear-gradient(to right,#34d399,#2dd4bf)'
-            : catPct >= 0.5 ? 'linear-gradient(to right,#fbbf24,#f97316)'
-            : 'linear-gradient(to right,#a78bfa,#8b5cf6)'
-          const gc = catPct >= 1 ? '#34d39966' : catPct >= 0.5 ? '#fbbf2466' : '#a78bfa66'
-          const dc = catPct >= 1 ? '#2dd4bf'   : catPct >= 0.5 ? '#f97316'   : '#8b5cf6'
+          const dc = catPct >= 1 ? '#2dd4bf' : catPct >= 0.5 ? '#f97316' : '#8b5cf6'
+          const r  = Math.round(catPct * 100)
           return (
-            <div className="fixed top-0 left-0 right-0 z-40 cat-sticky-strip">
-              <div className="max-w-lg mx-auto flex items-center gap-3 px-4 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md border-b border-zinc-200/70 dark:border-zinc-800"
-                style={{ paddingTop: 'max(10px, env(safe-area-inset-top))', paddingBottom: 10 }}>
-                <CatProgressBar pct={catPct} atlasUrl={catAtlasUrl} sheetOpen={sheetOpen} compact />
-                <div className="flex-1 relative" style={{ height: 7 }}>
-                  <div className="absolute inset-0 rounded-full bg-zinc-200/80 dark:bg-zinc-800 ring-1 ring-inset ring-black/5 dark:ring-white/5" />
-                  <div className="absolute inset-y-0 left-0 rounded-full cat-bar-fill"
-                    style={{ width: `${r}%`, background: tc, transition: 'width 2s cubic-bezier(0.4,0,0.2,1)', boxShadow: `0 0 6px ${gc}` }}>
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent cat-bar-shimmer rounded-full" />
-                  </div>
-                  {r > 3 && (
-                    <div className="absolute top-1/2 rounded-full"
-                      style={{ left: `${r}%`, width: 7, height: 7, transform: 'translate(-50%,-50%)', background: 'white', boxShadow: `0 0 5px 2px ${gc}` }} />
-                  )}
+            <div className="fixed top-0 left-0 right-0 z-40 cat-sticky-strip bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md border-b border-zinc-200/70 dark:border-zinc-800">
+              <div className="max-w-lg mx-auto flex items-center gap-2 px-4"
+                style={{ paddingTop: 'max(8px, env(safe-area-inset-top))', paddingBottom: 8 }}>
+                <div className="flex-1">
+                  <CatProgressBar pct={catPct} atlasUrl={catAtlasUrl} sheetOpen={sheetOpen} compact />
                 </div>
-                <span className="text-[11px] font-black tabular-nums w-8 text-right shrink-0" style={{ color: dc }}>{r}%</span>
+                <span className="text-[11px] font-black tabular-nums shrink-0" style={{ color: dc }}>{r}%</span>
               </div>
             </div>
           )
