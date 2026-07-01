@@ -10,6 +10,7 @@ import Feed from './pages/Feed'
 import Recap from './pages/Recap'
 import EditGoals from './pages/EditGoals'
 import Auth from './pages/Auth'
+import Feedback from './pages/Feedback'
 import { ThemeProvider } from './ThemeContext'
 import { AuthProvider, useAuth } from './AuthContext'
 
@@ -27,6 +28,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<SessionPicker />} />
+      <Route path="/feedback" element={<Feedback />} />
       <Route path="/:sessionId" element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="member/:name" element={<MemberProfile />} />

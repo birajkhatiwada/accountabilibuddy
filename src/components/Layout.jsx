@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { Outlet, NavLink, useParams, useNavigate, useLocation } from 'react-router-dom'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase'
-import { Target, DollarSign, Clock, Users, Rss, Moon, Sun, Copy, Check, LogOut } from 'lucide-react'
+import { Target, DollarSign, Clock, Users, Rss, Moon, Sun, Copy, Check, LogOut, MessageSquare } from 'lucide-react'
 import { useTheme } from '../ThemeContext'
 import { useAuth } from '../AuthContext'
 
@@ -100,6 +100,14 @@ export default function Layout() {
       <main className="flex-1 px-4 py-3 overflow-y-auto pb-24" style={{ overflowAnchor: 'none' }}>
         <Outlet />
       </main>
+
+      {/* Feedback FAB */}
+      <button onClick={() => navigate('/feedback')}
+        className="fixed right-4 z-50 flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 text-xs font-semibold px-3.5 py-2.5 rounded-full shadow-lg transition-all active:scale-95"
+        style={{ bottom: 'max(88px, calc(env(safe-area-inset-bottom) + 88px))' }}>
+        <MessageSquare size={14} />
+        Feedback
+      </button>
 
       {/* Pill nav */}
       {(() => {
