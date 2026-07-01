@@ -107,13 +107,13 @@ function CatProgressBar({ pct, atlasUrl, sheetOpen, compact = false }) {
   const pctRound = Math.round(displayedPct * 100)
   const clampedLeft = Math.min(Math.max(pctRound, 9), 91)
 
-  const trackColor = displayedPct >= 1
-    ? 'linear-gradient(to right,#34d399,#2dd4bf)'
-    : displayedPct >= 0.5
-      ? 'linear-gradient(to right,#fbbf24,#f97316)'
-      : 'linear-gradient(to right,#a78bfa,#8b5cf6)'
-  const glowColor = displayedPct >= 1 ? '#34d39966' : displayedPct >= 0.5 ? '#fbbf2466' : '#a78bfa66'
-  const dotColor  = displayedPct >= 1 ? '#2dd4bf'   : displayedPct >= 0.5 ? '#f97316'   : '#8b5cf6'
+  const trackColor = displayedPct >= 0.65
+    ? 'linear-gradient(to right,#22c55e,#4ade80)'
+    : displayedPct >= 0.35
+      ? 'linear-gradient(to right,#f97316,#fb923c)'
+      : 'linear-gradient(to right,#ef4444,#f87171)'
+  const glowColor = displayedPct >= 0.65 ? '#22c55e55' : displayedPct >= 0.35 ? '#f9731655' : '#ef444455'
+  const dotColor  = displayedPct >= 0.65 ? '#22c55e'   : displayedPct >= 0.35 ? '#f97316'   : '#ef4444'
 
   const behavior = REST_BEHAVIORS[behaviorIdx]
   const bgRow = isWalking
@@ -171,21 +171,33 @@ function CatProgressBar({ pct, atlasUrl, sheetOpen, compact = false }) {
         {/* Track: outer border + inner gap + fill */}
         <div className="absolute bottom-0 w-full"
           style={{ height: 14, border: `1.5px solid ${dotColor}`, borderRadius: 3, padding: 2, boxSizing: 'border-box' }}>
-          <div className="relative h-full overflow-hidden cat-bar-fill" style={{ borderRadius: 1 }}>
-            {/* Empty bg */}
+          <div className="relative h-full overflow-hidden" style={{ borderRadius: 1 }}>
             <div className="absolute inset-0 bg-zinc-100 dark:bg-zinc-800/60" />
-            {/* Fill */}
             <div className="absolute inset-y-0 left-0 h-full cat-bar-fill"
               style={{ width: `${pctRound}%`, background: trackColor, transition: 'width 2s cubic-bezier(0.4,0,0.2,1)', boxShadow: `0 0 8px ${glowColor}` }}>
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent cat-bar-shimmer" />
             </div>
-            {/* Milestone ticks */}
-            {[25, 50, 75].map(m => (
-              <div key={m} className="absolute top-0 bottom-0 w-px"
-                style={{ left: `${m}%`, background: pctRound >= m ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.08)' }} />
-            ))}
           </div>
         </div>
+
+        {/* Post signs at zone boundaries and finish */}
+        {[
+          { at: 35, signColor: '#f97316', postColor: '#c2410c' },
+          { at: 65, signColor: '#22c55e', postColor: '#15803d' },
+          { at: 100, signColor: null,     postColor: '#27272a' },
+        ].map(({ at, signColor, postColor }) => (
+          <div key={at} className="absolute pointer-events-none select-none flex flex-col items-center"
+            style={{ left: `${at}%`, bottom: 14, transform: 'translateX(-50%)', zIndex: 10 }}>
+            {signColor ? (
+              <div style={{ width: 16, height: 10, background: signColor, borderRadius: 2, marginBottom: 1, boxShadow: `0 0 4px ${signColor}88` }} />
+            ) : (
+              <div style={{ width: 18, height: 11, borderRadius: 2, marginBottom: 1, overflow: 'hidden',
+                background: 'repeating-conic-gradient(#1c1c1e 0% 25%, #e4e4e7 0% 50%) 0 0 / 6px 6px',
+                border: '1px solid #3f3f46' }} />
+            )}
+            <div style={{ width: 2, height: 16, background: postColor }} />
+          </div>
+        ))}
 
         {/* Cat */}
         <div className="absolute select-none"
