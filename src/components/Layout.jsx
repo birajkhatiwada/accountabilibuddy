@@ -118,7 +118,6 @@ export default function Layout() {
             {({ isActive }) => (
               <div className={pillTab(isActive)}>
                 <Target size={16} strokeWidth={isActive ? 2.5 : 2} />
-                {isActive && <span className="text-[11px] font-bold whitespace-nowrap">This Week</span>}
               </div>
             )}
           </NavLink>
@@ -126,7 +125,6 @@ export default function Layout() {
             {({ isActive }) => (
               <div className={pillTab(isActive)}>
                 <Clock size={16} strokeWidth={isActive ? 2.5 : 2} />
-                {isActive && <span className="text-[11px] font-bold whitespace-nowrap">History</span>}
               </div>
             )}
           </NavLink>
@@ -134,7 +132,6 @@ export default function Layout() {
             {({ isActive }) => (
               <div className={pillTab(isActive)}>
                 <DollarSign size={16} strokeWidth={isActive ? 2.5 : 2} />
-                {isActive && <span className="text-[11px] font-bold whitespace-nowrap">The Pot</span>}
               </div>
             )}
           </NavLink>
@@ -142,7 +139,6 @@ export default function Layout() {
             {({ isActive }) => (
               <div className={pillTab(isActive)}>
                 <Rss size={16} strokeWidth={isActive ? 2.5 : 2} />
-                {isActive && <span className="text-[11px] font-bold whitespace-nowrap">Feed</span>}
               </div>
             )}
           </NavLink>
@@ -150,7 +146,6 @@ export default function Layout() {
             {({ isActive }) => (
               <div className={pillTab(isActive)}>
                 <Users size={16} strokeWidth={isActive ? 2.5 : 2} />
-                {isActive && <span className="text-[11px] font-bold whitespace-nowrap">My Page</span>}
               </div>
             )}
           </NavLink>
