@@ -117,35 +117,40 @@ export default function Layout() {
           <NavLink to={`/${sessionId}`} end>
             {({ isActive }) => (
               <div className={pillTab(isActive)}>
-                <Target size={16} strokeWidth={isActive ? 2.5 : 2} />
+                <Target size={15} strokeWidth={isActive ? 2.5 : 2} />
+                <span className="text-[10px] font-semibold">Week</span>
               </div>
             )}
           </NavLink>
           <NavLink to={`/${sessionId}/history`}>
             {({ isActive }) => (
               <div className={pillTab(isActive)}>
-                <Clock size={16} strokeWidth={isActive ? 2.5 : 2} />
+                <Clock size={15} strokeWidth={isActive ? 2.5 : 2} />
+                <span className="text-[10px] font-semibold">History</span>
               </div>
             )}
           </NavLink>
           <NavLink to={`/${sessionId}/pot`}>
             {({ isActive }) => (
               <div className={pillTab(isActive)}>
-                <DollarSign size={16} strokeWidth={isActive ? 2.5 : 2} />
+                <DollarSign size={15} strokeWidth={isActive ? 2.5 : 2} />
+                <span className="text-[10px] font-semibold">Pot</span>
               </div>
             )}
           </NavLink>
           <NavLink to={`/${sessionId}/feed`}>
             {({ isActive }) => (
               <div className={pillTab(isActive)}>
-                <Rss size={16} strokeWidth={isActive ? 2.5 : 2} />
+                <Rss size={15} strokeWidth={isActive ? 2.5 : 2} />
+                <span className="text-[10px] font-semibold">Feed</span>
               </div>
             )}
           </NavLink>
           <NavLink to={user ? `/${sessionId}/member/${encodeURIComponent(user.displayName)}` : `/${sessionId}/members`}>
             {({ isActive }) => (
               <div className={pillTab(isActive)}>
-                <Users size={16} strokeWidth={isActive ? 2.5 : 2} />
+                <Users size={15} strokeWidth={isActive ? 2.5 : 2} />
+                <span className="text-[10px] font-semibold">Me</span>
               </div>
             )}
           </NavLink>

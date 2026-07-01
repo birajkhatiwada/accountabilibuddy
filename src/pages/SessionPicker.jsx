@@ -313,16 +313,19 @@ export default function SessionPicker() {
       <div className="fixed left-1/2 -translate-x-1/2 z-40 flex justify-center"
         style={{ bottom: 'max(16px, env(safe-area-inset-bottom))' }}>
         <nav className="flex items-center gap-0.5 bg-zinc-900/95 backdrop-blur-2xl rounded-full px-2 py-2 shadow-2xl shadow-black/60 border border-white/[0.06]">
-          <div className="flex items-center px-3 py-2 rounded-full bg-zinc-700 text-white">
-            <Home size={16} strokeWidth={2.5} />
+          <div className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-zinc-700 text-white">
+            <Home size={15} strokeWidth={2.5} />
+            <span className="text-[10px] font-semibold">Sessions</span>
           </div>
           <button onClick={() => setMode('join')}
             className="flex items-center gap-1.5 px-3 py-2 rounded-full text-zinc-400 hover:text-zinc-200 transition-all duration-200">
-            <Users size={16} strokeWidth={2} />
+            <Users size={15} strokeWidth={2} />
+            <span className="text-[10px] font-semibold">Join</span>
           </button>
           <button onClick={() => setMode('create')}
             className="flex items-center gap-1.5 px-3 py-2 rounded-full text-zinc-400 hover:text-zinc-200 transition-all duration-200">
-            <Plus size={16} strokeWidth={2} />
+            <Plus size={15} strokeWidth={2} />
+            <span className="text-[10px] font-semibold">New</span>
           </button>
         </nav>
       </div>
