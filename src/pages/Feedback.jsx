@@ -9,6 +9,7 @@ export default function Feedback() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [text, setText] = useState('')
+  const [saved, setSaved] = useState(false)
 
   const submit = async () => {
     if (!text.trim()) return
@@ -18,43 +19,45 @@ export default function Feedback() {
       createdAt: Timestamp.now(),
       uid: user?.uid || null,
     })
-    setText('')
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col max-w-lg mx-auto">
-      <header className="px-4 pt-12 pb-4 flex items-center gap-3">
+    <div className="min-h-screen bg-white dark:bg-zinc-950 flex flex-col max-w-lg mx-auto">
+      {/* Top bar */}
+      <div className="flex items-center justify-between px-4 pt-12 pb-2">
         <button onClick={() => navigate(-1)}
-          className="p-2 -ml-2 rounded-xl text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all">
+          className="p-2 -ml-2 rounded-xl text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors">
           <ArrowLeft size={18} />
         </button>
-        <div>
-          <h1 className="text-xl font-black text-zinc-900 dark:text-white">Feedback</h1>
-          <p className="text-xs text-zinc-400 dark:text-zinc-600">Tell us what's on your mind</p>
-        </div>
-      </header>
+        <button onClick={submit} disabled={!text.trim()}
+          className="text-sm font-bold text-emerald-500 disabled:opacity-30 transition-opacity active:scale-95">
+          {saved ? 'Saved' : 'Done'}
+        </button>
+      </div>
 
-      <div className="flex-1 px-4 pt-2 pb-10 flex flex-col gap-4">
+      {/* Editor */}
+      <div className="flex-1 flex flex-col px-5 pt-2 pb-10">
+        <h2 className="text-2xl font-black text-zinc-900 dark:text-white mb-1">Feedback</h2>
+        <p className="text-xs text-zinc-400 dark:text-zinc-600 mb-5">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
         <textarea
           value={text}
           onChange={e => setText(e.target.value)}
-          placeholder="What's working? What's broken? What's missing?"
-          rows={8}
+          placeholder="Write your thoughts here…"
           maxLength={800}
-          style={{ fontSize: 16 }}
-          className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl px-4 py-3.5 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-600 transition-all resize-none"
+          style={{ fontSize: 16, lineHeight: '1.75' }}
+          className="flex-1 w-full bg-transparent text-zinc-800 dark:text-zinc-200 placeholder-zinc-300 dark:placeholder-zinc-700 focus:outline-none resize-none"
           autoFocus
         />
-        <div className="flex items-center justify-between">
-          <span className="text-[11px] text-zinc-400 dark:text-zinc-600">{text.length}/800</span>
-          <button
-            onClick={submit}
-            disabled={!text.trim()}
-            className="px-5 py-2.5 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-bold disabled:opacity-30 transition-all active:scale-95">
-            Submit
-          </button>
-        </div>
       </div>
+
+      {/* Bottom char count */}
+      {text.length > 0 && (
+        <div className="px-5 pb-6 text-right">
+          <span className="text-[11px] text-zinc-300 dark:text-zinc-700">{text.length}/800</span>
+        </div>
+      )}
     </div>
   )
 }
