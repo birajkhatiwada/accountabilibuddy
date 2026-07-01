@@ -125,13 +125,13 @@ export default function Layout() {
         return (
           <div className="fixed left-1/2 -translate-x-1/2 z-40 px-4 w-full max-w-lg"
             style={{ bottom: 'max(16px, env(safe-area-inset-bottom))' }}>
-            <nav className="relative flex items-center bg-zinc-900/95 backdrop-blur-2xl rounded-full py-1.5 shadow-2xl shadow-black/60 border border-white/[0.06]">
-              {/* Sliding pill indicator */}
-              <div className="absolute inset-y-1.5 rounded-full pointer-events-none"
+            <nav className="relative flex items-center bg-zinc-900/95 backdrop-blur-2xl rounded-full p-1 shadow-2xl shadow-black/60 border border-white/[0.06]">
+              {/* Sliding pill indicator — stays inside the border */}
+              <div className="absolute inset-y-1 rounded-full pointer-events-none"
                 style={{
-                  width: `${100 / tabs.length}%`,
-                  transform: `translateX(${activeIdx * 100}%)`,
-                  transition: 'transform 0.3s cubic-bezier(0.34, 1.3, 0.64, 1)',
+                  width: `calc((100% - 8px) / ${tabs.length})`,
+                  left: `calc(4px + ${activeIdx} * (100% - 8px) / ${tabs.length})`,
+                  transition: 'left 0.3s cubic-bezier(0.34, 1.3, 0.64, 1)',
                   background: gaming ? 'rgba(0,255,136,0.15)' : 'rgb(63,63,70)',
                 }} />
               {tabs.map(({ to, end, Icon, label }) => (
