@@ -35,11 +35,13 @@ export default function Layout() {
     setCopied(true); setTimeout(() => setCopied(false), 2000)
   }
 
-  const linkClass = ({ isActive }) =>
-    `flex flex-col items-center gap-0.5 flex-1 py-1 text-[10px] font-bold uppercase tracking-wide transition-all ${
+  const pillTab = (isActive) =>
+    `flex items-center gap-1.5 px-3 py-2 rounded-full transition-all duration-200 ${
       isActive
-        ? gaming ? 'text-[#00ff88]' : 'text-zinc-900 dark:text-white'
-        : 'text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-400'
+        ? gaming
+          ? 'bg-[#00ff88]/15 text-[#00ff88]'
+          : 'bg-zinc-700 dark:bg-zinc-700 text-white'
+        : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-200 dark:hover:text-zinc-300'
     }`
 
   return (
@@ -104,64 +106,56 @@ export default function Layout() {
         </header>
       )}
 
-      <main className="flex-1 px-4 py-3 overflow-y-auto pb-28" style={{ overflowAnchor: 'none' }}>
+      <main className="flex-1 px-4 py-3 overflow-y-auto pb-24" style={{ overflowAnchor: 'none' }}>
         <Outlet />
       </main>
 
-      {/* Nav */}
-      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-lg bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md border-t border-zinc-200 dark:border-zinc-800/60 flex justify-around pt-2 pb-safe"
-        style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }}>
-        <NavLink to={`/${sessionId}`} end className={linkClass}>
-          {({ isActive }) => (
-            <>
-              <div className={`p-1.5 rounded-xl transition-all ${isActive ? (gaming ? 'bg-[#00ff88]/10' : 'bg-zinc-100 dark:bg-zinc-800') : ''}`}>
-                <Target size={18} />
+      {/* Pill nav */}
+      <div className="fixed left-1/2 -translate-x-1/2 z-40 flex justify-center"
+        style={{ bottom: 'max(16px, env(safe-area-inset-bottom))' }}>
+        <nav className="flex items-center gap-0.5 bg-zinc-900/95 backdrop-blur-2xl rounded-full px-2 py-2 shadow-2xl shadow-black/60 border border-white/[0.06]">
+          <NavLink to={`/${sessionId}`} end>
+            {({ isActive }) => (
+              <div className={pillTab(isActive)}>
+                <Target size={16} strokeWidth={isActive ? 2.5 : 2} />
+                {isActive && <span className="text-[11px] font-bold whitespace-nowrap">This Week</span>}
               </div>
-              This Week
-            </>
-          )}
-        </NavLink>
-        <NavLink to={`/${sessionId}/history`} className={linkClass}>
-          {({ isActive }) => (
-            <>
-              <div className={`p-1.5 rounded-xl transition-all ${isActive ? (gaming ? 'bg-[#00ff88]/10' : 'bg-zinc-100 dark:bg-zinc-800') : ''}`}>
-                <Clock size={18} />
+            )}
+          </NavLink>
+          <NavLink to={`/${sessionId}/history`}>
+            {({ isActive }) => (
+              <div className={pillTab(isActive)}>
+                <Clock size={16} strokeWidth={isActive ? 2.5 : 2} />
+                {isActive && <span className="text-[11px] font-bold whitespace-nowrap">History</span>}
               </div>
-              History
-            </>
-          )}
-        </NavLink>
-        <NavLink to={`/${sessionId}/pot`} className={linkClass}>
-          {({ isActive }) => (
-            <>
-              <div className={`p-1.5 rounded-xl transition-all ${isActive ? (gaming ? 'bg-[#00ff88]/10' : 'bg-zinc-100 dark:bg-zinc-800') : ''}`}>
-                <DollarSign size={18} />
+            )}
+          </NavLink>
+          <NavLink to={`/${sessionId}/pot`}>
+            {({ isActive }) => (
+              <div className={pillTab(isActive)}>
+                <DollarSign size={16} strokeWidth={isActive ? 2.5 : 2} />
+                {isActive && <span className="text-[11px] font-bold whitespace-nowrap">The Pot</span>}
               </div>
-              The Pot
-            </>
-          )}
-        </NavLink>
-        <NavLink to={`/${sessionId}/feed`} className={linkClass}>
-          {({ isActive }) => (
-            <>
-              <div className={`p-1.5 rounded-xl transition-all ${isActive ? (gaming ? 'bg-[#00ff88]/10' : 'bg-zinc-100 dark:bg-zinc-800') : ''}`}>
-                <Rss size={18} />
+            )}
+          </NavLink>
+          <NavLink to={`/${sessionId}/feed`}>
+            {({ isActive }) => (
+              <div className={pillTab(isActive)}>
+                <Rss size={16} strokeWidth={isActive ? 2.5 : 2} />
+                {isActive && <span className="text-[11px] font-bold whitespace-nowrap">Feed</span>}
               </div>
-              Feed
-            </>
-          )}
-        </NavLink>
-        <NavLink to={user ? `/${sessionId}/member/${encodeURIComponent(user.displayName)}` : `/${sessionId}/members`} className={linkClass}>
-          {({ isActive }) => (
-            <>
-              <div className={`p-1.5 rounded-xl transition-all ${isActive ? (gaming ? 'bg-[#00ff88]/10' : 'bg-zinc-100 dark:bg-zinc-800') : ''}`}>
-                <Users size={18} />
+            )}
+          </NavLink>
+          <NavLink to={user ? `/${sessionId}/member/${encodeURIComponent(user.displayName)}` : `/${sessionId}/members`}>
+            {({ isActive }) => (
+              <div className={pillTab(isActive)}>
+                <Users size={16} strokeWidth={isActive ? 2.5 : 2} />
+                {isActive && <span className="text-[11px] font-bold whitespace-nowrap">My Page</span>}
               </div>
-              My Page
-            </>
-          )}
-        </NavLink>
-      </nav>
+            )}
+          </NavLink>
+        </nav>
+      </div>
 
       {confirmSignOut && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-6" onClick={() => setConfirmSignOut(false)}>

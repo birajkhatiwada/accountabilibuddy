@@ -133,7 +133,7 @@ function CatProgressBar({ pct, atlasUrl, sheetOpen, compact = false, gaming = fa
             boxShadow: gaming ? `0 0 6px ${glowColor}` : 'none',
             padding: 2, boxSizing: 'border-box' }}>
           <div className="relative h-full overflow-hidden" style={{ borderRadius: 1 }}>
-            <div className={`absolute inset-0 ${gaming ? '' : 'bg-zinc-100 dark:bg-zinc-800/60'}`} style={gaming ? { background: '#050505' } : undefined} />
+            <div className={`absolute inset-0 ${gaming ? '' : 'bg-zinc-100 dark:bg-zinc-800'}`} style={gaming ? { background: '#050505' } : undefined} />
             <div className="absolute inset-y-0 left-0 h-full cat-bar-fill"
               style={{ width: `${pctRound}%`, background: trackColor, transition: 'width 2s cubic-bezier(0.4,0,0.2,1)', boxShadow: `0 0 6px ${glowColor}` }}>
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent cat-bar-shimmer" />
@@ -213,6 +213,9 @@ function CatProgressBar({ pct, atlasUrl, sheetOpen, compact = false, gaming = fa
         {/* Cover for the progress bar area only */}
         <div className="absolute bottom-0 w-full bg-white dark:bg-zinc-900"
           style={{ height: 14, zIndex: 3 }} />
+        {/* Cover hides sign posts behind the bar; cat (zIndex 4) still shows above */}
+        <div className="absolute bottom-0 w-full bg-white dark:bg-zinc-900"
+          style={{ height: 14, zIndex: 3 }} />
         {/* Track: outer border + inner gap + fill */}
         <div className="absolute bottom-0 w-full"
           style={{
@@ -222,7 +225,7 @@ function CatProgressBar({ pct, atlasUrl, sheetOpen, compact = false, gaming = fa
             padding: 2, boxSizing: 'border-box', zIndex: 5,
           }}>
           <div className="relative h-full overflow-hidden" style={{ borderRadius: 1 }}>
-            <div className={`absolute inset-0 ${gaming ? '' : 'bg-zinc-100 dark:bg-zinc-800/60'}`} style={gaming ? { background: '#050505' } : undefined} />
+            <div className={`absolute inset-0 ${gaming ? '' : 'bg-zinc-100 dark:bg-zinc-800'}`} style={gaming ? { background: '#050505' } : undefined} />
             <div className="absolute inset-y-0 left-0 h-full cat-bar-fill"
               style={{ width: `${pctRound}%`, background: trackColor, transition: 'width 2s cubic-bezier(0.4,0,0.2,1)', boxShadow: `0 0 8px ${glowColor}` }}>
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent cat-bar-shimmer" />
@@ -238,7 +241,7 @@ function CatProgressBar({ pct, atlasUrl, sheetOpen, compact = false, gaming = fa
           { at: 100, signColor: null,     postColor: gaming ? dotColor : '#27272a', label: gaming ? 'MAX' : null },
         ].map(({ at, signColor, postColor, label }) => (
           <div key={at} className="absolute pointer-events-none select-none flex flex-col items-center"
-            style={{ left: `${at}%`, bottom: 6, transform: 'translateX(-50%)', zIndex: 2 }}>
+            style={{ left: `${at}%`, bottom: 11, transform: 'translateX(-50%)', zIndex: 2 }}>
             {signColor ? (
               <div style={{ width: gaming ? 14 : 11, height: gaming ? 8 : 7, background: signColor, borderRadius: gaming ? 1 : 1,
                 marginBottom: 1, boxShadow: gaming ? `0 0 6px ${signColor}` : `0 0 4px ${signColor}88`,
@@ -1096,7 +1099,7 @@ export default function MemberProfile() {
       {(entry || myGoals.length > 0) && (
         <>
           {/* Day strip */}
-          <div className="flex items-stretch bg-zinc-100 dark:bg-zinc-800/60 rounded-xl overflow-hidden">
+          <div className="flex items-stretch bg-zinc-100 dark:bg-zinc-800 rounded-xl overflow-hidden">
             {weekDays.map((day, i) => {
               const key = dateKey(day)
               const isToday    = key === todayKey
@@ -1272,7 +1275,7 @@ export default function MemberProfile() {
                     return (
                       <div key={goal.text} className="space-y-1">
                         {/* Parent card */}
-                        <div className={`relative rounded-xl overflow-hidden ${isExceeded ? 'goal-gold-fill' : isGoalMet ? 'goal-green-fill' : 'bg-zinc-100 dark:bg-zinc-800/60'} ${shakingGoals.has(goal.text) ? 'row-shake' : ''}`}
+                        <div className={`relative rounded-xl overflow-hidden ${isExceeded ? 'goal-gold-fill' : isGoalMet ? 'goal-green-fill' : 'bg-zinc-100 dark:bg-zinc-800'} ${shakingGoals.has(goal.text) ? 'row-shake' : ''}`}
                           style={isBreakdown ? { borderLeft: `4px solid ${isExceeded ? '#d97706' : isGoalMet ? '#059669' : c.accent}` } : undefined}>
                           {!isExceeded && !isGoalMet && <div className={`absolute inset-y-0 left-0 transition-all duration-700 ${c.fill}`} style={{ width: `${Math.min(1, barPct) * 100}%` }} />}
 
@@ -1325,7 +1328,7 @@ export default function MemberProfile() {
                               const sGoalMet = !sExceeded && sdone
                               const sc = sExceeded ? goldColors : stateColors(sp, sdone)
                               return (
-                                <div key={si} className={`relative rounded-lg overflow-hidden ${sExceeded ? 'goal-gold-fill' : sGoalMet ? 'goal-green-fill' : 'bg-zinc-100 dark:bg-zinc-800/60'} ${shakingGoals.has(k) ? 'row-shake' : ''}`}>
+                                <div key={si} className={`relative rounded-lg overflow-hidden ${sExceeded ? 'goal-gold-fill' : sGoalMet ? 'goal-green-fill' : 'bg-zinc-100 dark:bg-zinc-800'} ${shakingGoals.has(k) ? 'row-shake' : ''}`}>
                                   {!sExceeded && !sGoalMet && <div className={`absolute inset-y-0 left-0 transition-all duration-700 ${sc.fill}`} style={{ width: `${sp * 100}%` }} />}
                                   {canLog && (
                                     <>
@@ -1347,7 +1350,7 @@ export default function MemberProfile() {
                                       )}
                                     </div>
                                     <span className={`text-xs flex-1 truncate ${sc.text}`}>{sg.text}</span>
-                                    {todayV > 0 && <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${sc.todayPill}`}>+{todayV} today</span>}
+                                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${sc.todayPill} ${todayV === 0 ? 'opacity-0' : ''}`}>+{todayV} today</span>
                                     <span className={`text-[10px] tabular-nums shrink-0 ${sc.label}`}>{sv}{st ? `/${st}` : ''}{sg.unit ? ` ${sg.unit}` : ''}</span>
                                   </div>
                                 </div>
@@ -1620,75 +1623,72 @@ export default function MemberProfile() {
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
           <div className="relative bg-white dark:bg-zinc-900 rounded-t-3xl w-full max-w-lg slide-up pb-safe" onClick={e => e.stopPropagation()}>
             <div className="w-10 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto mt-3 mb-4" />
-            <div className="px-5 pb-6 space-y-5">
+            <div className="px-4 pb-5 space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-base font-black text-zinc-900 dark:text-white">Edit Banner</h3>
-                <button onClick={() => setEditBannerOpen(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"><X size={18} /></button>
+                <h3 className="text-sm font-black text-zinc-900 dark:text-white">Edit Profile</h3>
+                <button onClick={() => setEditBannerOpen(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"><X size={16} /></button>
               </div>
 
-              {/* Display name */}
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">Display Name <span className="font-normal normal-case text-zinc-500">({name})</span></label>
-                <input value={nicknameInput} onChange={e => setNicknameInput(e.target.value)}
-                  maxLength={30} placeholder={name}
-                  style={{ fontSize: 16 }}
-                  className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-emerald-400 dark:focus:border-emerald-500 transition-colors" />
-              </div>
-
-              {/* Status */}
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">Status</label>
-                <input value={statusInput} onChange={e => setStatusInput(e.target.value)}
-                  maxLength={40} placeholder="What's the vibe this week?"
-                  style={{ fontSize: 16 }}
-                  className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-emerald-400 dark:focus:border-emerald-500 transition-colors" />
-              </div>
-
-              {/* Bio */}
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">Bio</label>
-                <textarea value={bioInput} onChange={e => setBioInput(e.target.value)}
-                  maxLength={120} rows={2} placeholder="Short bio…"
-                  style={{ fontSize: 16 }}
-                  className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-emerald-400 dark:focus:border-emerald-500 transition-colors resize-none" />
-              </div>
-
-              {/* Banner image */}
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">Banner Image</label>
-                <label className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border cursor-pointer transition-colors ${bannerImageUrl ? 'border-emerald-400 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-950/30' : 'border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-600'}`}>
-                  {uploadingBanner
-                    ? <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin shrink-0" />
-                    : <Camera size={15} className="text-zinc-400 shrink-0" />}
-                  <span className="text-sm text-zinc-600 dark:text-zinc-400 flex-1">{bannerImageUrl ? 'Change banner photo' : 'Upload a banner photo'}</span>
-                  {bannerImageUrl && <button type="button" onClick={e => { e.preventDefault(); setBannerImageUrl(''); setDoc(sessionDoc, { bannerImages: { [name]: '' } }, { merge: true }) }} className="text-xs text-zinc-400 hover:text-red-400 transition-colors">Remove</button>}
-                  <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadBannerImage(f); e.target.value = '' }} />
-                </label>
-                {bannerImageUrl && <img src={bannerImageUrl} alt="" className="w-full h-16 object-cover rounded-xl" />}
-              </div>
-
-              {/* Banner color */}
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">Banner Color {bannerImageUrl && <span className="font-normal text-zinc-500">(hidden when photo set)</span>}</label>
-                <div className="flex flex-wrap gap-2">
-                  {BANNER_COLORS.map((_, i) => (
-                    <button key={i} onClick={() => saveBannerColor(i)}
-                      className={`w-7 h-7 rounded-full transition-all hover:scale-110 ${bannerColorIdx === i ? 'ring-2 ring-offset-2 ring-zinc-400 dark:ring-zinc-500 dark:ring-offset-zinc-900 scale-110' : ''}`}
-                      style={{ background: BANNER_COLOR_PREVIEWS[i] }} />
-                  ))}
+              {/* Name + Status row */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">Name</label>
+                  <input value={nicknameInput} onChange={e => setNicknameInput(e.target.value)}
+                    maxLength={30} placeholder={name} style={{ fontSize: 16 }}
+                    className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-lg px-2.5 py-2 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-emerald-400 transition-all" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">Status</label>
+                  <input value={statusInput} onChange={e => setStatusInput(e.target.value)}
+                    maxLength={40} placeholder="Vibe this week…" style={{ fontSize: 16 }}
+                    className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-lg px-2.5 py-2 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-emerald-400 transition-all" />
                 </div>
               </div>
 
-              {/* Vibe */}
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">Vibe</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {VIBE_EMOJIS.map(e => (
-                    <button key={e} onClick={() => saveBannerVibe(bannerVibe === e ? '' : e)}
-                      className={`text-xl w-9 h-9 flex items-center justify-center rounded-xl transition-all hover:scale-110 ${bannerVibe === e ? 'bg-zinc-100 dark:bg-zinc-800 scale-110 ring-2 ring-zinc-300 dark:ring-zinc-600' : 'opacity-50 hover:opacity-100'}`}>
-                      {e}
-                    </button>
-                  ))}
+              {/* Bio */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">Bio</label>
+                <textarea value={bioInput} onChange={e => setBioInput(e.target.value)}
+                  maxLength={120} rows={2} placeholder="Short bio…" style={{ fontSize: 16 }}
+                  className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-lg px-2.5 py-2 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-emerald-400 transition-all resize-none" />
+              </div>
+
+              {/* Banner image */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">Banner Image</label>
+                <label className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors ${bannerImageUrl ? 'border-emerald-400 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-950/30' : 'border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800'}`}>
+                  {uploadingBanner
+                    ? <div className="w-3.5 h-3.5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin shrink-0" />
+                    : <Camera size={13} className="text-zinc-400 shrink-0" />}
+                  <span className="text-xs text-zinc-600 dark:text-zinc-400 flex-1">{bannerImageUrl ? 'Change photo' : 'Upload photo'}</span>
+                  {bannerImageUrl && <button type="button" onClick={e => { e.preventDefault(); setBannerImageUrl(''); setDoc(sessionDoc, { bannerImages: { [name]: '' } }, { merge: true }) }} className="text-xs text-zinc-400 hover:text-red-400 transition-colors">Remove</button>}
+                  <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadBannerImage(f); e.target.value = '' }} />
+                </label>
+                {bannerImageUrl && <img src={bannerImageUrl} alt="" className="w-full h-12 object-cover rounded-lg" />}
+              </div>
+
+              {/* Banner color + Vibe in one row */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">Color</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {BANNER_COLORS.map((_, i) => (
+                      <button key={i} onClick={() => saveBannerColor(i)}
+                        className={`w-6 h-6 rounded-full transition-all hover:scale-110 ${bannerColorIdx === i ? 'ring-2 ring-offset-1 ring-zinc-400 dark:ring-zinc-500 dark:ring-offset-zinc-900 scale-110' : ''}`}
+                        style={{ background: BANNER_COLOR_PREVIEWS[i] }} />
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">Vibe</label>
+                  <div className="flex flex-wrap gap-1">
+                    {VIBE_EMOJIS.map(e => (
+                      <button key={e} onClick={() => saveBannerVibe(bannerVibe === e ? '' : e)}
+                        className={`text-base w-7 h-7 flex items-center justify-center rounded-lg transition-all ${bannerVibe === e ? 'bg-zinc-100 dark:bg-zinc-800 scale-110 ring-1 ring-zinc-300 dark:ring-zinc-600' : 'opacity-50 hover:opacity-100'}`}>
+                        {e}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
