@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { collection, addDoc, Timestamp } from 'firebase/firestore'
 import { db } from '../firebase'
@@ -9,38 +9,63 @@ export default function Feedback() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [text, setText] = useState('')
-  const [saved, setSaved] = useState(false)
+  const [status, setStatus] = useState('') // '' | 'saving' | 'saved'
+  const timerRef = useRef(null)
+  const savedRef = useRef(false)
 
-  const submit = async () => {
+  const save = async (value) => {
+    if (!value.trim()) return
+    setStatus('saving')
+    try {
+      await addDoc(collection(db, 'feedback'), {
+        text: value.trim(),
+        name: user?.displayName || 'Anonymous',
+        createdAt: Timestamp.now(),
+        uid: user?.uid || null,
+      })
+      savedRef.current = true
+      setStatus('saved')
+    } catch (e) {
+      console.error('feedback save failed', e)
+      setStatus('')
+    }
+  }
+
+  // Debounce autosave — fires 1.5s after the user stops typing
+  useEffect(() => {
     if (!text.trim()) return
-    await addDoc(collection(db, 'feedback'), {
-      text: text.trim(),
-      name: user?.displayName || 'Anonymous',
-      createdAt: Timestamp.now(),
-      uid: user?.uid || null,
-    })
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    savedRef.current = false
+    setStatus('')
+    clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => save(text), 1500)
+    return () => clearTimeout(timerRef.current)
+  }, [text])
+
+  const handleBack = async () => {
+    clearTimeout(timerRef.current)
+    if (text.trim() && !savedRef.current) await save(text)
+    navigate(-1)
   }
 
   return (
     <div className="min-h-screen bg-white dark:bg-zinc-950 flex flex-col max-w-lg mx-auto">
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 pt-12 pb-2">
-        <button onClick={() => navigate(-1)}
+        <button onClick={handleBack}
           className="p-2 -ml-2 rounded-xl text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors">
           <ArrowLeft size={18} />
         </button>
-        <button onClick={submit} disabled={!text.trim()}
-          className="text-sm font-bold text-emerald-500 disabled:opacity-30 transition-opacity active:scale-95">
-          {saved ? 'Saved' : 'Done'}
-        </button>
+        <span className="text-xs text-zinc-400 dark:text-zinc-600 transition-opacity">
+          {status === 'saving' ? 'Saving…' : status === 'saved' ? 'Saved' : ''}
+        </span>
       </div>
 
       {/* Editor */}
       <div className="flex-1 flex flex-col px-5 pt-2 pb-10">
         <h2 className="text-2xl font-black text-zinc-900 dark:text-white mb-1">Feedback</h2>
-        <p className="text-xs text-zinc-400 dark:text-zinc-600 mb-5">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+        <p className="text-xs text-zinc-400 dark:text-zinc-600 mb-5">
+          {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+        </p>
         <textarea
           value={text}
           onChange={e => setText(e.target.value)}
@@ -52,7 +77,6 @@ export default function Feedback() {
         />
       </div>
 
-      {/* Bottom char count */}
       {text.length > 0 && (
         <div className="px-5 pb-6 text-right">
           <span className="text-[11px] text-zinc-300 dark:text-zinc-700">{text.length}/800</span>
