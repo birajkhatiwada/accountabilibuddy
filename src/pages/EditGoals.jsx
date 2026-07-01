@@ -400,10 +400,8 @@ export default function EditGoals() {
 
         {/* Add goal */}
         <button onClick={() => setEditingGoal({ index: -1, goal: null })}
-          className="group add-goal-btn mt-4 w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold active:scale-95 transition-transform">
-          <span className="add-goal-plus-wrap">
-            <Plus size={14} strokeWidth={2.5} />
-          </span>
+          className="mt-4 w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-95 transition-all">
+          <Plus size={14} strokeWidth={2.5} />
           Add goal
         </button>
 
