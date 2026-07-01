@@ -170,6 +170,17 @@
 .zzz-1 { animation: zzz-1 2s ease-out infinite; }
 .zzz-2 { animation: zzz-2 2s ease-out 0.85s infinite; }
 
+@keyframes cat-bar-shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+.cat-bar-shimmer {
+  animation: cat-bar-shimmer 2.4s ease-in-out infinite;
+}
+.cat-bar-fill {
+  will-change: width;
+}
+
 /* TipTap sticky note editor */
 .tiptap-note .ProseMirror {
   outline: none;

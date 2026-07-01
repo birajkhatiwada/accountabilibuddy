@@ -101,11 +101,14 @@ function CatProgressBar({ pct, atlasUrl }) {
 
   const pctRound = Math.round(pct * 100)
   const clampedLeft = Math.min(Math.max(pctRound, 9), 91)
+
   const trackColor = pct >= 1
     ? 'linear-gradient(to right,#34d399,#2dd4bf)'
     : pct >= 0.5
       ? 'linear-gradient(to right,#fbbf24,#f97316)'
       : 'linear-gradient(to right,#a78bfa,#8b5cf6)'
+  const glowColor = pct >= 1 ? '#34d39966' : pct >= 0.5 ? '#fbbf2466' : '#a78bfa66'
+  const dotColor  = pct >= 1 ? '#2dd4bf'   : pct >= 0.5 ? '#f97316'   : '#8b5cf6'
 
   const behavior = REST_BEHAVIORS[behaviorIdx]
   const bgRow = isWalking
@@ -117,30 +120,47 @@ function CatProgressBar({ pct, atlasUrl }) {
 
   return (
     <div className="w-full mt-3">
-      <div className="flex items-center justify-between mb-1">
+      <div className="flex items-center justify-between mb-1.5">
         <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">This week</span>
-        <span className="text-xs font-black text-zinc-700 dark:text-zinc-200">{pctRound}%</span>
+        <span className="text-[11px] font-black tabular-nums" style={{ color: dotColor }}>{pctRound}%</span>
       </div>
 
       <div className="relative h-16">
-        <div className="absolute bottom-0 w-full h-2.5 bg-zinc-200 dark:bg-zinc-700/70 rounded-full overflow-hidden">
-          <div className="h-full rounded-full" style={{ width: `${pctRound}%`, background: trackColor, transition: 'width 0.7s ease' }} />
+        {/* Track */}
+        <div className="absolute bottom-0 w-full" style={{ height: 10 }}>
+          {/* Background */}
+          <div className="absolute inset-0 rounded-full bg-zinc-200/80 dark:bg-zinc-800 ring-1 ring-inset ring-black/5 dark:ring-white/5" />
+
+          {/* Fill */}
+          <div className="absolute inset-y-0 left-0 rounded-full overflow-hidden cat-bar-fill"
+            style={{ width: `${pctRound}%`, background: trackColor, transition: 'width 0.7s ease', boxShadow: `0 0 10px ${glowColor}` }}>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent cat-bar-shimmer" />
+          </div>
+
+          {/* Milestone ticks */}
+          {[25, 50, 75].map(m => (
+            <div key={m} className="absolute top-1/2 -translate-y-1/2 w-px rounded-full"
+              style={{ left: `${m}%`, height: 14, background: pctRound >= m ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.12)' }} />
+          ))}
+
+          {/* Trailing glow dot */}
+          {pctRound > 3 && (
+            <div className="absolute top-1/2 -translate-y-1/2 rounded-full"
+              style={{ left: `${pctRound}%`, width: 8, height: 8, transform: 'translate(-50%,-50%)', background: 'white', boxShadow: `0 0 6px 2px ${glowColor}, 0 0 2px white` }} />
+          )}
         </div>
 
-        <div
-          className="absolute select-none"
-          style={{ left: `${clampedLeft}%`, bottom: '6px', transform: 'translateX(-50%)', transition: 'left 0.7s ease' }}
-        >
+        {/* Cat */}
+        <div className="absolute select-none"
+          style={{ left: `${clampedLeft}%`, bottom: 6, transform: 'translateX(-50%)', transition: 'left 0.7s ease' }}>
           {showZzz && (
             <div className="absolute pointer-events-none" style={{ top: '-14px', left: '50%', transform: 'translateX(-50%)' }}>
               <span className="zzz-1 absolute text-[10px] font-black text-zinc-400 dark:text-zinc-500">z</span>
               <span className="zzz-2 absolute text-[8px] font-black text-zinc-300 dark:text-zinc-600" style={{ left: '9px', top: '-5px' }}>z</span>
             </div>
           )}
-
           <div style={{
-            width: FRAME_W,
-            height: FRAME_H,
+            width: FRAME_W, height: FRAME_H,
             backgroundImage: `url(${atlasUrl})`,
             backgroundSize: `${ATLAS_W}px ${ATLAS_H}px`,
             backgroundPosition: `-${bgX}px -${bgY}px`,
@@ -828,12 +848,20 @@ export default function MemberProfile() {
           <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: `radial-gradient(circle, white 1px, transparent 1px)`, backgroundSize: '20px 20px' }} />
           {bannerVibe && !bannerImageUrl && <div className="absolute right-5 bottom-3 text-7xl opacity-20 select-none pointer-events-none leading-none">{bannerVibe}</div>}
 
-          {/* Edit banner button */}
+          {/* Owner actions — bottom-right of banner */}
           {isOwner && (
-            <button onClick={() => { setStatusInput(status); setBioInput(bio); setNicknameInput(nickname); setEditBannerOpen(true) }}
-              className="absolute bottom-2.5 right-2.5 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-black/30 hover:bg-black/50 backdrop-blur-sm text-white/80 hover:text-white text-xs font-semibold transition-all active:scale-95">
-              <Pencil size={11} /> Edit
-            </button>
+            <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1.5">
+              {myGoals.length > 0 && (
+                <button onClick={() => navigate(`/${sessionId}/member/${encodeURIComponent(name)}/goals`)}
+                  className="flex items-center gap-1 px-2 py-1.5 rounded-xl bg-black/30 hover:bg-black/50 backdrop-blur-sm text-white/80 hover:text-white text-xs font-semibold transition-all active:scale-95">
+                  🎯 Goals
+                </button>
+              )}
+              <button onClick={() => { setStatusInput(status); setBioInput(bio); setNicknameInput(nickname); setEditBannerOpen(true) }}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-black/30 hover:bg-black/50 backdrop-blur-sm text-white/80 hover:text-white text-xs font-semibold transition-all active:scale-95">
+                <Pencil size={11} /> Edit
+              </button>
+            </div>
           )}
         </div>
 
@@ -887,14 +915,6 @@ export default function MemberProfile() {
         </div>
       </div>
 
-      {/* Edit Goals — full-width below banner */}
-      {isOwner && myGoals.length > 0 && (
-        <button onClick={() => navigate(`/${sessionId}/member/${encodeURIComponent(name)}/goals`)}
-          className="add-goal-btn w-full py-3 flex items-center justify-center gap-2 font-bold text-sm rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98]">
-          <span className="add-goal-plus-wrap">✏️</span>
-          Edit Goals
-        </button>
-      )}
 
 
 
