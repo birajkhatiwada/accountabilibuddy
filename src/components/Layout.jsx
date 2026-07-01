@@ -6,6 +6,46 @@ import { Target, DollarSign, Clock, Users, Rss, Moon, Sun, Copy, Check, LogOut, 
 import { useTheme } from '../ThemeContext'
 import { useAuth } from '../AuthContext'
 
+function PillNav({ sessionId, user, gaming, location, isHome }) {
+  if (isHome) return null
+  const myPath = user ? `/${sessionId}/member/${encodeURIComponent(user.displayName)}` : `/${sessionId}/members`
+  const tabs = [
+    { to: `/${sessionId}`, end: true, Icon: Target,     label: 'Week'    },
+    { to: `/${sessionId}/history`,    Icon: Clock,      label: 'History' },
+    { to: `/${sessionId}/pot`,        Icon: DollarSign, label: 'Pot'     },
+    { to: `/${sessionId}/feed`,       Icon: Rss,        label: 'Feed'    },
+    { to: myPath,                     Icon: Users,      label: 'Me'      },
+  ]
+  const activeIdx = tabs.findIndex(t =>
+    t.end ? location.pathname === t.to : location.pathname.startsWith(t.to)
+  )
+  return (
+    <div className="fixed left-1/2 -translate-x-1/2 z-40 px-4 w-full max-w-lg"
+      style={{ bottom: 'max(16px, env(safe-area-inset-bottom))' }}>
+      <nav className="relative flex items-center bg-zinc-900/95 backdrop-blur-2xl rounded-full p-1 shadow-2xl shadow-black/60 border border-white/[0.06]">
+        <div className="absolute inset-y-1 rounded-full pointer-events-none"
+          style={{
+            width: `calc((100% - 8px) / ${tabs.length})`,
+            left: `calc(4px + ${activeIdx} * (100% - 8px) / ${tabs.length})`,
+            transition: 'left 0.3s cubic-bezier(0.34, 1.3, 0.64, 1)',
+            background: gaming ? 'rgba(0,255,136,0.15)' : 'rgb(63,63,70)',
+          }} />
+        {tabs.map(({ to, end, Icon, label }) => (
+          <NavLink key={to} to={to} end={end} className="flex-1 z-10">
+            {({ isActive }) => (
+              <div className="flex flex-col items-center gap-0.5 py-1.5 transition-colors duration-200"
+                style={{ color: isActive ? (gaming ? '#00ff88' : '#fff') : '#71717a' }}>
+                <Icon size={16} strokeWidth={isActive ? 2.5 : 2} />
+                <span className="text-[9px] font-semibold tracking-wide">{label}</span>
+              </div>
+            )}
+          </NavLink>
+        ))}
+      </nav>
+    </div>
+  )
+}
+
 export default function Layout() {
   const { dark, toggle, uiTheme } = useTheme()
   const gaming = uiTheme === 'gaming'
@@ -101,54 +141,18 @@ export default function Layout() {
         <Outlet />
       </main>
 
-      {/* Feedback FAB */}
-      <button onClick={() => navigate('/feedback')}
-        className="fixed right-4 z-50 flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 text-xs font-semibold px-3.5 py-2.5 rounded-full shadow-lg transition-all active:scale-95"
-        style={{ bottom: 'max(88px, calc(env(safe-area-inset-bottom) + 88px))' }}>
-        <MessageSquare size={14} />
-        Feedback
-      </button>
+      {/* Feedback FAB — hidden on session home */}
+      {!isHome && (
+        <button onClick={() => navigate('/feedback')}
+          className="fixed right-4 z-50 flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 text-xs font-semibold px-3.5 py-2.5 rounded-full shadow-lg transition-all active:scale-95"
+          style={{ bottom: 'max(88px, calc(env(safe-area-inset-bottom) + 88px))' }}>
+          <MessageSquare size={14} />
+          Feedback
+        </button>
+      )}
 
       {/* Pill nav — hidden on session home */}
-      {!isHome && (() => {
-        const myPath = user ? `/${sessionId}/member/${encodeURIComponent(user.displayName)}` : `/${sessionId}/members`
-        const tabs = [
-          { to: `/${sessionId}`, end: true,  Icon: Target,      label: 'Week'    },
-          { to: `/${sessionId}/history`,      Icon: Clock,       label: 'History' },
-          { to: `/${sessionId}/pot`,          Icon: DollarSign,  label: 'Pot'     },
-          { to: `/${sessionId}/feed`,         Icon: Rss,         label: 'Feed'    },
-          { to: myPath,                       Icon: Users,       label: 'Me'      },
-        ]
-        const activeIdx = tabs.findIndex(t =>
-          t.end ? location.pathname === t.to : location.pathname.startsWith(t.to)
-        )
-        return (
-          <div className="fixed left-1/2 -translate-x-1/2 z-40 px-4 w-full max-w-lg"
-            style={{ bottom: 'max(16px, env(safe-area-inset-bottom))' }}>
-            <nav className="relative flex items-center bg-zinc-900/95 backdrop-blur-2xl rounded-full p-1 shadow-2xl shadow-black/60 border border-white/[0.06]">
-              {/* Sliding pill indicator — stays inside the border */}
-              <div className="absolute inset-y-1 rounded-full pointer-events-none"
-                style={{
-                  width: `calc((100% - 8px) / ${tabs.length})`,
-                  left: `calc(4px + ${activeIdx} * (100% - 8px) / ${tabs.length})`,
-                  transition: 'left 0.3s cubic-bezier(0.34, 1.3, 0.64, 1)',
-                  background: gaming ? 'rgba(0,255,136,0.15)' : 'rgb(63,63,70)',
-                }} />
-              {tabs.map(({ to, end, Icon, label }) => (
-                <NavLink key={to} to={to} end={end} className="flex-1 z-10">
-                  {({ isActive }) => (
-                    <div className="flex flex-col items-center gap-0.5 py-1.5 transition-colors duration-200"
-                      style={{ color: isActive ? (gaming ? '#00ff88' : '#fff') : '#71717a' }}>
-                      <Icon size={16} strokeWidth={isActive ? 2.5 : 2} />
-                      <span className="text-[9px] font-semibold tracking-wide">{label}</span>
-                    </div>
-                  )}
-                </NavLink>
-              ))}
-            </nav>
-          </div>
-        )
-      })()}
+      <PillNav sessionId={sessionId} user={user} gaming={gaming} location={location} isHome={isHome} />
 
       {confirmSignOut && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-6" onClick={() => setConfirmSignOut(false)}>
