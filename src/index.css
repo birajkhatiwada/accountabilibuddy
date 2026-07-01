@@ -177,6 +177,14 @@
 .zzz-1 { animation: zzz-1 2s ease-out infinite; }
 .zzz-2 { animation: zzz-2 2s ease-out 0.85s infinite; }
 
+@keyframes cat-sticky-in {
+  from { transform: translateY(-100%); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+.cat-sticky-strip {
+  animation: cat-sticky-in 0.22s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
 @keyframes cat-bar-shimmer {
   0%   { transform: translateX(-100%); }
   100% { transform: translateX(200%); }

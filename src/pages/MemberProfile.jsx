@@ -47,7 +47,7 @@ const REST_BEHAVIORS = [
 ]
 const SLEEP_COUNT = 2 // first N behaviors are sleep
 
-function CatProgressBar({ pct, atlasUrl, sheetOpen }) {
+function CatProgressBar({ pct, atlasUrl, sheetOpen, compact = false }) {
   const [displayedPct, setDisplayedPct] = useState(pct)
   const [isWalking, setIsWalking]       = useState(false)
   const [facingRight, setFacingRight]   = useState(true)
@@ -122,6 +122,28 @@ function CatProgressBar({ pct, atlasUrl, sheetOpen }) {
   const bgX = frame * FRAME_W
   const bgY = bgRow * FRAME_H
   const showZzz = !isWalking && behavior.zzz
+
+  if (compact) {
+    const s = 2 / 3  // 48px → 32px
+    return (
+      <div style={{ width: 32, height: 32, position: 'relative', flexShrink: 0 }}>
+        {showZzz && (
+          <div className="absolute pointer-events-none" style={{ top: '-10px', left: '50%', transform: 'translateX(-50%)' }}>
+            <span className="zzz-1 absolute text-[8px] font-black text-zinc-400 dark:text-zinc-500">z</span>
+            <span className="zzz-2 absolute text-[7px] font-black text-zinc-300 dark:text-zinc-600" style={{ left: '6px', top: '-3px' }}>z</span>
+          </div>
+        )}
+        <div style={{
+          width: 32, height: 32,
+          backgroundImage: `url(${atlasUrl})`,
+          backgroundSize: `${Math.round(ATLAS_W * s)}px ${Math.round(ATLAS_H * s)}px`,
+          backgroundPosition: `-${Math.round(bgX * s)}px -${Math.round(bgY * s)}px`,
+          backgroundRepeat: 'no-repeat',
+          imageRendering: 'pixelated',
+        }} />
+      </div>
+    )
+  }
 
   return (
     <div className="w-full mt-3">
@@ -275,6 +297,8 @@ export default function MemberProfile() {
   const [activeClosing, setActiveClosing]     = useState(false)
   const [loggingSheet, setLoggingSheet]       = useState(null)
   const [loggingClosing, setLoggingClosing]   = useState(false)
+  const catBarRef   = useRef(null)
+  const [catBarInView, setCatBarInView] = useState(true)
   const [uploadingPhoto, setUploadingPhoto] = useState({})
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [uploadingBanner, setUploadingBanner] = useState(false)
@@ -832,6 +856,36 @@ export default function MemberProfile() {
     series: myGoals.map((g, i) => ({ name: g.text, color: GOAL_COLORS[i % GOAL_COLORS.length], data: getGoalDailyPct(g) })),
   }), [logs, myGoals])
 
+  // ── cat bar shared state (used by main bar + sticky strip) ──────────────
+  const catPct = useMemo(() => {
+    if (!myGoals.length || !logsLoaded) return 0
+    return myGoals.reduce((sum, g) => {
+      if (g.type === 'habit') return sum + Object.values(logs).filter(d => d.habits?.[g.text]).length / 7
+      if (g.subGoals?.length > 0) {
+        const r = g.subGoals.map(sg => {
+          const k = `${g.text}::${sg.text}`
+          const done = Object.values(logs).reduce((s, d) => s + (Number(d.counts?.[k]) || 0), 0)
+          return Math.min(1, done / (Number(sg.target) || 1))
+        })
+        return sum + r.reduce((s, v) => s + v, 0) / r.length
+      }
+      const done = Object.values(logs).reduce((s, d) => s + (Number(d.counts?.[g.text]) || 0), 0)
+      return sum + Math.min(1, done / (Number(g.target) || 1))
+    }, 0) / myGoals.length
+  }, [myGoals, logs, logsLoaded])
+
+  const catAtlasUrl = useMemo(() =>
+    CAT_ATLASES[typeof entry?.catColor === 'number' ? entry.catColor : 0],
+  [entry?.catColor])
+
+  useEffect(() => {
+    const el = catBarRef.current
+    if (!el) return
+    const obs = new IntersectionObserver(([e]) => setCatBarInView(e.isIntersecting), { threshold: 0.1 })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+
   // ── loading skeleton ──────────────────────────────────────────────────────
 
   if (entry === undefined) return (
@@ -912,23 +966,11 @@ export default function MemberProfile() {
           {bio && <p className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500 leading-snug">{bio}</p>}
           <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-1">{formatWeekLabel(weekId)}</p>
 
-          {myGoals.length > 0 && logsLoaded && (() => {
-            const pct = myGoals.reduce((sum, g) => {
-              if (g.type === 'habit') return sum + Object.values(logs).filter(d => d.habits?.[g.text]).length / 7
-              if (g.subGoals?.length > 0) {
-                const r = g.subGoals.map(sg => {
-                  const k = `${g.text}::${sg.text}`
-                  const done = Object.values(logs).reduce((s, d) => s + (Number(d.counts?.[k]) || 0), 0)
-                  return Math.min(1, done / (Number(sg.target) || 1))
-                })
-                return sum + r.reduce((s, v) => s + v, 0) / r.length
-              }
-              const done = Object.values(logs).reduce((s, d) => s + (Number(d.counts?.[g.text]) || 0), 0)
-              return sum + Math.min(1, done / (Number(g.target) || 1))
-            }, 0) / myGoals.length
-            const atlasUrl = CAT_ATLASES[typeof entry?.catColor === 'number' ? entry.catColor : 0]
-            return <CatProgressBar pct={pct} atlasUrl={atlasUrl} sheetOpen={!!(loggingSheet || activeGoalSheet)} />
-          })()}
+          <div ref={catBarRef}>
+            {myGoals.length > 0 && logsLoaded && (
+              <CatProgressBar pct={catPct} atlasUrl={catAtlasUrl} sheetOpen={!!(loggingSheet || activeGoalSheet)} />
+            )}
+          </div>
         </div>
       </div>
 
@@ -1404,6 +1446,41 @@ export default function MemberProfile() {
 
 
         </>
+      )}
+
+      {/* Sticky cat strip — shown when main bar is scrolled out of view */}
+      {!catBarInView && myGoals.length > 0 && logsLoaded && createPortal(
+        (() => {
+          const sheetOpen = !!(loggingSheet || activeGoalSheet)
+          const r = Math.round(catPct * 100)
+          const tc = catPct >= 1
+            ? 'linear-gradient(to right,#34d399,#2dd4bf)'
+            : catPct >= 0.5 ? 'linear-gradient(to right,#fbbf24,#f97316)'
+            : 'linear-gradient(to right,#a78bfa,#8b5cf6)'
+          const gc = catPct >= 1 ? '#34d39966' : catPct >= 0.5 ? '#fbbf2466' : '#a78bfa66'
+          const dc = catPct >= 1 ? '#2dd4bf'   : catPct >= 0.5 ? '#f97316'   : '#8b5cf6'
+          return (
+            <div className="fixed top-0 left-0 right-0 z-40 cat-sticky-strip">
+              <div className="max-w-lg mx-auto flex items-center gap-3 px-4 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md border-b border-zinc-200/70 dark:border-zinc-800"
+                style={{ paddingTop: 'max(10px, env(safe-area-inset-top))', paddingBottom: 10 }}>
+                <CatProgressBar pct={catPct} atlasUrl={catAtlasUrl} sheetOpen={sheetOpen} compact />
+                <div className="flex-1 relative" style={{ height: 7 }}>
+                  <div className="absolute inset-0 rounded-full bg-zinc-200/80 dark:bg-zinc-800 ring-1 ring-inset ring-black/5 dark:ring-white/5" />
+                  <div className="absolute inset-y-0 left-0 rounded-full cat-bar-fill"
+                    style={{ width: `${r}%`, background: tc, transition: 'width 2s cubic-bezier(0.4,0,0.2,1)', boxShadow: `0 0 6px ${gc}` }}>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent cat-bar-shimmer rounded-full" />
+                  </div>
+                  {r > 3 && (
+                    <div className="absolute top-1/2 rounded-full"
+                      style={{ left: `${r}%`, width: 7, height: 7, transform: 'translate(-50%,-50%)', background: 'white', boxShadow: `0 0 5px 2px ${gc}` }} />
+                  )}
+                </div>
+                <span className="text-[11px] font-black tabular-nums w-8 text-right shrink-0" style={{ color: dc }}>{r}%</span>
+              </div>
+            </div>
+          )
+        })(),
+        document.body
       )}
 
       {/* Edit Banner sheet */}
