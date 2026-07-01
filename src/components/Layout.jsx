@@ -35,15 +35,6 @@ export default function Layout() {
     setCopied(true); setTimeout(() => setCopied(false), 2000)
   }
 
-  const pillTab = (isActive) =>
-    `flex flex-col items-center gap-0.5 px-3.5 py-1.5 rounded-full transition-all duration-200 ${
-      isActive
-        ? gaming
-          ? 'bg-[#00ff88]/15 text-[#00ff88]'
-          : 'bg-zinc-700 dark:bg-zinc-700 text-white'
-        : 'text-zinc-500 dark:text-zinc-500 hover:text-zinc-200 dark:hover:text-zinc-300'
-    }`
-
   return (
     <div className="min-h-screen flex flex-col max-w-lg mx-auto relative">
       {/* Header */}
@@ -107,57 +98,49 @@ export default function Layout() {
       )}
 
       <main className="flex-1 px-4 py-3 overflow-y-auto pb-24" style={{ overflowAnchor: 'none' }}>
-        <div key={location.pathname} className="page-slide">
-          <Outlet />
-        </div>
+        <Outlet />
       </main>
 
       {/* Pill nav */}
-      <div className="fixed left-1/2 -translate-x-1/2 z-40 flex justify-center"
-        style={{ bottom: 'max(16px, env(safe-area-inset-bottom))' }}>
-        <nav className="flex items-center gap-0.5 bg-zinc-900/95 backdrop-blur-2xl rounded-full px-2 py-1.5 shadow-2xl shadow-black/60 border border-white/[0.06]">
-          <NavLink to={`/${sessionId}`} end>
-            {({ isActive }) => (
-              <div className={pillTab(isActive)}>
-                <Target size={16} strokeWidth={isActive ? 2.5 : 2} />
-                <span className="text-[9px] font-semibold tracking-wide">Week</span>
-              </div>
-            )}
-          </NavLink>
-          <NavLink to={`/${sessionId}/history`}>
-            {({ isActive }) => (
-              <div className={pillTab(isActive)}>
-                <Clock size={16} strokeWidth={isActive ? 2.5 : 2} />
-                <span className="text-[9px] font-semibold tracking-wide">History</span>
-              </div>
-            )}
-          </NavLink>
-          <NavLink to={`/${sessionId}/pot`}>
-            {({ isActive }) => (
-              <div className={pillTab(isActive)}>
-                <DollarSign size={16} strokeWidth={isActive ? 2.5 : 2} />
-                <span className="text-[9px] font-semibold tracking-wide">Pot</span>
-              </div>
-            )}
-          </NavLink>
-          <NavLink to={`/${sessionId}/feed`}>
-            {({ isActive }) => (
-              <div className={pillTab(isActive)}>
-                <Rss size={16} strokeWidth={isActive ? 2.5 : 2} />
-                <span className="text-[9px] font-semibold tracking-wide">Feed</span>
-              </div>
-            )}
-          </NavLink>
-          <NavLink to={user ? `/${sessionId}/member/${encodeURIComponent(user.displayName)}` : `/${sessionId}/members`}>
-            {({ isActive }) => (
-              <div className={pillTab(isActive)}>
-                <Users size={16} strokeWidth={isActive ? 2.5 : 2} />
-                <span className="text-[9px] font-semibold tracking-wide">Me</span>
-              </div>
-            )}
-          </NavLink>
-        </nav>
-      </div>
+      {(() => {
+        const myPath = user ? `/${sessionId}/member/${encodeURIComponent(user.displayName)}` : `/${sessionId}/members`
+        const tabs = [
+          { to: `/${sessionId}`, end: true,  Icon: Target,      label: 'Week'    },
+          { to: `/${sessionId}/history`,      Icon: Clock,       label: 'History' },
+          { to: `/${sessionId}/pot`,          Icon: DollarSign,  label: 'Pot'     },
+          { to: `/${sessionId}/feed`,         Icon: Rss,         label: 'Feed'    },
+          { to: myPath,                       Icon: Users,       label: 'Me'      },
+        ]
+        const activeIdx = tabs.findIndex(t =>
+          t.end ? location.pathname === t.to : location.pathname.startsWith(t.to)
+        )
+        return (
+          <div className="fixed left-1/2 -translate-x-1/2 z-40 px-4 w-full max-w-lg"
+            style={{ bottom: 'max(16px, env(safe-area-inset-bottom))' }}>
+            <nav className="relative flex items-center bg-zinc-900/95 backdrop-blur-2xl rounded-full py-1.5 shadow-2xl shadow-black/60 border border-white/[0.06]">
+              {/* Sliding pill indicator */}
+              <div className="absolute inset-y-1.5 rounded-full pointer-events-none"
+                style={{
+                  width: `${100 / tabs.length}%`,
+                  transform: `translateX(${activeIdx * 100}%)`,
+                  transition: 'transform 0.3s cubic-bezier(0.34, 1.3, 0.64, 1)',
+                  background: gaming ? 'rgba(0,255,136,0.15)' : 'rgb(63,63,70)',
+                }} />
+              {tabs.map(({ to, end, Icon, label }) => (
+                <NavLink key={to} to={to} end={end} className="flex-1 z-10">
+                  {({ isActive }) => (
+                    <div className="flex flex-col items-center gap-0.5 py-1.5 transition-colors duration-200"
+                      style={{ color: isActive ? (gaming ? '#00ff88' : '#fff') : '#71717a' }}>
+                      <Icon size={16} strokeWidth={isActive ? 2.5 : 2} />
+                      <span className="text-[9px] font-semibold tracking-wide">{label}</span>
+                    </div>
+                  )}
+                </NavLink>
+              ))}
+            </nav>
+          </div>
+        )
+      })()}
 
       {confirmSignOut && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-6" onClick={() => setConfirmSignOut(false)}>

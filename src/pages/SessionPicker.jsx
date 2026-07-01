@@ -310,21 +310,32 @@ export default function SessionPicker() {
       </div>
 
       {/* Pill nav */}
-      <div className="fixed left-1/2 -translate-x-1/2 z-40 flex justify-center"
+      <div className="fixed left-1/2 -translate-x-1/2 z-40 px-4 w-full max-w-lg"
         style={{ bottom: 'max(16px, env(safe-area-inset-bottom))' }}>
-        <nav className="flex items-center gap-0.5 bg-zinc-900/95 backdrop-blur-2xl rounded-full px-2 py-2 shadow-2xl shadow-black/60 border border-white/[0.06]">
-          <div className="flex flex-col items-center gap-0.5 px-3.5 py-1.5 rounded-full bg-zinc-700 text-white">
-            <Home size={16} strokeWidth={2.5} />
+        <nav className="relative flex items-center bg-zinc-900/95 backdrop-blur-2xl rounded-full py-1.5 shadow-2xl shadow-black/60 border border-white/[0.06]">
+          {/* Sliding indicator — 0: Sessions, 1: Join, 2: New */}
+          <div className="absolute inset-y-1.5 rounded-full bg-zinc-700 pointer-events-none"
+            style={{
+              width: `${100 / 3}%`,
+              transform: `translateX(${(mode === 'join' ? 1 : mode === 'create' ? 2 : 0) * 100}%)`,
+              transition: 'transform 0.3s cubic-bezier(0.34, 1.3, 0.64, 1)',
+            }} />
+          <button onClick={() => setMode(null)}
+            className="flex-1 z-10 flex flex-col items-center gap-0.5 py-1.5 transition-colors duration-200"
+            style={{ color: !mode ? '#fff' : '#71717a' }}>
+            <Home size={16} strokeWidth={!mode ? 2.5 : 2} />
             <span className="text-[9px] font-semibold tracking-wide">Sessions</span>
-          </div>
+          </button>
           <button onClick={() => setMode('join')}
-            className="flex flex-col items-center gap-0.5 px-3.5 py-1.5 rounded-full text-zinc-500 hover:text-zinc-200 transition-all duration-200">
-            <Users size={16} strokeWidth={2} />
+            className="flex-1 z-10 flex flex-col items-center gap-0.5 py-1.5 transition-colors duration-200"
+            style={{ color: mode === 'join' ? '#fff' : '#71717a' }}>
+            <Users size={16} strokeWidth={mode === 'join' ? 2.5 : 2} />
             <span className="text-[9px] font-semibold tracking-wide">Join</span>
           </button>
           <button onClick={() => setMode('create')}
-            className="flex flex-col items-center gap-0.5 px-3.5 py-1.5 rounded-full text-zinc-500 hover:text-zinc-200 transition-all duration-200">
-            <Plus size={16} strokeWidth={2} />
+            className="flex-1 z-10 flex flex-col items-center gap-0.5 py-1.5 transition-colors duration-200"
+            style={{ color: mode === 'create' ? '#fff' : '#71717a' }}>
+            <Plus size={16} strokeWidth={mode === 'create' ? 2.5 : 2} />
             <span className="text-[9px] font-semibold tracking-wide">New</span>
           </button>
         </nav>
