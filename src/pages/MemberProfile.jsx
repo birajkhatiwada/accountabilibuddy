@@ -128,8 +128,7 @@ function CatProgressBar({ pct, atlasUrl, sheetOpen, compact = false }) {
     return (
       <div className="w-full relative" style={{ height: 46 }}>
         {/* Track: border + gap + fill */}
-        <div className="absolute bottom-0 w-full"
-          className="border-zinc-300 dark:border-zinc-600"
+        <div className="absolute bottom-0 w-full border-zinc-300 dark:border-zinc-600"
           style={{ height: 11, borderWidth: '1.5px', borderStyle: 'solid', borderRadius: 3, padding: 2, boxSizing: 'border-box' }}>
           <div className="relative h-full overflow-hidden" style={{ borderRadius: 1 }}>
             <div className="absolute inset-0 bg-zinc-100 dark:bg-zinc-800/60" />
@@ -170,8 +169,7 @@ function CatProgressBar({ pct, atlasUrl, sheetOpen, compact = false }) {
 
       <div className="relative h-16">
         {/* Track: outer border + inner gap + fill */}
-        <div className="absolute bottom-0 w-full"
-          className="border-zinc-300 dark:border-zinc-600"
+        <div className="absolute bottom-0 w-full border-zinc-300 dark:border-zinc-600"
           style={{ height: 14, borderWidth: '1.5px', borderStyle: 'solid', borderRadius: 3, padding: 2, boxSizing: 'border-box' }}>
           <div className="relative h-full overflow-hidden" style={{ borderRadius: 1 }}>
             <div className="absolute inset-0 bg-zinc-100 dark:bg-zinc-800/60" />
