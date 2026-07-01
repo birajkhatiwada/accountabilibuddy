@@ -129,8 +129,8 @@ function CatProgressBar({ pct, atlasUrl, sheetOpen, compact = false }) {
       <div className="w-full relative" style={{ height: 46 }}>
         {/* Track */}
         <div className="absolute bottom-0 w-full" style={{ height: 7 }}>
-          <div className="absolute inset-0 rounded-full bg-zinc-200/80 dark:bg-zinc-800 ring-1 ring-inset ring-black/5 dark:ring-white/5" />
-          <div className="absolute inset-y-0 left-0 rounded-full overflow-hidden cat-bar-fill"
+          <div className="absolute inset-0 rounded-sm bg-zinc-200/80 dark:bg-zinc-800 ring-1 ring-inset ring-black/5 dark:ring-white/5" />
+          <div className="absolute inset-y-0 left-0 rounded-sm overflow-hidden cat-bar-fill"
             style={{ width: `${pctRound}%`, background: trackColor, transition: 'width 2s cubic-bezier(0.4,0,0.2,1)', boxShadow: `0 0 8px ${glowColor}` }}>
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent cat-bar-shimmer" />
           </div>
@@ -172,17 +172,17 @@ function CatProgressBar({ pct, atlasUrl, sheetOpen, compact = false }) {
         {/* Track */}
         <div className="absolute bottom-0 w-full" style={{ height: 10 }}>
           {/* Background */}
-          <div className="absolute inset-0 rounded-full bg-zinc-200/80 dark:bg-zinc-800 ring-1 ring-inset ring-black/5 dark:ring-white/5" />
+          <div className="absolute inset-0 rounded-sm bg-zinc-200/80 dark:bg-zinc-800 ring-1 ring-inset ring-black/5 dark:ring-white/5" />
 
           {/* Fill */}
-          <div className="absolute inset-y-0 left-0 rounded-full overflow-hidden cat-bar-fill"
+          <div className="absolute inset-y-0 left-0 rounded-sm overflow-hidden cat-bar-fill"
             style={{ width: `${pctRound}%`, background: trackColor, transition: 'width 2s cubic-bezier(0.4,0,0.2,1)', boxShadow: `0 0 10px ${glowColor}` }}>
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent cat-bar-shimmer" />
           </div>
 
           {/* Milestone ticks */}
           {[25, 50, 75].map(m => (
-            <div key={m} className="absolute top-1/2 -translate-y-1/2 w-px rounded-full"
+            <div key={m} className="absolute top-1/2 -translate-y-1/2 w-px"
               style={{ left: `${m}%`, height: 14, background: pctRound >= m ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.12)' }} />
           ))}
 
