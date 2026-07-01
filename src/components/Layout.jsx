@@ -7,7 +7,6 @@ import { useTheme } from '../ThemeContext'
 import { useAuth } from '../AuthContext'
 
 function PillNav({ sessionId, user, gaming, location, isHome }) {
-  if (isHome) return null
   const myPath = user ? `/${sessionId}/member/${encodeURIComponent(user.displayName)}` : `/${sessionId}/members`
   const tabs = [
     { to: `/${sessionId}`, end: true, Icon: Target,     label: 'Week'    },
@@ -137,19 +136,17 @@ export default function Layout() {
         </header>
       )}
 
-      <main className={`flex-1 px-4 py-3 overflow-y-auto ${isHome ? 'pb-8' : 'pb-24'}`} style={{ overflowAnchor: 'none' }}>
+      <main className="flex-1 px-4 py-3 overflow-y-auto pb-24" style={{ overflowAnchor: 'none' }}>
         <Outlet />
       </main>
 
       {/* Feedback FAB — hidden on session home */}
-      {!isHome && (
-        <button onClick={() => navigate('/feedback')}
-          className="fixed right-4 z-50 flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 text-xs font-semibold px-3.5 py-2.5 rounded-full shadow-lg transition-all active:scale-95"
-          style={{ bottom: 'max(88px, calc(env(safe-area-inset-bottom) + 88px))' }}>
-          <MessageSquare size={14} />
-          Feedback
-        </button>
-      )}
+      <button onClick={() => navigate('/feedback')}
+        className="fixed right-4 z-50 flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 text-xs font-semibold px-3.5 py-2.5 rounded-full shadow-lg transition-all active:scale-95"
+        style={{ bottom: 'max(88px, calc(env(safe-area-inset-bottom) + 88px))' }}>
+        <MessageSquare size={14} />
+        Feedback
+      </button>
 
       {/* Pill nav — hidden on session home */}
       <PillNav sessionId={sessionId} user={user} gaming={gaming} location={location} isHome={isHome} />

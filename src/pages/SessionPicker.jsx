@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, Timestamp, getCountFromServer, collection } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuth } from '../AuthContext'
-import { Plus, Users, ChevronRight, Home, MessageSquare } from 'lucide-react'
+import { Plus, Users, ChevronRight, MessageSquare } from 'lucide-react'
 
 const SESSION_EMOJIS = ['💼','👨‍👩‍👧‍👦','🏋️','📚','🎯','🚀','🌱','🎮','🏠','✈️']
 const SAVED_KEY = 'accountabili_sessions'
@@ -135,7 +135,7 @@ export default function SessionPicker() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 px-4 pb-28 space-y-5 max-w-sm mx-auto w-full">
+      <div className="flex-1 px-4 pb-20 space-y-5 max-w-sm mx-auto w-full">
 
         {/* Saved sessions */}
         {saved.length > 0 && !mode && (
@@ -250,42 +250,10 @@ export default function SessionPicker() {
       {/* Feedback FAB */}
       <button onClick={() => navigate('/feedback')}
         className="fixed right-4 z-50 flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 text-xs font-semibold px-3.5 py-2.5 rounded-full shadow-lg transition-all active:scale-95"
-        style={{ bottom: 'max(88px, calc(env(safe-area-inset-bottom) + 88px))' }}>
+        style={{ bottom: 'max(24px, env(safe-area-inset-bottom))' }}>
         <MessageSquare size={14} />
         Feedback
       </button>
-
-      {/* Pill nav */}
-      <div className="fixed left-1/2 -translate-x-1/2 z-40 px-4 w-full max-w-lg"
-        style={{ bottom: 'max(16px, env(safe-area-inset-bottom))' }}>
-        <nav className="relative flex items-center bg-zinc-900/95 backdrop-blur-2xl rounded-full p-1 shadow-2xl shadow-black/60 border border-white/[0.06]">
-          {/* Sliding indicator — stays inside the border */}
-          <div className="absolute inset-y-1 rounded-full bg-zinc-700 pointer-events-none"
-            style={{
-              width: 'calc((100% - 8px) / 3)',
-              left: `calc(4px + ${(mode === 'join' ? 1 : mode === 'create' ? 2 : 0)} * (100% - 8px) / 3)`,
-              transition: 'left 0.3s cubic-bezier(0.34, 1.3, 0.64, 1)',
-            }} />
-          <button onClick={() => setMode(null)}
-            className="flex-1 z-10 flex flex-col items-center gap-0.5 py-1.5 transition-colors duration-200"
-            style={{ color: !mode ? '#fff' : '#71717a' }}>
-            <Home size={16} strokeWidth={!mode ? 2.5 : 2} />
-            <span className="text-[9px] font-semibold tracking-wide">Sessions</span>
-          </button>
-          <button onClick={() => setMode('join')}
-            className="flex-1 z-10 flex flex-col items-center gap-0.5 py-1.5 transition-colors duration-200"
-            style={{ color: mode === 'join' ? '#fff' : '#71717a' }}>
-            <Users size={16} strokeWidth={mode === 'join' ? 2.5 : 2} />
-            <span className="text-[9px] font-semibold tracking-wide">Join</span>
-          </button>
-          <button onClick={() => setMode('create')}
-            className="flex-1 z-10 flex flex-col items-center gap-0.5 py-1.5 transition-colors duration-200"
-            style={{ color: mode === 'create' ? '#fff' : '#71717a' }}>
-            <Plus size={16} strokeWidth={mode === 'create' ? 2.5 : 2} />
-            <span className="text-[9px] font-semibold tracking-wide">New</span>
-          </button>
-        </nav>
-      </div>
     </div>
   )
 }
