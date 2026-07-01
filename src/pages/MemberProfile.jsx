@@ -69,7 +69,7 @@ function CatProgressBar({ pct, atlasUrl, sheetOpen }) {
       timerRef.current = setTimeout(() => {
         setBehaviorIdx(SLEEP_COUNT + Math.floor(Math.random() * (REST_BEHAVIORS.length - SLEEP_COUNT)))
         setIsWalking(false)
-      }, 1100)
+      }, 2000)
       prevRef.current = displayedPct
     }
     return () => clearTimeout(timerRef.current)
@@ -138,7 +138,7 @@ function CatProgressBar({ pct, atlasUrl, sheetOpen }) {
 
           {/* Fill */}
           <div className="absolute inset-y-0 left-0 rounded-full overflow-hidden cat-bar-fill"
-            style={{ width: `${pctRound}%`, background: trackColor, transition: 'width 1.1s cubic-bezier(0.4,0,0.2,1)', boxShadow: `0 0 10px ${glowColor}` }}>
+            style={{ width: `${pctRound}%`, background: trackColor, transition: 'width 2s cubic-bezier(0.4,0,0.2,1)', boxShadow: `0 0 10px ${glowColor}` }}>
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent cat-bar-shimmer" />
           </div>
 
@@ -157,7 +157,7 @@ function CatProgressBar({ pct, atlasUrl, sheetOpen }) {
 
         {/* Cat */}
         <div className="absolute select-none"
-          style={{ left: `${clampedLeft}%`, bottom: 6, transform: 'translateX(-50%)', transition: 'left 1.1s cubic-bezier(0.4,0,0.2,1)' }}>
+          style={{ left: `${clampedLeft}%`, bottom: 6, transform: 'translateX(-50%)', transition: 'left 2s cubic-bezier(0.4,0,0.2,1)' }}>
           {showZzz && (
             <div className="absolute pointer-events-none" style={{ top: '-14px', left: '50%', transform: 'translateX(-50%)' }}>
               <span className="zzz-1 absolute text-[10px] font-black text-zinc-400 dark:text-zinc-500">z</span>
