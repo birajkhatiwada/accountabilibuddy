@@ -963,12 +963,7 @@ export default function MemberProfile() {
 
   const chartOptions = useMemo(() => ({
     chart: { type: 'areaspline', backgroundColor: 'transparent', height: 160, spacing: [8,8,8,0], style: { fontFamily: 'inherit' } },
-    title: { text: null }, credits: { enabled: false },
-    legend: {
-      enabled: chartSeries.length > 1,
-      itemStyle: { color: '#a1a1aa', fontSize: '10px', fontWeight: '500' },
-      itemHoverStyle: { color: '#e4e4e7' },
-    },
+    title: { text: null }, credits: { enabled: false }, legend: { enabled: false },
     xAxis: { categories: chartCategories, labels: { style: { color: '#71717a', fontSize: '10px' } }, lineColor: '#27272a', tickColor: 'transparent', gridLineColor: 'transparent' },
     yAxis: { min: 0, max: 100, title: { text: null }, labels: { format: '{value}%', style: { color: '#71717a', fontSize: '10px' } }, gridLineColor: '#27272a', tickPositions: [0, 50, 100] },
     tooltip: { shared: true, backgroundColor: '#18181b', borderColor: '#3f3f46', borderRadius: 12, style: { color: '#e4e4e7', fontSize: '11px' }, pointFormat: '<span style="color:{series.color}">●</span> {series.name}: <b>{point.y}%</b><br/>' },
