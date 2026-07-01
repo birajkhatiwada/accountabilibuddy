@@ -47,7 +47,8 @@ const REST_BEHAVIORS = [
 ]
 const SLEEP_COUNT = 2 // first N behaviors are sleep
 
-function CatProgressBar({ pct, atlasUrl }) {
+function CatProgressBar({ pct, atlasUrl, sheetOpen }) {
+  const [displayedPct, setDisplayedPct] = useState(pct)
   const [isWalking, setIsWalking]       = useState(false)
   const [facingRight, setFacingRight]   = useState(true)
   const [frame, setFrame]               = useState(0)
@@ -55,20 +56,24 @@ function CatProgressBar({ pct, atlasUrl }) {
   const prevRef  = useRef(pct)
   const timerRef = useRef(null)
 
+  // Hold progress updates while a logging sheet is open; flush when it closes
   useEffect(() => {
-    if (pct !== prevRef.current) {
-      setFacingRight(pct > prevRef.current)
+    if (!sheetOpen) setDisplayedPct(pct)
+  }, [pct, sheetOpen])
+
+  useEffect(() => {
+    if (displayedPct !== prevRef.current) {
+      setFacingRight(displayedPct > prevRef.current)
       setIsWalking(true)
       clearTimeout(timerRef.current)
       timerRef.current = setTimeout(() => {
-        // Pick a random active-rest behavior (not sleep)
         setBehaviorIdx(SLEEP_COUNT + Math.floor(Math.random() * (REST_BEHAVIORS.length - SLEEP_COUNT)))
         setIsWalking(false)
-      }, 750)
-      prevRef.current = pct
+      }, 1100)
+      prevRef.current = displayedPct
     }
     return () => clearTimeout(timerRef.current)
-  }, [pct])
+  }, [displayedPct])
 
   useEffect(() => {
     setFrame(0)
@@ -99,16 +104,16 @@ function CatProgressBar({ pct, atlasUrl }) {
     return () => clearInterval(id)
   }, [isWalking, behaviorIdx])
 
-  const pctRound = Math.round(pct * 100)
+  const pctRound = Math.round(displayedPct * 100)
   const clampedLeft = Math.min(Math.max(pctRound, 9), 91)
 
-  const trackColor = pct >= 1
+  const trackColor = displayedPct >= 1
     ? 'linear-gradient(to right,#34d399,#2dd4bf)'
-    : pct >= 0.5
+    : displayedPct >= 0.5
       ? 'linear-gradient(to right,#fbbf24,#f97316)'
       : 'linear-gradient(to right,#a78bfa,#8b5cf6)'
-  const glowColor = pct >= 1 ? '#34d39966' : pct >= 0.5 ? '#fbbf2466' : '#a78bfa66'
-  const dotColor  = pct >= 1 ? '#2dd4bf'   : pct >= 0.5 ? '#f97316'   : '#8b5cf6'
+  const glowColor = displayedPct >= 1 ? '#34d39966' : displayedPct >= 0.5 ? '#fbbf2466' : '#a78bfa66'
+  const dotColor  = displayedPct >= 1 ? '#2dd4bf'   : displayedPct >= 0.5 ? '#f97316'   : '#8b5cf6'
 
   const behavior = REST_BEHAVIORS[behaviorIdx]
   const bgRow = isWalking
@@ -133,7 +138,7 @@ function CatProgressBar({ pct, atlasUrl }) {
 
           {/* Fill */}
           <div className="absolute inset-y-0 left-0 rounded-full overflow-hidden cat-bar-fill"
-            style={{ width: `${pctRound}%`, background: trackColor, transition: 'width 0.7s ease', boxShadow: `0 0 10px ${glowColor}` }}>
+            style={{ width: `${pctRound}%`, background: trackColor, transition: 'width 1.1s cubic-bezier(0.4,0,0.2,1)', boxShadow: `0 0 10px ${glowColor}` }}>
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent cat-bar-shimmer" />
           </div>
 
@@ -152,7 +157,7 @@ function CatProgressBar({ pct, atlasUrl }) {
 
         {/* Cat */}
         <div className="absolute select-none"
-          style={{ left: `${clampedLeft}%`, bottom: 6, transform: 'translateX(-50%)', transition: 'left 0.7s ease' }}>
+          style={{ left: `${clampedLeft}%`, bottom: 6, transform: 'translateX(-50%)', transition: 'left 1.1s cubic-bezier(0.4,0,0.2,1)' }}>
           {showZzz && (
             <div className="absolute pointer-events-none" style={{ top: '-14px', left: '50%', transform: 'translateX(-50%)' }}>
               <span className="zzz-1 absolute text-[10px] font-black text-zinc-400 dark:text-zinc-500">z</span>
@@ -267,7 +272,9 @@ export default function MemberProfile() {
   const [proofNoteInputs, setProofNoteInputs] = useState({})
   const [editingProof, setEditingProof] = useState({})
   const [activeGoalSheet, setActiveGoalSheet] = useState(null)
-  const [loggingSheet, setLoggingSheet] = useState(null)
+  const [activeClosing, setActiveClosing]     = useState(false)
+  const [loggingSheet, setLoggingSheet]       = useState(null)
+  const [loggingClosing, setLoggingClosing]   = useState(false)
   const [uploadingPhoto, setUploadingPhoto] = useState({})
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [uploadingBanner, setUploadingBanner] = useState(false)
@@ -400,6 +407,16 @@ export default function MemberProfile() {
       return day
     })
   }, [weekId])
+
+  // ── sheet close helpers (animate out, then unmount) ───────────────────────
+  const closeLoggingSheet = () => {
+    setLoggingClosing(true)
+    setTimeout(() => { setLoggingSheet(null); setLoggingClosing(false) }, 280)
+  }
+  const closeActiveSheet = () => {
+    setActiveClosing(true)
+    setTimeout(() => { setActiveGoalSheet(null); setEditingProof({}); setReactionPickerOpen(null); setActiveClosing(false) }, 280)
+  }
 
   // ── logging helpers ────────────────────────────────────────────────────────
 
@@ -910,7 +927,7 @@ export default function MemberProfile() {
               return sum + Math.min(1, done / (Number(g.target) || 1))
             }, 0) / myGoals.length
             const atlasUrl = CAT_ATLASES[typeof entry?.catColor === 'number' ? entry.catColor : 0]
-            return <CatProgressBar pct={pct} atlasUrl={atlasUrl} />
+            return <CatProgressBar pct={pct} atlasUrl={atlasUrl} sheetOpen={!!(loggingSheet || activeGoalSheet)} />
           })()}
         </div>
       </div>
@@ -1169,16 +1186,16 @@ export default function MemberProfile() {
           {loggingSheet && (() => {
             const goal = loggingSheet
             const isFutureDay = selectedDay > todayKey
-            const close = () => setLoggingSheet(null)
+            const close = closeLoggingSheet
             const sheetClass = "fixed inset-0 z-50 flex items-end justify-center"
-            const innerClass = "relative bg-white dark:bg-zinc-900 rounded-t-3xl w-full max-w-lg slide-up flex flex-col"
+            const innerClass = `relative bg-white dark:bg-zinc-900 rounded-t-3xl w-full max-w-lg flex flex-col ${loggingClosing ? 'slide-down' : 'slide-up'}`
             const handle = <div className="flex justify-center pt-3 pb-0 shrink-0"><div className="w-10 h-1 bg-zinc-200 dark:bg-zinc-700 rounded-full" /></div>
 
             // ── breakdown ──────────────────────────────────────────────────
             if (goal.subGoals?.length > 0) {
               return createPortal(
                 <div className={sheetClass} onClick={close}>
-                  <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+                  <div className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-[280ms] ${loggingClosing ? 'opacity-0' : ''}`} />
                   <div className={innerClass} style={{ maxHeight: '88vh' }} onClick={e => e.stopPropagation()}>
                     {handle}
                     <div className="px-5 pt-4 pb-2 flex items-start justify-between shrink-0">
@@ -1284,12 +1301,12 @@ export default function MemberProfile() {
             const proof = getGoalProof(goal.text)
             const uploading = uploadingPhoto[goal.text]
             const isEditing = !!editingProof[goal.text]
-            const closeProof = () => { setActiveGoalSheet(null); setEditingProof({}); setReactionPickerOpen(null) }
+            const closeProof = closeActiveSheet
 
             return createPortal(
               <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={closeProof}>
-                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-                <div className="relative bg-white dark:bg-zinc-900 rounded-t-3xl w-full max-w-lg slide-up shadow-2xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                <div className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-[280ms] ${activeClosing ? 'opacity-0' : ''}`} />
+                <div className={`relative bg-white dark:bg-zinc-900 rounded-t-3xl w-full max-w-lg shadow-2xl max-h-[85vh] overflow-y-auto ${activeClosing ? 'slide-down' : 'slide-up'}`} onClick={e => e.stopPropagation()}>
                   <div className="flex justify-center pt-3"><div className="w-10 h-1 rounded-full bg-zinc-200 dark:bg-zinc-700" /></div>
 
                   <div className="px-5 pt-4 pb-2 flex items-start justify-between">
