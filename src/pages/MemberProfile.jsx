@@ -1152,10 +1152,10 @@ export default function MemberProfile() {
               <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wide mb-2">Progress this week</p>
               <HighchartsReact highcharts={Highcharts} options={chartOptions} />
               <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
-                {myGoals.map((g, i) => (
+                {chartSeries.map((s, i) => (
                   <div key={i} className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-sm" style={{ background: GOAL_COLORS[i % GOAL_COLORS.length] }} />
-                    <span className="text-[10px] text-zinc-500 dark:text-zinc-400">{g.text}</span>
+                    <div className="w-2.5 h-2.5 rounded-sm" style={{ background: s.color }} />
+                    <span className="text-[10px] text-zinc-500 dark:text-zinc-400">{s.name}</span>
                   </div>
                 ))}
               </div>
