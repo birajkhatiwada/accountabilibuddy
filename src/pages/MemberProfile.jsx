@@ -69,7 +69,7 @@ function CatProgressBar({ pct, atlasUrl, sheetOpen, compact = false }) {
       timerRef.current = setTimeout(() => {
         setBehaviorIdx(SLEEP_COUNT + Math.floor(Math.random() * (REST_BEHAVIORS.length - SLEEP_COUNT)))
         setIsWalking(false)
-      }, 2000)
+      }, 6500)
       prevRef.current = displayedPct
     }
     return () => clearTimeout(timerRef.current)
@@ -129,7 +129,8 @@ function CatProgressBar({ pct, atlasUrl, sheetOpen, compact = false }) {
       <div className="w-full relative" style={{ height: 46 }}>
         {/* Track: border + gap + fill */}
         <div className="absolute bottom-0 w-full"
-          style={{ height: 11, border: `1.5px solid ${dotColor}`, borderRadius: 3, padding: 2, boxSizing: 'border-box' }}>
+          className="border-zinc-300 dark:border-zinc-600"
+          style={{ height: 11, borderWidth: '1.5px', borderStyle: 'solid', borderRadius: 3, padding: 2, boxSizing: 'border-box' }}>
           <div className="relative h-full overflow-hidden" style={{ borderRadius: 1 }}>
             <div className="absolute inset-0 bg-zinc-100 dark:bg-zinc-800/60" />
             <div className="absolute inset-y-0 left-0 h-full cat-bar-fill"
@@ -170,7 +171,8 @@ function CatProgressBar({ pct, atlasUrl, sheetOpen, compact = false }) {
       <div className="relative h-16">
         {/* Track: outer border + inner gap + fill */}
         <div className="absolute bottom-0 w-full"
-          style={{ height: 14, border: `1.5px solid ${dotColor}`, borderRadius: 3, padding: 2, boxSizing: 'border-box' }}>
+          className="border-zinc-300 dark:border-zinc-600"
+          style={{ height: 14, borderWidth: '1.5px', borderStyle: 'solid', borderRadius: 3, padding: 2, boxSizing: 'border-box' }}>
           <div className="relative h-full overflow-hidden" style={{ borderRadius: 1 }}>
             <div className="absolute inset-0 bg-zinc-100 dark:bg-zinc-800/60" />
             <div className="absolute inset-y-0 left-0 h-full cat-bar-fill"
@@ -201,7 +203,7 @@ function CatProgressBar({ pct, atlasUrl, sheetOpen, compact = false }) {
 
         {/* Cat */}
         <div className="absolute select-none"
-          style={{ left: `${clampedLeft}%`, bottom: 6, transform: 'translateX(-50%)', transition: 'left 2s cubic-bezier(0.4,0,0.2,1)' }}>
+          style={{ left: `${clampedLeft}%`, bottom: 6, transform: 'translateX(-50%)', transition: 'left 6s linear' }}>
           {showZzz && (
             <div className="absolute pointer-events-none" style={{ top: '-14px', left: '50%', transform: 'translateX(-50%)' }}>
               <span className="zzz-1 absolute text-[10px] font-black text-zinc-400 dark:text-zinc-500">z</span>
