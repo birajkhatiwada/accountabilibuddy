@@ -70,18 +70,12 @@ export default function Feedback() {
           value={text}
           onChange={e => setText(e.target.value)}
           placeholder="Write your thoughts here…"
-          maxLength={800}
           style={{ fontSize: 16, lineHeight: '1.75' }}
           className="flex-1 w-full bg-transparent text-zinc-800 dark:text-zinc-200 placeholder-zinc-300 dark:placeholder-zinc-700 focus:outline-none resize-none"
           autoFocus
         />
       </div>
 
-      {text.length > 0 && (
-        <div className="px-5 pb-6 text-right">
-          <span className="text-[11px] text-zinc-300 dark:text-zinc-700">{text.length}/800</span>
-        </div>
-      )}
     </div>
   )
 }
