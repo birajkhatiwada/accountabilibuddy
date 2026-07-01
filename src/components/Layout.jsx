@@ -97,7 +97,7 @@ export default function Layout() {
         </header>
       )}
 
-      <main className="flex-1 px-4 py-3 overflow-y-auto pb-24" style={{ overflowAnchor: 'none' }}>
+      <main className={`flex-1 px-4 py-3 overflow-y-auto ${isHome ? 'pb-8' : 'pb-24'}`} style={{ overflowAnchor: 'none' }}>
         <Outlet />
       </main>
 
@@ -109,8 +109,8 @@ export default function Layout() {
         Feedback
       </button>
 
-      {/* Pill nav */}
-      {(() => {
+      {/* Pill nav — hidden on session home */}
+      {!isHome && (() => {
         const myPath = user ? `/${sessionId}/member/${encodeURIComponent(user.displayName)}` : `/${sessionId}/members`
         const tabs = [
           { to: `/${sessionId}`, end: true,  Icon: Target,      label: 'Week'    },
