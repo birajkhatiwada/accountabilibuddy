@@ -49,6 +49,12 @@ function GoalPopup({ goal, onSave, onClose }) {
     ? UNIT_SUGGESTIONS.filter(u => u.includes(unitQuery.toLowerCase()))
     : UNIT_SUGGESTIONS
 
+  const isDraftValid = draft.text.trim() && (
+    draft.type !== 'weekly' ? true
+      : draft.subGoals?.length > 0 ? draft.subGoals.every(sg => sg.text.trim() && Number(sg.target) > 0)
+      : Number(draft.target) > 0
+  )
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
@@ -68,8 +74,8 @@ function GoalPopup({ goal, onSave, onClose }) {
           </button>
           <h2 className="text-base font-semibold text-white">{goal ? 'Edit goal' : 'New goal'}</h2>
           <button
-            onClick={() => draft.text.trim() && onSave(draft)}
-            disabled={!draft.text.trim()}
+            onClick={() => isDraftValid && onSave(draft)}
+            disabled={!isDraftValid}
             className="text-emerald-400 hover:text-emerald-300 disabled:text-zinc-600 text-sm font-bold transition-colors">
             Done
           </button>
@@ -120,10 +126,13 @@ function GoalPopup({ goal, onSave, onClose }) {
           {draft.type === 'weekly' && draft.subGoals.length === 0 && (
             <div className="space-y-2">
               <p className="text-xs font-medium uppercase tracking-widest text-zinc-500">Weekly target</p>
+              {!(Number(draft.target) > 0) && (
+                <p className="text-xs text-amber-500">Set a target of at least 1 to save this goal</p>
+              )}
               <div className="flex items-center gap-3">
                 <div className="flex items-center bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shrink-0">
                   <button type="button"
-                    onClick={() => update({ target: String(Math.max(0, (Number(draft.target) || 0) - 1)) })}
+                    onClick={() => update({ target: String(Math.max(1, (Number(draft.target) || 0) - 1)) })}
                     className="w-11 h-11 flex items-center justify-center text-zinc-500 hover:text-white active:scale-90 transition-all select-none text-lg">−</button>
                   <span className="w-10 text-center text-sm font-semibold text-white tabular-nums">
                     {draft.target || '0'}
@@ -179,6 +188,9 @@ function GoalPopup({ goal, onSave, onClose }) {
           {draft.type === 'weekly' && (
             <div>
               <p className="text-xs font-medium uppercase tracking-widest text-zinc-500 mb-2">Breakdowns <span className="font-normal text-zinc-600">(optional)</span></p>
+              {draft.subGoals.some(sg => sg.text.trim() && !(Number(sg.target) > 0)) && (
+                <p className="text-xs text-amber-500 mb-2">Each breakdown needs a target of at least 1</p>
+              )}
               <div className="space-y-2">
                 {draft.subGoals.map((sg, si) => (
                   <div key={si} className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-2xl px-4" style={{ height: 44 }}>

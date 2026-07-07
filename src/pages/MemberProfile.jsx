@@ -325,7 +325,6 @@ const BANNER_COLOR_PREVIEWS = [
   '#d946ef','#475569',
 ]
 
-const VIBE_EMOJIS = ['⚡','🔥','🌊','🎯','💎','🦁','🚀','🌈','🌙','⭐','🎸','🏔️','🐉','🌺','🦋','💫','🍀','🎃','🦅','🌋']
 const AVATAR_HEX = [
   '#8b5cf6','#3b82f6','#10b981','#f97316','#ec4899','#6366f1','#14b8a6','#d946ef',
 ]
@@ -381,6 +380,7 @@ export default function MemberProfile() {
   const [selectedDay, setSelectedDay] = useState(todayKey)
   const [localCounts, setLocalCounts] = useState({})
   const [localTotals, setLocalTotals] = useState({})
+  const [localHabits, setLocalHabits] = useState({})
   const [proofOpen, setProofOpen] = useState({})
   const [proofNoteInputs, setProofNoteInputs] = useState({})
   const [editingProof, setEditingProof] = useState({})
@@ -392,6 +392,14 @@ export default function MemberProfile() {
     setShakingGoals(s => new Set(s).add(key))
     setTimeout(() => setShakingGoals(s => { const n = new Set(s); n.delete(key); return n }), 400)
   }
+  const [pressedZone, setPressedZone] = useState({})
+  const [jiggleZone, setJiggleZone] = useState({})
+  const pressZone = (key, side) => setPressedZone(p => ({ ...p, [key]: side }))
+  const releaseZone = (key, side) => setPressedZone(p => {
+    if (!p[key]) return p
+    setJiggleZone(j => ({ ...j, [key]: side ?? p[key] }))
+    return { ...p, [key]: null }
+  })
   const [loggingClosing, setLoggingClosing]   = useState(false)
   const [catBarEl, setCatBarEl] = useState(null)
   const [catBarInView, setCatBarInView] = useState(true)
@@ -410,7 +418,6 @@ export default function MemberProfile() {
   const [statusInput, setStatusInput] = useState('')
   const [nicknameInput, setNicknameInput] = useState('')
   const [bannerColorIdx, setBannerColorIdx] = useState(null)
-  const [bannerVibe, setBannerVibe] = useState('')
   const [uiTheme, setUiTheme] = useState('default')
   const [editBannerOpen, setEditBannerOpen] = useState(false)
   const saveTimers = useRef({})
@@ -450,7 +457,6 @@ export default function MemberProfile() {
         setBio(d.bios?.[name] || '')
         setStatus(d.statuses?.[name] || '')
         setBannerColorIdx(d.bannerColors?.[name] ?? null)
-        setBannerVibe(d.bannerVibes?.[name] || '')
         setAvatarPhotoUrl(d.avatarPhotos?.[name] || '')
         setBannerImageUrl(d.bannerImages?.[name] || '')
         setNickname(d.nicknames?.[name] || '')
@@ -546,12 +552,13 @@ export default function MemberProfile() {
 
   const getDayLog = (key) => logs[key] || {}
 
-  const toggleHabit = async (goalText) => {
+  const setHabitDone = (goalText, val) => {
     if (!entry?.id) return
+    const localKey = `${selectedDay}__habit__${goalText}`
+    setLocalHabits(p => ({ ...p, [localKey]: val }))
     const current = getDayLog(selectedDay)
-    const habits = { ...(current.habits || {}) }
-    habits[goalText] = !habits[goalText]
-    await setDoc(doc(db, 'entries', entry.id, 'dailyLogs', selectedDay), { ...current, habits })
+    const habits = { ...(current.habits || {}), [goalText]: val }
+    setDoc(doc(db, 'entries', entry.id, 'dailyLogs', selectedDay), { ...current, habits })
   }
 
   const setDayCount = (key, value) => {
@@ -598,13 +605,6 @@ export default function MemberProfile() {
     return sum + (localCounts[localKey] ?? (Number(logs[dk]?.counts?.[key]) || 0))
   }, 0)
 
-  const cumulativeCount = (key, upToDay) => weekDays.reduce((sum, d) => {
-    if (dateKey(d) > upToDay) return sum
-    const dk = dateKey(d)
-    const localKey = `${dk}__count__${key}`
-    return sum + (localCounts[localKey] ?? (Number(logs[dk]?.counts?.[key]) || 0))
-  }, 0)
-
   const weeklyTotal = (key) => weekDays.reduce((sum, d) => {
     const dk = dateKey(d)
     const localKey = `${dk}__total__${key}`
@@ -612,7 +612,11 @@ export default function MemberProfile() {
   }, 0)
 
   const weeklyHabitDays = (text) =>
-    weekDays.filter(d => logs[dateKey(d)]?.habits?.[text]).length
+    weekDays.filter(d => {
+      const dk = dateKey(d)
+      const localKey = `${dk}__habit__${text}`
+      return localHabits[localKey] ?? logs[dk]?.habits?.[text]
+    }).length
 
   const dayHasActivity = (key) => {
     const log = logs[key]
@@ -695,9 +699,13 @@ export default function MemberProfile() {
     }
   }
 
+  const isGoalTargetValid = (g) => g.type !== 'weekly' ? true
+    : g.subGoals?.length > 0 ? g.subGoals.every(sg => Number(sg.target) > 0)
+    : Number(g.target) > 0
+
   const submitGoals = async () => {
     const valid = goalsInput.filter(g => g.text.trim())
-    if (!valid.length) return
+    if (!valid.length || !valid.every(isGoalTargetValid)) return
     setSubmitting(true)
     await persistGoals(valid)
     setSubmitting(false)
@@ -900,7 +908,6 @@ export default function MemberProfile() {
   const saveNickname = async (val) => { setNickname(val.trim()); await setDoc(sessionDoc, { nicknames: { [name]: val.trim() } }, { merge: true }) }
   const saveBannerColor = async (idx) => { setBannerColorIdx(idx); await setDoc(sessionDoc, { bannerColors: { [name]: idx } }, { merge: true }) }
   const saveUiTheme    = async (t)   => { setUiTheme(t); setGlobalUiTheme(t); await setDoc(sessionDoc, { memberThemes: { [name]: t } }, { merge: true }) }
-  const saveBannerVibe = async (emoji) => { setBannerVibe(emoji); await setDoc(sessionDoc, { bannerVibes: { [name]: emoji } }, { merge: true }) }
 
   const uploadAvatarPhoto = async (file) => {
     setUploadingAvatar(true)
@@ -966,7 +973,9 @@ export default function MemberProfile() {
     title: { text: null }, credits: { enabled: false }, legend: { enabled: false },
     xAxis: { categories: chartCategories, labels: { style: { color: '#71717a', fontSize: '10px' } }, lineColor: '#27272a', tickColor: 'transparent', gridLineColor: 'transparent' },
     yAxis: { min: 0, max: 100, title: { text: null }, labels: { format: '{value}%', style: { color: '#71717a', fontSize: '10px' } }, gridLineColor: '#27272a', tickPositions: [0, 50, 100] },
-    tooltip: { shared: true, backgroundColor: '#18181b', borderColor: '#3f3f46', borderRadius: 12, style: { color: '#e4e4e7', fontSize: '11px' }, pointFormat: '<span style="color:{series.color}">●</span> {series.name}: <b>{point.y}%</b><br/>' },
+    // followTouchMove:false lets a tap show the tooltip but stops the chart
+    // from capturing touch-drag, which otherwise blocks page scroll on mobile
+    tooltip: { shared: true, followTouchMove: false, backgroundColor: '#18181b', borderColor: '#3f3f46', borderRadius: 12, style: { color: '#e4e4e7', fontSize: '11px' }, pointFormat: '<span style="color:{series.color}">●</span> {series.name}: <b>{point.y}%</b><br/>' },
     plotOptions: { areaspline: { fillOpacity: 0.12, lineWidth: 2, marker: { enabled: true, radius: 3, lineWidth: 0 } } },
     series: chartSeries,
   }), [chartSeries, chartCategories])
@@ -1031,7 +1040,6 @@ export default function MemberProfile() {
         <div className={`bg-gradient-to-br ${color} h-28 relative overflow-hidden`}>
           {bannerImageUrl && <img src={bannerImageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />}
           <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: `radial-gradient(circle, white 1px, transparent 1px)`, backgroundSize: '20px 20px' }} />
-          {bannerVibe && !bannerImageUrl && <div className="absolute right-5 bottom-3 text-7xl opacity-20 select-none pointer-events-none leading-none">{bannerVibe}</div>}
 
           {/* Owner actions — bottom-right of banner */}
           {isOwner && (
@@ -1103,7 +1111,11 @@ export default function MemberProfile() {
             )}
           </div>
           <GoalBuilder key={goalBuilderKey} initialGoals={carryOverGoals} onChange={setGoalsInput} />
-          <button onClick={submitGoals} disabled={submitting || !goalsInput.some(g => g.text.trim())}
+          {goalsInput.some(g => g.text.trim() && !isGoalTargetValid(g)) && (
+            <p className="text-xs text-amber-500 -mt-2">Give every count goal a target of at least 1 before locking in</p>
+          )}
+          <button onClick={submitGoals}
+            disabled={submitting || !goalsInput.some(g => g.text.trim()) || !goalsInput.filter(g => g.text.trim()).every(isGoalTargetValid)}
             className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-40 text-white font-bold rounded-xl py-3 transition-all">
             {submitting ? 'Locking in...' : 'Lock in goals 🔒'}
           </button>
@@ -1165,7 +1177,10 @@ export default function MemberProfile() {
           {/* Goal rows */}
           {myGoals.length > 0 && (() => {
             const goalDone = (goal) => {
-              const checked = goal.type === 'habit' ? !!logs[selectedDay]?.habits?.[goal.text] : false
+              const habitLocalKey = `${selectedDay}__habit__${goal.text}`
+              const checked = goal.type === 'habit'
+                ? !!(localHabits[habitLocalKey] ?? logs[selectedDay]?.habits?.[goal.text])
+                : false
               const wv = goal.type !== 'habit' && !goal.subGoals?.length ? weeklyCount(goal.text) : 0
               const tgt = Number(goal.target) || 0
               return goal.type === 'habit' ? checked
@@ -1202,16 +1217,13 @@ export default function MemberProfile() {
                     const isBreakdown = goal.subGoals?.length > 0
                     const todayVal = !isBreakdown && goal.type !== 'habit' ? getCountVal(goal.text) : 0
                     const breakdownTodayVal = isBreakdown ? goal.subGoals.reduce((s, sg) => s + getCountVal(`${goal.text}::${sg.text}`), 0) : 0
-                    // for count goals: check if goal was already complete as of the selected day
-                    const doneAsOfSelectedDay = goal.type === 'habit' ? done
-                      : goal.subGoals?.length > 0
-                        ? goal.subGoals.every(sg => { const k=`${goal.text}::${sg.text}`; return (Number(sg.target)||0)>0 && cumulativeCount(k, selectedDay)>=(Number(sg.target)||0) })
-                        : tgt > 0 && cumulativeCount(goal.text, selectedDay) >= tgt
-                    const showCheck = goal.type === 'habit' ? done : doneAsOfSelectedDay
 
+                    // Only green (or neutral, pre-completion) — no red/amber/gold tiers.
+                    // Fill gradients match the design exactly: a muted green while in
+                    // progress, brightening once the goal is complete.
                     const stateColors = (pct, isDone) => {
                       if (isDone || pct >= 1) return {
-                        fill: 'bg-emerald-500/30 dark:bg-emerald-400/25',
+                        fill: 'linear-gradient(90deg, oklch(0.68 0.18 152), oklch(0.78 0.19 150))',
                         text: 'text-emerald-800 dark:text-emerald-300',
                         label: 'text-emerald-600 dark:text-emerald-400',
                         chevron: 'text-emerald-300 dark:text-emerald-700',
@@ -1221,10 +1233,10 @@ export default function MemberProfile() {
                         checkStroke: '#10b981',
                         accent: '#10b981',
                       }
-                      if (pct <= 0) return {
-                        fill: '',
+                      return {
+                        fill: 'linear-gradient(90deg, oklch(0.5 0.12 152), oklch(0.62 0.16 152))',
                         text: 'text-zinc-800 dark:text-zinc-200',
-                        label: 'text-zinc-400 dark:text-zinc-500',
+                        label: 'text-zinc-500 dark:text-zinc-400',
                         chevron: 'text-zinc-300 dark:text-zinc-600',
                         todayPill: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10',
                         checkFull: 'bg-emerald-500 border-emerald-500',
@@ -1232,146 +1244,166 @@ export default function MemberProfile() {
                         checkStroke: '#10b981',
                         accent: '#71717a',
                       }
-                      if (pct < 0.35) return {
-                        fill: 'bg-rose-500/20 dark:bg-rose-500/15',
-                        text: 'text-rose-800 dark:text-rose-300',
-                        label: 'text-rose-500 dark:text-rose-400',
-                        chevron: 'text-rose-300 dark:text-rose-700',
-                        todayPill: 'text-rose-700 dark:text-rose-300 bg-rose-500/15',
-                        checkFull: 'bg-rose-500 border-rose-500',
-                        checkOutline: 'border-rose-400 dark:border-rose-500',
-                        checkStroke: '#f43f5e',
-                        accent: '#f43f5e',
-                      }
-                      if (pct < 0.65) return {
-                        fill: 'bg-amber-500/20 dark:bg-amber-500/15',
-                        text: 'text-amber-800 dark:text-amber-300',
-                        label: 'text-amber-600 dark:text-amber-400',
-                        chevron: 'text-amber-300 dark:text-amber-700',
-                        todayPill: 'text-amber-700 dark:text-amber-300 bg-amber-500/15',
-                        checkFull: 'bg-amber-500 border-amber-500',
-                        checkOutline: 'border-amber-400 dark:border-amber-500',
-                        checkStroke: '#f59e0b',
-                        accent: '#f59e0b',
-                      }
-                      return {
-                        fill: 'bg-emerald-500/20 dark:bg-emerald-500/15',
-                        text: 'text-emerald-800 dark:text-emerald-300',
-                        label: 'text-emerald-600 dark:text-emerald-400',
-                        chevron: 'text-emerald-300 dark:text-emerald-700',
-                        todayPill: 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/15',
-                        checkFull: 'bg-emerald-500 border-emerald-500',
-                        checkOutline: 'border-emerald-400 dark:border-emerald-500',
-                        checkStroke: '#10b981',
-                        accent: '#10b981',
-                      }
                     }
 
                     const isDoneForColor = goal.type === 'habit' ? barPct >= 1 : done
-                    const isExceeded = isBreakdown
-                      ? goal.subGoals.every(sg => { const k = `${goal.text}::${sg.text}`; const st = Number(sg.target) || 0; return st > 0 && weeklyCount(k) > st })
-                      : goal.type !== 'habit' && tgt > 0 && weekVal > tgt
-                    const goldColors = {
-                      fill: 'goal-gold-fill',
-                      text: 'text-amber-900 dark:text-amber-100 font-bold',
-                      label: 'text-amber-700 dark:text-amber-300 font-bold',
-                      todayPill: 'text-amber-900 dark:text-amber-100 bg-amber-400/40 font-bold',
-                      checkFull: 'bg-amber-400 border-amber-400',
-                      checkOutline: 'border-amber-400',
-                      checkStroke: '#f59e0b',
-                      chevron: 'text-amber-400',
-                    }
-                    const isGoalMet = !isExceeded && isDoneForColor
-                    const c = isExceeded ? goldColors : stateColors(barPct, isDoneForColor)
+                    const isGoalMet = isDoneForColor
+                    const c = stateColors(barPct, isDoneForColor)
 
                     const canLog = isOwner && !isFutureDay
 
-                    return (
-                      <div key={goal.text} className="space-y-1">
-                        {/* Parent card */}
-                        <div className={`relative rounded-xl overflow-hidden ${isExceeded ? 'goal-gold-fill' : isGoalMet ? 'goal-green-fill' : 'bg-zinc-100 dark:bg-zinc-800'} ${shakingGoals.has(goal.text) ? 'row-shake' : ''}`}
-                          style={isBreakdown ? { borderLeft: `4px solid ${isExceeded ? '#d97706' : isGoalMet ? '#059669' : c.accent}` } : undefined}>
-                          {!isExceeded && !isGoalMet && <div className={`absolute inset-y-0 left-0 transition-all duration-700 ${c.fill}`} style={{ width: `${Math.min(1, barPct) * 100}%` }} />}
+                    const isCounter = canLog && goal.type !== 'habit' && !isBreakdown
+                    const isHabitLoggable = canLog && goal.type === 'habit' && !isFutureDay
 
-                          {/* Invisible split tap zones for count goals */}
-                          {canLog && goal.type !== 'habit' && !isBreakdown && (
-                            <>
-                              <button aria-label="subtract" onClick={() => setDayCount(goal.text, Math.max(0, todayVal - 1))}
-                                className="absolute inset-y-0 left-0 w-1/2 z-10 active:bg-black/5 dark:active:bg-white/5 transition-colors" />
-                              <button aria-label="add" onClick={() => {
-                                if (tgt > 0 && weekVal >= tgt) triggerShake(goal.text)
-                                setDayCount(goal.text, Math.min(999, todayVal + 1))
-                              }}
-                                className="absolute inset-y-0 right-0 w-1/2 z-10 active:bg-black/5 dark:active:bg-white/5 transition-colors" />
-                            </>
-                          )}
+                    if (isBreakdown) return (
+                      <div key={goal.text} className="space-y-1 pb-[2px]">
+                        {/* Minimal label — not itself a button, just names the group below */}
+                        <p className="px-1 text-[10px] font-bold uppercase tracking-wide text-zinc-400 dark:text-zinc-500 truncate">{goal.text}</p>
 
-                          {/* Visual content */}
-                          <button
-                            onClick={() => !isFutureDay && goal.type === 'habit' && toggleHabit(goal.text)}
-                            disabled={isFutureDay || goal.type !== 'habit'}
-                            className="relative w-full flex items-center gap-2.5 px-3 py-2.5 text-left disabled:pointer-events-none">
-                            {!isBreakdown && (
-                              <div className={`w-3.5 h-3.5 rounded-sm border-2 shrink-0 flex items-center justify-center transition-colors ${showCheck ? c.checkFull : 'border-zinc-300 dark:border-zinc-500'}`}>
-                                {showCheck && (
-                                  <svg width="7" height="5" viewBox="0 0 10 8" fill="none">
-                                    <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                                  </svg>
-                                )}
-                              </div>
-                            )}
-                            <span className={`flex-1 text-sm truncate ${isBreakdown ? 'font-bold uppercase tracking-wide' : ''} ${c.text}`}>{goal.text}</span>
-                            {(todayVal > 0 || breakdownTodayVal > 0) && (
-                              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${c.todayPill}`}>+{todayVal || breakdownTodayVal} today</span>
-                            )}
-                            {rightLabel && <span className={`text-[11px] tabular-nums shrink-0 ${c.label}`}>{rightLabel}</span>}
-                          </button>
-                        </div>
-
-                        {/* Sub-goal cards */}
-                        {isBreakdown && (
-                          <div className="ml-4 space-y-1">
-                            {goal.subGoals.map((sg, si) => {
+                        {/* Sub-goal rows — same size/style as every other goal button */}
+                        <div className="space-y-1">
+                          {goal.subGoals.map((sg, si) => {
                               const k = `${goal.text}::${sg.text}`
                               const sv = weeklyCount(k)
                               const todayV = getCountVal(k)
                               const st = Number(sg.target) || 0
                               const sp = st ? Math.min(1, sv / st) : 0
                               const sdone = st > 0 && sv >= st
-                              const sExceeded = st > 0 && sv > st
-                              const sGoalMet = !sExceeded && sdone
-                              const sc = sExceeded ? goldColors : stateColors(sp, sdone)
+                              const sc = stateColors(sp, sdone)
                               return (
-                                <div key={si} className={`relative rounded-lg overflow-hidden ${sExceeded ? 'goal-gold-fill' : sGoalMet ? 'goal-green-fill' : 'bg-zinc-100 dark:bg-zinc-800'} ${shakingGoals.has(k) ? 'row-shake' : ''}`}>
-                                  {!sExceeded && !sGoalMet && <div className={`absolute inset-y-0 left-0 transition-all duration-700 ${sc.fill}`} style={{ width: `${sp * 100}%` }} />}
+                                <div key={si} className={`relative rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 ${shakingGoals.has(k) ? 'row-shake' : ''}`}>
+                                  <div className="absolute inset-y-0 left-0 rounded-xl"
+                                    style={{ width: `${sp * 100}%`, background: sc.fill, transition: 'width 420ms cubic-bezier(0.34, 1.25, 0.64, 1), background 0.3s ease' }} />
                                   {canLog && (
                                     <>
-                                      <button aria-label="subtract" onClick={() => setDayCount(k, Math.max(0, todayV - 1))}
-                                        className="absolute inset-y-0 left-0 w-1/2 z-10 active:bg-black/5 dark:active:bg-white/5 transition-colors" />
-                                      <button aria-label="add" onClick={() => {
-                                        if (st > 0 && sv >= st) triggerShake(k)
-                                        setDayCount(k, Math.min(999, todayV + 1))
-                                      }}
-                                        className="absolute inset-y-0 right-0 w-1/2 z-10 active:bg-black/5 dark:active:bg-white/5 transition-colors" />
+                                      <button aria-label="subtract"
+                                        onClick={() => setDayCount(k, Math.max(0, todayV - 1))}
+                                        onPointerDown={() => pressZone(k, 'left')}
+                                        onPointerUp={() => releaseZone(k)}
+                                        onPointerLeave={() => releaseZone(k)}
+                                        className="absolute inset-y-0 left-0 w-1/2 z-10 rounded-l-xl" />
+                                      <button aria-label="add"
+                                        onClick={() => {
+                                          if (st > 0 && sv >= st) triggerShake(k)
+                                          setDayCount(k, Math.min(999, todayV + 1))
+                                        }}
+                                        onPointerDown={() => pressZone(k, 'right')}
+                                        onPointerUp={() => releaseZone(k)}
+                                        onPointerLeave={() => releaseZone(k)}
+                                        className="absolute inset-y-0 right-0 w-1/2 z-10 rounded-r-xl" />
                                     </>
                                   )}
-                                  <div className="relative flex items-center gap-2 px-3 py-2 pointer-events-none">
-                                    <div className={`w-3.5 h-3.5 rounded-sm border-2 shrink-0 flex items-center justify-center transition-colors ${sdone ? sc.checkFull : 'border-zinc-300 dark:border-zinc-500'}`}>
-                                      {sdone && (
-                                        <svg width="7" height="5" viewBox="0 0 10 8" fill="none">
-                                          <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                                        </svg>
+                                  <div className="relative w-full flex items-center justify-between gap-2 px-3 py-2.5 pointer-events-none">
+                                    <span className="flex items-center gap-2.5 min-w-0">
+                                      {canLog && (
+                                        <span
+                                          onAnimationEnd={() => setJiggleZone(j => ({ ...j, [k]: null }))}
+                                          className={`w-7 h-7 shrink-0 rounded-full bg-zinc-900/10 dark:bg-white/10 text-zinc-600 dark:text-white/75 flex items-center justify-center text-base font-semibold leading-none ${pressedZone[k] === 'left' ? 'badge-squash' : jiggleZone[k] === 'left' ? 'badge-slime-pop' : ''}`}>−</span>
                                       )}
-                                    </div>
-                                    <span className={`text-xs flex-1 truncate ${sc.text}`}>{sg.text}</span>
-                                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${sc.todayPill} ${todayV === 0 ? 'opacity-0' : ''}`}>+{todayV} today</span>
-                                    <span className={`text-[10px] tabular-nums shrink-0 ${sc.label}`}>{sv}{st ? `/${st}` : ''}{sg.unit ? ` ${sg.unit}` : ''}</span>
+                                      <span className={`text-sm truncate ${sc.text}`}>{sg.text}</span>
+                                    </span>
+                                    <span className="flex items-center gap-2.5 shrink-0">
+                                      {todayV > 0 && (
+                                        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${sc.todayPill}`}>+{todayV} today</span>
+                                      )}
+                                      <span className={`font-mono text-sm font-bold tabular-nums shrink-0 ${sc.label}`}>{sv}{st ? `/${st}` : ''}{sg.unit ? ` ${sg.unit}` : ''}</span>
+                                      {canLog && (
+                                        <span
+                                          onAnimationEnd={() => setJiggleZone(j => ({ ...j, [k]: null }))}
+                                          className={`w-7 h-7 shrink-0 rounded-full bg-emerald-500/20 dark:bg-emerald-400/20 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-base font-semibold leading-none ${pressedZone[k] === 'right' ? 'badge-squash' : jiggleZone[k] === 'right' ? 'badge-slime-pop' : ''}`}>+</span>
+                                      )}
+                                    </span>
                                   </div>
                                 </div>
                               )
                             })}
                           </div>
-                        )}
+                        </div>
+                      )
+
+                    return (
+                      <div key={goal.text} className="relative space-y-1 pb-[2px]">
+                        {/* Parent card */}
+                        <div className={`relative rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 ${shakingGoals.has(goal.text) ? 'row-shake' : ''}`}>
+                          <div className="absolute inset-y-0 left-0 rounded-xl"
+                            style={{ width: `${Math.min(1, barPct) * 100}%`, background: c.fill, transition: 'width 420ms cubic-bezier(0.34, 1.25, 0.64, 1), background 0.3s ease' }} />
+
+                          {/* Split tap zones — each half presses in like a real button when tapped */}
+                          {isCounter && (
+                            <>
+                              <button aria-label="subtract"
+                                onClick={() => setDayCount(goal.text, Math.max(0, todayVal - 1))}
+                                onPointerDown={() => pressZone(goal.text, 'left')}
+                                onPointerUp={() => releaseZone(goal.text)}
+                                onPointerLeave={() => releaseZone(goal.text)}
+                                className="absolute inset-y-0 left-0 w-1/2 z-10 rounded-l-xl" />
+                              <button aria-label="add"
+                                onClick={() => {
+                                  if (tgt > 0 && weekVal >= tgt) triggerShake(goal.text)
+                                  setDayCount(goal.text, Math.min(999, todayVal + 1))
+                                }}
+                                onPointerDown={() => pressZone(goal.text, 'right')}
+                                onPointerUp={() => releaseZone(goal.text)}
+                                onPointerLeave={() => releaseZone(goal.text)}
+                                className="absolute inset-y-0 right-0 w-1/2 z-10 rounded-r-xl" />
+                            </>
+                          )}
+                          {isHabitLoggable && (
+                            <>
+                              <button aria-label="mark not done"
+                                onClick={() => setHabitDone(goal.text, false)}
+                                onPointerDown={() => done && pressZone(goal.text, 'left')}
+                                onPointerUp={() => releaseZone(goal.text)}
+                                onPointerLeave={() => releaseZone(goal.text)}
+                                className="absolute inset-y-0 left-0 w-1/2 z-10 rounded-l-xl" />
+                              <button aria-label="mark done"
+                                onClick={() => setHabitDone(goal.text, true)}
+                                onPointerDown={() => !done && pressZone(goal.text, 'right')}
+                                onPointerUp={() => releaseZone(goal.text)}
+                                onPointerLeave={() => releaseZone(goal.text)}
+                                className="absolute inset-y-0 right-0 w-1/2 z-10 rounded-r-xl" />
+                            </>
+                          )}
+
+                          {/* Visual content */}
+                          {isCounter ? (
+                            <div className="relative w-full flex items-center justify-between gap-2 px-3 py-2.5 pointer-events-none">
+                              <span className="flex items-center gap-2.5 min-w-0">
+                                <span
+                                  onAnimationEnd={() => setJiggleZone(j => ({ ...j, [goal.text]: null }))}
+                                  className={`w-7 h-7 shrink-0 rounded-full bg-zinc-900/10 dark:bg-white/10 text-zinc-600 dark:text-white/75 flex items-center justify-center text-base font-semibold leading-none ${pressedZone[goal.text] === 'left' ? 'badge-squash' : jiggleZone[goal.text] === 'left' ? 'badge-slime-pop' : ''}`}>−</span>
+                                <span className={`text-sm truncate ${c.text}`}>{goal.text}</span>
+                              </span>
+                              <span className="flex items-center gap-2.5 shrink-0">
+                                {todayVal > 0 && (
+                                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${c.todayPill}`}>+{todayVal} today</span>
+                                )}
+                                {rightLabel && <span className={`font-mono text-sm font-bold tabular-nums ${c.label}`}>{rightLabel}</span>}
+                                <span
+                                  onAnimationEnd={() => setJiggleZone(j => ({ ...j, [goal.text]: null }))}
+                                  className={`w-7 h-7 shrink-0 rounded-full bg-emerald-500/20 dark:bg-emerald-400/20 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-base font-semibold leading-none ${pressedZone[goal.text] === 'right' ? 'badge-squash' : jiggleZone[goal.text] === 'right' ? 'badge-slime-pop' : ''}`}>+</span>
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="relative w-full flex items-center gap-2.5 px-3 py-2.5 pointer-events-none">
+                              {isHabitLoggable && (
+                                <span
+                                  onAnimationEnd={() => setJiggleZone(j => ({ ...j, [goal.text]: null }))}
+                                  className={`w-7 h-7 shrink-0 rounded-full bg-zinc-900/10 dark:bg-white/10 text-zinc-600 dark:text-white/75 flex items-center justify-center text-base font-semibold leading-none ${pressedZone[goal.text] === 'left' ? 'badge-squash' : jiggleZone[goal.text] === 'left' ? 'badge-slime-pop' : `${done ? 'opacity-100' : 'opacity-30'}`}`}>−</span>
+                              )}
+                              <span className={`flex-1 text-sm truncate ${c.text}`}>{goal.text}</span>
+                              {done && (
+                                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${c.todayPill}`}>+1 today</span>
+                              )}
+                              {rightLabel && <span className={`text-[11px] tabular-nums shrink-0 ${c.label}`}>{rightLabel}</span>}
+                              {isHabitLoggable && (
+                                <span
+                                  onAnimationEnd={() => setJiggleZone(j => ({ ...j, [goal.text]: null }))}
+                                  className={`w-7 h-7 shrink-0 rounded-full bg-emerald-500/20 dark:bg-emerald-400/20 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-base font-semibold leading-none ${pressedZone[goal.text] === 'right' ? 'badge-squash' : jiggleZone[goal.text] === 'right' ? 'badge-slime-pop' : `${done ? 'opacity-30' : 'opacity-100'}`}`}>+</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )
                   })}
@@ -1681,28 +1713,15 @@ export default function MemberProfile() {
                 {bannerImageUrl && <img src={bannerImageUrl} alt="" className="w-full h-12 object-cover rounded-lg" />}
               </div>
 
-              {/* Banner color + Vibe in one row */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">Color</label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {BANNER_COLORS.map((_, i) => (
-                      <button key={i} onClick={() => saveBannerColor(i)}
-                        className={`w-6 h-6 rounded-full transition-all hover:scale-110 ${bannerColorIdx === i ? 'ring-2 ring-offset-1 ring-zinc-400 dark:ring-zinc-500 dark:ring-offset-zinc-900 scale-110' : ''}`}
-                        style={{ background: BANNER_COLOR_PREVIEWS[i] }} />
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">Vibe</label>
-                  <div className="flex flex-wrap gap-1">
-                    {VIBE_EMOJIS.map(e => (
-                      <button key={e} onClick={() => saveBannerVibe(bannerVibe === e ? '' : e)}
-                        className={`text-base w-7 h-7 flex items-center justify-center rounded-lg transition-all ${bannerVibe === e ? 'bg-zinc-100 dark:bg-zinc-800 scale-110 ring-1 ring-zinc-300 dark:ring-zinc-600' : 'opacity-50 hover:opacity-100'}`}>
-                        {e}
-                      </button>
-                    ))}
-                  </div>
+              {/* Banner color */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">Color</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {BANNER_COLORS.map((_, i) => (
+                    <button key={i} onClick={() => saveBannerColor(i)}
+                      className={`w-6 h-6 rounded-full transition-all hover:scale-110 ${bannerColorIdx === i ? 'ring-2 ring-offset-1 ring-zinc-400 dark:ring-zinc-500 dark:ring-offset-zinc-900 scale-110' : ''}`}
+                      style={{ background: BANNER_COLOR_PREVIEWS[i] }} />
+                  ))}
                 </div>
               </div>
 

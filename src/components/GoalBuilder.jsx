@@ -136,11 +136,11 @@ export default function GoalBuilder({ onChange, initialGoals }) {
               {/* Target stepper + unit (only for count) */}
               {goal.type === 'weekly' && goal.subGoals.length === 0 && (
                 <div className="flex items-center gap-1.5">
-                  <div className="flex items-center bg-zinc-900 rounded-lg overflow-hidden">
+                  <div className={`flex items-center bg-zinc-900 rounded-lg overflow-hidden ${!(Number(goal.target) > 0) ? 'ring-1 ring-amber-500/60' : ''}`}>
                     <button type="button"
                       onClick={() => update(i, { target: String(Math.max(1, (Number(goal.target) || 0) - 1)) })}
                       className="w-7 h-7 flex items-center justify-center text-zinc-500 hover:text-zinc-200 transition-colors select-none text-sm">−</button>
-                    <span className="w-7 text-center text-xs font-black text-white tabular-nums">
+                    <span className={`w-7 text-center text-xs font-black tabular-nums ${!(Number(goal.target) > 0) ? 'text-amber-500' : 'text-white'}`}>
                       {goal.target || '0'}
                     </span>
                     <button type="button"
@@ -164,10 +164,10 @@ export default function GoalBuilder({ onChange, initialGoals }) {
                       style={{ fontSize: 16 }}
                       className="flex-1 min-w-0 bg-transparent text-xs font-medium text-zinc-300 placeholder-zinc-700 focus:outline-none"
                     />
-                    <div className="flex items-center bg-zinc-900 rounded-md overflow-hidden shrink-0">
+                    <div className={`flex items-center bg-zinc-900 rounded-md overflow-hidden shrink-0 ${!(Number(sg.target) > 0) ? 'ring-1 ring-amber-500/60' : ''}`}>
                       <button type="button" onClick={() => updateSub(i, si, { target: String(Math.max(1, (Number(sg.target) || 0) - 1)) })}
                         className="w-5 h-6 flex items-center justify-center text-zinc-600 text-xs hover:text-zinc-300 transition-colors select-none">−</button>
-                      <span className="w-5 text-center text-[10px] font-black text-zinc-300 tabular-nums">{sg.target || '0'}</span>
+                      <span className={`w-5 text-center text-[10px] font-black tabular-nums ${!(Number(sg.target) > 0) ? 'text-amber-500' : 'text-zinc-300'}`}>{sg.target || '0'}</span>
                       <button type="button" onClick={() => updateSub(i, si, { target: String((Number(sg.target) || 0) + 1) })}
                         className="w-5 h-6 flex items-center justify-center text-zinc-600 text-xs hover:text-zinc-300 transition-colors select-none">+</button>
                     </div>

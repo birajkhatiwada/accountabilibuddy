@@ -216,6 +216,7 @@ export default function Feed() {
               <select
                 value={shoutoutFrom}
                 onChange={e => setShoutoutFrom(e.target.value)}
+                style={{ fontSize: 16 }}
                 className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-800 dark:text-zinc-200 focus:outline-none focus:border-emerald-500"
               >
                 <option value="">You...</option>
@@ -227,6 +228,7 @@ export default function Feed() {
               <select
                 value={shoutoutTo}
                 onChange={e => setShoutoutTo(e.target.value)}
+                style={{ fontSize: 16 }}
                 className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-800 dark:text-zinc-200 focus:outline-none focus:border-emerald-500"
               >
                 <option value="">Who...</option>
@@ -254,6 +256,7 @@ export default function Feed() {
               value={shoutoutMsg}
               onChange={e => setShoutoutMsg(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && postShoutout()}
+              style={{ fontSize: 16 }}
               className="flex-1 bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-amber-500 transition-colors"
             />
             <button
@@ -323,6 +326,7 @@ function FeedItem({ item, members, avatars, penalty, itemComments, commentsExpan
           ))}
           <div className="flex gap-1.5 mt-1">
             <select value={commentInput.from} onChange={e => onCommentInputChange('from', e.target.value)}
+              style={{ fontSize: 16 }}
               className="bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2 py-1.5 text-xs text-zinc-700 dark:text-zinc-300 focus:outline-none focus:border-zinc-400 shrink-0">
               <option value="">Who?</option>
               {commentMembers.map(m => <option key={m} value={m}>{m}</option>)}
@@ -330,6 +334,7 @@ function FeedItem({ item, members, avatars, penalty, itemComments, commentsExpan
             <input value={commentInput.text} onChange={e => onCommentInputChange('text', e.target.value)}
               onKeyDown={e => e.key === 'Enter' && onPostComment()}
               placeholder="Say something..."
+              style={{ fontSize: 16 }}
               className="flex-1 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-zinc-400 transition-colors min-w-0" />
             <button onClick={onPostComment}
               disabled={postingComment || !commentInput.from || !commentInput.text?.trim()}

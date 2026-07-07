@@ -89,6 +89,7 @@ export default function WeekCalendar({ entryId, selectedDay, logs = {} }) {
           value={noteInput}
           onChange={e => setNoteInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && addNote()}
+          style={{ fontSize: 16 }}
           className="flex-1 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors"
         />
         <button onClick={addNote} disabled={saving || !noteInput.trim()}

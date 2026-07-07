@@ -270,18 +270,16 @@ html.gaming .rounded-xl  { border-radius: 4px !important; }
 }
 .row-shake { animation: row-shake 0.35s ease-in-out; }
 
-.goal-gold-fill {
-  background: linear-gradient(90deg, #f59e0b, #fbbf24, #fde68a, #fbbf24, #f59e0b);
+/* squish-and-jiggle "slime" press effect for the +/- badges */
+.badge-squash { transform: scale(1.18, 0.8); transition: transform 100ms ease-out; }
+@keyframes slime-pop {
+  0%   { transform: scale(1.18, 0.8); }
+  35%  { transform: scale(0.88, 1.16); }
+  58%  { transform: scale(1.1, 0.92); }
+  78%  { transform: scale(0.96, 1.04); }
+  100% { transform: scale(1, 1); }
 }
-.dark .goal-gold-fill {
-  background: linear-gradient(90deg, #b45309, #d97706, #f59e0b, #d97706, #b45309);
-}
-.goal-green-fill {
-  background: linear-gradient(90deg, #22c55e, #4ade80, #86efac, #4ade80, #22c55e);
-}
-.dark .goal-green-fill {
-  background: linear-gradient(90deg, #064e3b, #065f46, #059669, #065f46, #064e3b);
-}
+.badge-slime-pop { animation: slime-pop 480ms cubic-bezier(0.34, 1.4, 0.64, 1); }
 
 @keyframes cat-sticky-in {
   from { transform: translateY(-100%); opacity: 0; }

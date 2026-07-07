@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { Outlet, NavLink, useParams, useNavigate, useLocation } from 'react-router-dom'
+import { Outlet, NavLink, useParams, useNavigate, useLocation, useNavigationType } from 'react-router-dom'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase'
 import { Target, DollarSign, Clock, Users, Rss, Moon, Sun, Copy, Check, LogOut, MessageSquare } from 'lucide-react'
@@ -54,11 +54,30 @@ export default function Layout() {
   const { sessionId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
+  const navigationType = useNavigationType()
   const isHome = location.pathname === `/${sessionId}`
 
+  // Remember scroll position per page so going back (POP) restores where you
+  // were, instead of always jumping to the top like a fresh page visit.
+  const scrollPositions = useRef(new Map())
+
   useEffect(() => {
-    document.querySelector('main')?.scrollTo(0, 0)
+    const main = document.querySelector('main')
+    if (!main) return
+    const onScroll = () => scrollPositions.current.set(location.pathname, main.scrollTop)
+    main.addEventListener('scroll', onScroll, { passive: true })
+    return () => main.removeEventListener('scroll', onScroll)
   }, [location.pathname])
+
+  useEffect(() => {
+    const main = document.querySelector('main')
+    if (!main) return
+    if (navigationType === 'POP') {
+      main.scrollTo(0, scrollPositions.current.get(location.pathname) || 0)
+    } else {
+      main.scrollTo(0, 0)
+    }
+  }, [location.pathname, navigationType])
   const [session, setSession] = useState(null)
   const [copied, setCopied] = useState(false)
 
@@ -99,6 +118,9 @@ export default function Layout() {
             </div>
             <div className="flex items-center gap-2 mb-1">
               {user && <button onClick={() => navigate(`/${sessionId}/member/${encodeURIComponent(user.displayName)}`)} className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 hover:text-emerald-500 transition-colors">{user.displayName}</button>}
+              <button onClick={() => navigate('/feedback')} className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Feedback">
+                <MessageSquare size={16} />
+              </button>
               <button onClick={toggle} className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Toggle dark mode">
                 {dark ? <Sun size={16} /> : <Moon size={16} />}
               </button>
@@ -125,6 +147,9 @@ export default function Layout() {
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {user && <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500">{user.displayName}</span>}
+            <button onClick={() => navigate('/feedback')} className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Feedback">
+              <MessageSquare size={15} />
+            </button>
             <button onClick={toggle} className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Toggle dark mode">
               {dark ? <Sun size={15} /> : <Moon size={15} />}
             </button>
@@ -139,14 +164,6 @@ export default function Layout() {
       <main className="flex-1 px-4 py-3 overflow-y-auto pb-24" style={{ overflowAnchor: 'none' }}>
         <Outlet />
       </main>
-
-      {/* Feedback FAB — hidden on session home */}
-      <button onClick={() => navigate('/feedback')}
-        className="fixed right-4 z-50 flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 text-xs font-semibold px-3.5 py-2.5 rounded-full shadow-lg transition-all active:scale-95"
-        style={{ bottom: 'max(88px, calc(env(safe-area-inset-bottom) + 88px))' }}>
-        <MessageSquare size={14} />
-        Feedback
-      </button>
 
       {/* Pill nav — hidden on session home */}
       <PillNav sessionId={sessionId} user={user} gaming={gaming} location={location} isHome={isHome} />

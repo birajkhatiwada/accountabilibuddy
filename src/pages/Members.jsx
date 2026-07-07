@@ -144,6 +144,7 @@ export default function Members() {
               onChange={e => setPenaltyInput(e.target.value)}
               onBlur={savePenalty}
               onKeyDown={e => e.key === 'Enter' && savePenalty()}
+              style={{ fontSize: 16 }}
               className="w-16 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2 py-1.5 text-sm font-bold text-zinc-800 dark:text-zinc-200 text-center focus:outline-none focus:border-emerald-500 transition-colors"
             />
             {penaltySaved && <Check size={14} className="text-emerald-500" />}
