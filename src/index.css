@@ -101,6 +101,13 @@ html.gaming .rounded-xl  { border-radius: 4px !important; }
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  /* Shared type treatment for every "x/y" style counter (goal counts,
+     sub-goal counts, weekly habit tallies, etc) — change it once here
+     and every counter across the app stays in sync. */
+  .goal-count-font {
+    @apply font-mono font-bold tabular-nums;
+  }
 }
 
 @keyframes glow-pop {

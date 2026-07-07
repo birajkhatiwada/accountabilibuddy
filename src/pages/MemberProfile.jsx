@@ -1306,7 +1306,7 @@ export default function MemberProfile() {
                                       {todayV > 0 && (
                                         <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${sc.todayPill}`}>+{todayV} today</span>
                                       )}
-                                      <span className={`font-mono text-sm font-bold tabular-nums shrink-0 ${sc.label}`}>{sv}{st ? `/${st}` : ''}{sg.unit ? ` ${sg.unit}` : ''}</span>
+                                      <span className={`goal-count-font text-sm shrink-0 ${sc.label}`}>{sv}{st ? `/${st}` : ''}{sg.unit ? ` ${sg.unit}` : ''}</span>
                                       {canLog && (
                                         <span
                                           onAnimationEnd={() => setJiggleZone(j => ({ ...j, [k]: null }))}
@@ -1378,7 +1378,7 @@ export default function MemberProfile() {
                                 {todayVal > 0 && (
                                   <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${c.todayPill}`}>+{todayVal} today</span>
                                 )}
-                                {rightLabel && <span className={`font-mono text-sm font-bold tabular-nums ${c.label}`}>{rightLabel}</span>}
+                                {rightLabel && <span className={`goal-count-font text-sm ${c.label}`}>{rightLabel}</span>}
                                 <span
                                   onAnimationEnd={() => setJiggleZone(j => ({ ...j, [goal.text]: null }))}
                                   className={`w-7 h-7 shrink-0 rounded-full bg-emerald-500/20 dark:bg-emerald-400/20 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-base font-semibold leading-none ${pressedZone[goal.text] === 'right' ? 'badge-squash' : jiggleZone[goal.text] === 'right' ? 'badge-slime-pop' : ''}`}>+</span>
@@ -1395,7 +1395,7 @@ export default function MemberProfile() {
                               {done && (
                                 <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${c.todayPill}`}>+1 today</span>
                               )}
-                              {rightLabel && <span className={`text-[11px] tabular-nums shrink-0 ${c.label}`}>{rightLabel}</span>}
+                              {rightLabel && <span className={`goal-count-font text-[11px] shrink-0 ${c.label}`}>{rightLabel}</span>}
                               {isHabitLoggable && (
                                 <span
                                   onAnimationEnd={() => setJiggleZone(j => ({ ...j, [goal.text]: null }))}
