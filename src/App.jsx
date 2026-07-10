@@ -9,6 +9,7 @@ import MemberProfile from './pages/MemberProfile'
 import Feed from './pages/Feed'
 import Recap from './pages/Recap'
 import EditGoals from './pages/EditGoals'
+import EditGoalTemplate from './pages/EditGoalTemplate'
 import Auth from './pages/Auth'
 import Feedback from './pages/Feedback'
 import { ThemeProvider } from './ThemeContext'
@@ -33,6 +34,7 @@ function AppRoutes() {
         <Route index element={<Home />} />
         <Route path="member/:name" element={<MemberProfile />} />
         <Route path="member/:name/goals" element={<EditGoals />} />
+        <Route path="member/:name/template" element={<EditGoalTemplate />} />
         <Route path="feed" element={<Feed />} />
         <Route path="history" element={<History />} />
         <Route path="pot" element={<Pot />} />

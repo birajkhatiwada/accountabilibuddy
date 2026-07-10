@@ -4,10 +4,11 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, addDoc, setDoc, getDoc, Timestamp } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { db, storage } from '../firebase'
+import { BUTTON_MD, BUTTON_SM, BUTTON_BASE } from '../buttonStyles'
 import { useAuth } from '../AuthContext'
 import { useTheme } from '../ThemeContext'
 import { getCurrentWeekId, formatWeekLabel, formatTimestamp } from '../utils'
-import { Pencil, X, Camera } from 'lucide-react'
+import { Pencil, X, Camera, ChevronLeft, ChevronRight, User, Target, ClipboardList, Plus } from 'lucide-react'
 import GoalBuilder from '../components/GoalBuilder'
 import DailyNote from '../components/DailyNote'
 import Highcharts from 'highcharts'
@@ -48,7 +49,10 @@ const REST_BEHAVIORS = [
 ]
 const SLEEP_COUNT = 2 // first N behaviors are sleep
 
-function CatProgressBar({ pct, atlasUrl, sheetOpen, compact = false, gaming = false }) {
+// Shared animation clock for the cat — called once by the parent so the
+// inline bar and the sticky/fixed bar render the exact same walking/resting
+// state instead of each running its own independent timers out of sync.
+function useCatAnimation(pct, sheetOpen) {
   const [displayedPct, setDisplayedPct] = useState(pct)
   const [isWalking, setIsWalking]       = useState(false)
   const [facingRight, setFacingRight]   = useState(true)
@@ -103,6 +107,10 @@ function CatProgressBar({ pct, atlasUrl, sheetOpen, compact = false, gaming = fa
     return () => clearInterval(id)
   }, [isWalking, behaviorIdx])
 
+  return { displayedPct, isWalking, facingRight, frame, behaviorIdx }
+}
+
+function CatProgressBar({ displayedPct, isWalking, facingRight, frame, behaviorIdx, atlasUrl, compact = false, gaming = false }) {
   const pctRound = Math.round(displayedPct * 100)
   const clampedLeft = Math.min(Math.max(pctRound, 9), 91)
 
@@ -122,104 +130,70 @@ function CatProgressBar({ pct, atlasUrl, sheetOpen, compact = false, gaming = fa
   const bgY = bgRow * FRAME_H
   const showZzz = !isWalking && behavior.zzz
 
-  if (compact) {
-    const s = 2 / 3  // 48px → 32px
-    return (
-      <div className="w-full relative" style={{ height: 46 }}>
-        {/* Track: border + gap + fill */}
-        <div className="absolute bottom-0 w-full"
-          style={{ height: 11, borderWidth: '1.5px', borderStyle: 'solid', borderRadius: gaming ? 2 : 3,
-            borderColor: gaming ? dotColor : 'white',
-            boxShadow: gaming ? `0 0 6px ${glowColor}` : 'none',
-            padding: 2, boxSizing: 'border-box' }}>
-          <div className="relative h-full overflow-hidden" style={{ borderRadius: 1 }}>
-            <div className={`absolute inset-0 ${gaming ? '' : 'bg-zinc-100 dark:bg-zinc-800'}`} style={gaming ? { background: '#050505' } : undefined} />
-            <div className="absolute inset-y-0 left-0 h-full cat-bar-fill"
-              style={{ width: `${pctRound}%`, background: trackColor, transition: 'width 2s cubic-bezier(0.4,0,0.2,1)', boxShadow: `0 0 6px ${glowColor}` }}>
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent cat-bar-shimmer" />
-            </div>
-          </div>
-        </div>
-        {/* Cat (32px) on top of track */}
-        <div className="absolute select-none"
-          style={{ left: `${clampedLeft}%`, bottom: 11, transform: 'translateX(-50%)', transition: 'left 2s cubic-bezier(0.4,0,0.2,1)' }}>
-          {showZzz && (
-            <div className="absolute pointer-events-none" style={{ top: '-10px', left: '50%', transform: 'translateX(-50%)' }}>
-              <span className="zzz-1 absolute text-[8px] font-black text-zinc-400 dark:text-zinc-500">z</span>
-              <span className="zzz-2 absolute text-[7px] font-black text-zinc-300 dark:text-zinc-600" style={{ left: '6px', top: '-3px' }}>z</span>
-            </div>
-          )}
-          <div style={{
-            width: 32, height: 32,
-            backgroundImage: `url(${atlasUrl})`,
-            backgroundSize: `${Math.round(ATLAS_W * s)}px ${Math.round(ATLAS_H * s)}px`,
-            backgroundPosition: `-${Math.round(bgX * s)}px -${Math.round(bgY * s)}px`,
-            backgroundRepeat: 'no-repeat',
-            imageRendering: 'pixelated',
-          }} />
-        </div>
-      </div>
-    )
-  }
-
   const gamingLevel = Math.min(10, Math.floor(pctRound / 10) + (pctRound > 0 ? 1 : 0))
   const gamingBorderColor = dotColor
   const gamingGlow = `0 0 8px ${glowColor}, 0 0 20px ${glowColor}`
 
-  return (
-    <div className="w-full mt-3">
-      <div className="flex items-center justify-between mb-1.5">
-        {gaming ? (
-          <>
-            <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: dotColor, fontVariantNumeric: 'tabular-nums', letterSpacing: '0.15em' }}>⚡ XP BAR</span>
-            <span className="text-[11px] font-black tabular-nums" style={{ color: dotColor }}>LVL {gamingLevel}</span>
-          </>
-        ) : (
-          <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">This week</span>
-        )}
-      </div>
+  // Size tokens — compact is the same layout, just scaled down to fit the
+  // shorter sticky strip. Every element (ruler %, post signs, track, cat)
+  // is present in both, only the numbers differ.
+  const sc       = compact ? 0.63 : 1
+  const wrapH    = compact ? 40 : 64
+  const barH     = compact ? 11 : 14
+  const postBot  = compact ? 7 : 11
+  const catScale = compact ? 2 / 3 : 1
+  const catSize  = Math.round(FRAME_W * catScale)
+  const rulerW   = 340
+  const midY     = Math.round(wrapH * 0.34)
+  const labelX   = Math.max(22 * sc, Math.min(rulerW - 22 * sc, (pctRound / 100) * rulerW))
 
-      <div className="relative h-16">
+  return (
+    <div className={compact ? 'w-full relative' : 'w-full mt-3'}>
+      {!compact && (
+        <div className="flex items-center justify-between mb-1.5">
+          {gaming ? (
+            <>
+              <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: dotColor, fontVariantNumeric: 'tabular-nums', letterSpacing: '0.15em' }}>⚡ XP BAR</span>
+              <span className="text-[11px] font-black tabular-nums" style={{ color: dotColor }}>LVL {gamingLevel}</span>
+            </>
+          ) : (
+            <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">This week</span>
+          )}
+        </div>
+      )}
+
+      <div className="relative" style={{ height: wrapH }}>
         {/* Ruler watermark */}
-        {(() => {
-          const W = 340, midY = 22
-          const labelX = Math.max(22, Math.min(W - 22, (pctRound / 100) * W))
-          return (
-            <svg width="100%" height="100%" viewBox={`0 0 ${W} 64`} preserveAspectRatio="xMidYMid meet"
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                zIndex: 0, opacity: 0.11,
-                color: gaming ? '#00ff88' : 'currentColor',
-                WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 28%, black 72%, transparent 100%)',
-                maskImage: 'linear-gradient(to right, transparent 0%, black 28%, black 72%, transparent 100%)',
-              }}>
-              <line x1="0" y1={midY} x2={W} y2={midY} stroke="currentColor" strokeWidth="0.5" opacity="0.4" />
-              {Array.from({ length: 51 }, (_, i) => i * 2).map(p => {
-                const x = (p / 100) * W
-                const isMajor = p % 25 === 0
-                const isMid = p % 10 === 0
-                const h = isMajor ? 12 : isMid ? 7 : 4
-                return <line key={p} x1={x} y1={midY - h / 2} x2={x} y2={midY + h / 2}
-                  stroke="currentColor" strokeWidth={isMajor ? 1.4 : isMid ? 0.9 : 0.6}
-                  opacity={isMajor ? 1 : isMid ? 0.7 : 0.45} />
-              })}
-              <rect x={labelX - 40} y={midY - 18} width="80" height="36"
-                fill={gaming ? '#020202' : document.documentElement.classList.contains('dark') ? '#09090b' : '#fafafa'} />
-              <text x={labelX} y={midY + 13} textAnchor="middle" fontSize="32" fontWeight="900"
-                fill="currentColor" letterSpacing="-0.5">{pctRound}%</text>
-            </svg>
-          )
-        })()}
-        {/* Cover for the progress bar area only */}
+        <svg width="100%" height="100%" viewBox={`0 0 ${rulerW} ${wrapH}`} preserveAspectRatio="xMidYMid meet"
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            zIndex: 0, opacity: 0.11,
+            color: gaming ? '#00ff88' : 'currentColor',
+            WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 28%, black 72%, transparent 100%)',
+            maskImage: 'linear-gradient(to right, transparent 0%, black 28%, black 72%, transparent 100%)',
+          }}>
+          <line x1="0" y1={midY} x2={rulerW} y2={midY} stroke="currentColor" strokeWidth="0.5" opacity="0.4" />
+          {Array.from({ length: 51 }, (_, i) => i * 2).map(p => {
+            const x = (p / 100) * rulerW
+            const isMajor = p % 25 === 0
+            const isMid = p % 10 === 0
+            const h = (isMajor ? 12 : isMid ? 7 : 4) * sc
+            return <line key={p} x1={x} y1={midY - h / 2} x2={x} y2={midY + h / 2}
+              stroke="currentColor" strokeWidth={isMajor ? 1.4 : isMid ? 0.9 : 0.6}
+              opacity={isMajor ? 1 : isMid ? 0.7 : 0.45} />
+          })}
+          <rect x={labelX - 40 * sc} y={midY - 18 * sc} width={80 * sc} height={36 * sc}
+            fill={gaming ? '#020202' : document.documentElement.classList.contains('dark') ? '#09090b' : '#fafafa'} />
+          <text x={labelX} y={midY + 13 * sc} textAnchor="middle" fontSize={32 * sc} fontWeight="900"
+            fill="currentColor" letterSpacing="-0.5">{pctRound}%</text>
+        </svg>
+        {/* Cover hides sign posts behind the bar; cat still shows above */}
         <div className="absolute bottom-0 w-full bg-white dark:bg-zinc-900"
-          style={{ height: 14, zIndex: 3 }} />
-        {/* Cover hides sign posts behind the bar; cat (zIndex 4) still shows above */}
-        <div className="absolute bottom-0 w-full bg-white dark:bg-zinc-900"
-          style={{ height: 14, zIndex: 3 }} />
+          style={{ height: barH, zIndex: 3 }} />
         {/* Track: outer border + inner gap + fill */}
         <div className="absolute bottom-0 w-full"
           style={{
-            height: 14, borderWidth: '1.5px', borderStyle: 'solid', borderRadius: gaming ? 2 : 3,
+            height: barH, borderWidth: '1.5px', borderStyle: 'solid', borderRadius: gaming ? 2 : 3,
             borderColor: gaming ? gamingBorderColor : 'rgba(255,255,255,0.45)',
             boxShadow: gaming ? gamingGlow : 'none',
             padding: 2, boxSizing: 'border-box', zIndex: 5,
@@ -241,46 +215,49 @@ function CatProgressBar({ pct, atlasUrl, sheetOpen, compact = false, gaming = fa
           { at: 100, signColor: null,     postColor: gaming ? dotColor : '#27272a', label: gaming ? 'MAX' : null },
         ].map(({ at, signColor, postColor, label }) => (
           <div key={at} className="absolute pointer-events-none select-none flex flex-col items-center"
-            style={{ left: `${at}%`, bottom: 11, transform: 'translateX(-50%)', zIndex: 2 }}>
+            style={{ left: `${at}%`, bottom: postBot, transform: 'translateX(-50%)', zIndex: 1 }}>
             {signColor ? (
-              <div style={{ width: gaming ? 14 : 11, height: gaming ? 8 : 7, background: signColor, borderRadius: gaming ? 1 : 1,
+              <div style={{ width: (gaming ? 14 : 11) * sc, height: (gaming ? 8 : 7) * sc, background: signColor, borderRadius: 1,
                 marginBottom: 1, boxShadow: gaming ? `0 0 6px ${signColor}` : `0 0 4px ${signColor}88`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                {label && <span style={{ fontSize: 5, color: '#fff', fontWeight: 900 }}>{label}</span>}
+                {label && <span style={{ fontSize: 5 * sc, color: '#fff', fontWeight: 900 }}>{label}</span>}
               </div>
             ) : (
               gaming ? (
-                <div style={{ width: 16, height: 8, borderRadius: 1, marginBottom: 1,
+                <div style={{ width: 16 * sc, height: 8 * sc, borderRadius: 1, marginBottom: 1,
                   background: '#000', border: `1px solid ${dotColor}`,
                   boxShadow: `0 0 6px ${dotColor}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontSize: 5, fontWeight: 900, color: dotColor, letterSpacing: 1 }}>MAX</span>
+                  <span style={{ fontSize: 5 * sc, fontWeight: 900, color: dotColor, letterSpacing: 1 }}>MAX</span>
                 </div>
               ) : (
-                <div style={{ width: 12, height: 8, borderRadius: 1, marginBottom: 1, overflow: 'hidden',
+                <div style={{ width: 12 * sc, height: 8 * sc, borderRadius: 1, marginBottom: 1, overflow: 'hidden',
                   background: 'repeating-conic-gradient(#1c1c1e 0% 25%, #e4e4e7 0% 50%) 0 0 / 4px 4px',
                   border: '1px solid #3f3f46' }} />
               )
             )}
-            <div style={{ width: 1.5, height: 12, background: postColor,
+            <div style={{ width: 1.5, height: 12 * sc, background: postColor,
               boxShadow: gaming ? `0 0 4px ${postColor}` : 'none' }} />
           </div>
         ))}
 
-        {/* Cat */}
+        {/* Cat — above the post signs (zIndex 1) so it still walks in front
+            of them, but below the cover (zIndex 3) so its lower body stays
+            fully hidden behind that opaque layer instead of leaking through
+            the track's transparent border/padding gap */}
         <div className="absolute select-none"
-          style={{ left: `${clampedLeft}%`, bottom: 2, transform: `translateX(-50%) translateY(${!isWalking && behaviorIdx === 1 ? 7 : 0}px)`, transition: 'left 6s linear, transform 0.3s ease', zIndex: 4 }}>
+          style={{ left: `${clampedLeft}%`, bottom: 2, transform: `translateX(-50%) translateY(${!isWalking && behaviorIdx === 1 ? (compact ? 5 : 7) : 0}px)`, transition: 'left 6s linear, transform 0.3s ease', zIndex: 2 }}>
           {showZzz && (
-            <div className="absolute pointer-events-none" style={{ top: '-14px', left: '50%', transform: 'translateX(-50%)' }}>
-              <span className="zzz-1 absolute text-[10px] font-black text-zinc-400 dark:text-zinc-500">z</span>
-              <span className="zzz-2 absolute text-[8px] font-black text-zinc-300 dark:text-zinc-600" style={{ left: '9px', top: '-5px' }}>z</span>
+            <div className="absolute pointer-events-none" style={{ top: compact ? '-10px' : '-14px', left: '50%', transform: 'translateX(-50%)' }}>
+              <span className="zzz-1 absolute text-[8px] font-black text-zinc-400 dark:text-zinc-500">z</span>
+              <span className="zzz-2 absolute text-[7px] font-black text-zinc-300 dark:text-zinc-600" style={{ left: '6px', top: '-3px' }}>z</span>
             </div>
           )}
           <div style={{
-            width: FRAME_W, height: FRAME_H,
+            width: catSize, height: catSize,
             backgroundImage: `url(${atlasUrl})`,
-            backgroundSize: `${ATLAS_W}px ${ATLAS_H}px`,
-            backgroundPosition: `-${bgX}px -${bgY}px`,
+            backgroundSize: `${Math.round(ATLAS_W * catScale)}px ${Math.round(ATLAS_H * catScale)}px`,
+            backgroundPosition: `-${Math.round(bgX * catScale)}px -${Math.round(bgY * catScale)}px`,
             backgroundRepeat: 'no-repeat',
             imageRendering: 'pixelated',
           }} />
@@ -328,6 +305,20 @@ const BANNER_COLOR_PREVIEWS = [
 const AVATAR_HEX = [
   '#8b5cf6','#3b82f6','#10b981','#f97316','#ec4899','#6366f1','#14b8a6','#d946ef',
 ]
+
+// A member can keep several named templates now. Normalize away the older
+// shapes this field used to be saved in: a bare goal array (the very first
+// version), or a single { title, items } object (one template, no list).
+const newTemplateId = () =>
+  (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`)
+const normalizeTemplates = (raw) => {
+  if (!raw) return []
+  if (Array.isArray(raw)) {
+    if (!raw.length) return []
+    return raw[0]?.items !== undefined ? raw : [{ id: newTemplateId(), title: '', items: raw }]
+  }
+  return raw.items?.length ? [{ id: newTemplateId(), title: raw.title || '', items: raw.items }] : []
+}
 
 function dateKey(d) {
   const y = d.getFullYear()
@@ -377,6 +368,9 @@ export default function MemberProfile() {
   const [pickingAvatar, setPickingAvatar] = useState(false)
   const [goalBuilderKey, setGoalBuilderKey] = useState(0)
   const [carryOverGoals, setCarryOverGoals] = useState(null)
+  const [goalTemplates, setGoalTemplates] = useState([])
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false)
+  const [namingTemplate, setNamingTemplate] = useState(false)
   const [selectedDay, setSelectedDay] = useState(todayKey)
   const [localCounts, setLocalCounts] = useState({})
   const [localTotals, setLocalTotals] = useState({})
@@ -420,6 +414,7 @@ export default function MemberProfile() {
   const [bannerColorIdx, setBannerColorIdx] = useState(null)
   const [uiTheme, setUiTheme] = useState('default')
   const [editBannerOpen, setEditBannerOpen] = useState(false)
+  const [editMenuOpen, setEditMenuOpen] = useState(false)
   const saveTimers = useRef({})
   const confettiFired = useRef(false)
 
@@ -465,6 +460,7 @@ export default function MemberProfile() {
         if (isOwner) setGlobalUiTheme(savedTheme)
         const mg = d.memberGoals?.[name]
         setMemberGoals(mg?.length ? mg : null)
+        setGoalTemplates(normalizeTemplates(d.goalTemplates?.[name]))
       }
     })
   }, [sessionId])
@@ -672,6 +668,22 @@ export default function MemberProfile() {
     setCarryOverGoals(goals); setGoalsInput(goals); setGoalBuilderKey(k => k + 1)
   }
 
+  const handleUseTemplate = (items) => {
+    const goals = items || []
+    setCarryOverGoals(goals); setGoalsInput(goals); setGoalBuilderKey(k => k + 1)
+    setTemplatePickerOpen(false)
+  }
+
+  // Saves this week's goals as a brand new template — every template needs
+  // its own name, so this opens a small prompt for one first.
+  const saveGoalTemplate = async (title) => {
+    if (!myGoals.length || !title.trim()) return
+    const next = [...goalTemplates, { id: newTemplateId(), title: title.trim(), items: myGoals }]
+    setGoalTemplates(next)
+    await setDoc(sessionDoc, { goalTemplates: { [name]: next } }, { merge: true })
+    setNamingTemplate(false)
+  }
+
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href)
   }
@@ -871,7 +883,7 @@ export default function MemberProfile() {
                 className="text-xs text-zinc-400 hover:text-zinc-600 transition-colors">Cancel</button>
               <button onClick={() => { sendProofNote(goalText); setEditingProof(p => ({ ...p, [goalText]: false })) }}
                 disabled={!(proofNoteInputs[goalText] ?? '').trim()}
-                className="text-xs font-bold text-white bg-emerald-500 hover:bg-emerald-400 disabled:opacity-30 px-3 py-1 rounded-lg transition-colors">
+                className={BUTTON_SM}>
                 Save
               </button>
             </div>
@@ -1002,6 +1014,10 @@ export default function MemberProfile() {
     CAT_ATLASES[typeof entry?.catColor === 'number' ? entry.catColor : 0],
   [entry?.catColor])
 
+  // Single shared animation clock — both the inline bar and the sticky bar
+  // read from this so they always show the exact same walking/resting state
+  const catAnim = useCatAnimation(catPct, !!(loggingSheet || activeGoalSheet))
+
   useEffect(() => {
     if (!catBarEl) return
     const obs = new IntersectionObserver(([e]) => setCatBarInView(e.isIntersecting), { threshold: 0.1 })
@@ -1044,15 +1060,9 @@ export default function MemberProfile() {
           {/* Owner actions — bottom-right of banner */}
           {isOwner && (
             <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1.5">
-              {myGoals.length > 0 && (
-                <button onClick={() => navigate(`/${sessionId}/member/${encodeURIComponent(name)}/goals`)}
-                  className="flex items-center gap-1 px-2 py-1.5 rounded-xl bg-black/30 hover:bg-black/50 backdrop-blur-sm text-white/80 hover:text-white text-xs font-semibold transition-all active:scale-95">
-                  🎯 Goals
-                </button>
-              )}
-              <button onClick={() => { setStatusInput(status); setBioInput(bio); setNicknameInput(nickname); setEditBannerOpen(true) }}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-black/30 hover:bg-black/50 backdrop-blur-sm text-white/80 hover:text-white text-xs font-semibold transition-all active:scale-95">
-                <Pencil size={11} /> Edit
+              <button onClick={() => setEditMenuOpen(true)}
+                className={BUTTON_SM}>
+                Edit
               </button>
             </div>
           )}
@@ -1061,17 +1071,20 @@ export default function MemberProfile() {
         {/* Profile info — avatar overlaps banner */}
         <div className="px-4 pb-3">
           <div className="flex items-end justify-between -mt-7 mb-3">
-            {/* Avatar */}
-            <button onClick={() => setPickingAvatar(v => !v)}
-              className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${color} ring-4 ring-zinc-50 dark:ring-zinc-950 flex items-center justify-center relative group transition-all hover:scale-105 active:scale-95 shrink-0 shadow-lg overflow-hidden`}>
+            {/* Avatar — only the owner can open the picker to change it */}
+            <button onClick={() => isOwner && setPickingAvatar(v => !v)}
+              disabled={!isOwner}
+              className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${color} ring-4 ring-zinc-50 dark:ring-zinc-950 flex items-center justify-center relative group transition-all shrink-0 shadow-lg overflow-hidden ${isOwner ? 'hover:scale-105 active:scale-95' : 'cursor-default'}`}>
               {avatarPhotoUrl
                 ? <img src={avatarPhotoUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
                 : avatars[name]
                   ? <span className="text-3xl">{avatars[name]}</span>
                   : <span className="text-white font-black text-3xl leading-none">{name[0].toUpperCase()}</span>}
-              <span className="absolute inset-0 rounded-2xl bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                <Pencil size={11} className="text-white" />
-              </span>
+              {isOwner && (
+                <span className="absolute inset-0 rounded-2xl bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                  <Pencil size={11} className="text-white" />
+                </span>
+              )}
             </button>
 
             {/* Badges top-right */}
@@ -1090,7 +1103,7 @@ export default function MemberProfile() {
 
           <div ref={setCatBarEl}>
             {myGoals.length > 0 && logsLoaded && (
-              <CatProgressBar pct={catPct} atlasUrl={catAtlasUrl} sheetOpen={!!(loggingSheet || activeGoalSheet)} gaming={uiTheme === 'gaming'} />
+              <CatProgressBar {...catAnim} atlasUrl={catAtlasUrl} gaming={uiTheme === 'gaming'} />
             )}
           </div>
         </div>
@@ -1102,13 +1115,22 @@ export default function MemberProfile() {
       {/* No goals yet */}
       {!myGoals.length && isOwner && (
         <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">Lock in your goals for this week 🔒</p>
-            {prevEntry?.goalItems?.length > 0 && (
-              <button onClick={handleCarryOver} className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 transition-colors">
-                ↩ Last week's
-              </button>
-            )}
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">Lock in your goals for this week</p>
+            <div className="flex items-center gap-3 shrink-0">
+              {goalTemplates.length > 0 && (
+                <button onClick={() => setTemplatePickerOpen(true)}
+                  className={BUTTON_SM}>
+                  Use template
+                </button>
+              )}
+              {prevEntry?.goalItems?.length > 0 && (
+                <button onClick={handleCarryOver}
+                  className={BUTTON_SM}>
+                  Last week's
+                </button>
+              )}
+            </div>
           </div>
           <GoalBuilder key={goalBuilderKey} initialGoals={carryOverGoals} onChange={setGoalsInput} />
           {goalsInput.some(g => g.text.trim() && !isGoalTargetValid(g)) && (
@@ -1116,8 +1138,8 @@ export default function MemberProfile() {
           )}
           <button onClick={submitGoals}
             disabled={submitting || !goalsInput.some(g => g.text.trim()) || !goalsInput.filter(g => g.text.trim()).every(isGoalTargetValid)}
-            className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-40 text-white font-bold rounded-xl py-3 transition-all">
-            {submitting ? 'Locking in...' : 'Lock in goals 🔒'}
+            className={`w-full ${BUTTON_MD}`}>
+            {submitting ? 'Locking in...' : 'Lock in goals'}
           </button>
         </div>
       )}
@@ -1298,7 +1320,7 @@ export default function MemberProfile() {
                                       {canLog && (
                                         <span
                                           onAnimationEnd={() => setJiggleZone(j => ({ ...j, [k]: null }))}
-                                          className={`w-7 h-7 shrink-0 rounded-full bg-zinc-900/10 dark:bg-white/10 text-zinc-600 dark:text-white/75 flex items-center justify-center text-base font-semibold leading-none ${pressedZone[k] === 'left' ? 'badge-squash' : jiggleZone[k] === 'left' ? 'badge-slime-pop' : ''}`}>−</span>
+                                          className={`w-7 h-7 shrink-0 rounded-full bg-zinc-900/10 dark:bg-white/10 text-zinc-600 dark:text-white/75 flex items-center justify-center text-base font-semibold leading-none ${pressedZone[k] === 'left' ? 'badge-squash' : jiggleZone[k] === 'left' ? 'badge-slime-pop' : todayV === 0 ? 'opacity-30' : ''}`}>−</span>
                                       )}
                                       <span className={`text-sm truncate ${sc.text}`}>{sg.text}</span>
                                     </span>
@@ -1371,7 +1393,7 @@ export default function MemberProfile() {
                               <span className="flex items-center gap-2.5 min-w-0">
                                 <span
                                   onAnimationEnd={() => setJiggleZone(j => ({ ...j, [goal.text]: null }))}
-                                  className={`w-7 h-7 shrink-0 rounded-full bg-zinc-900/10 dark:bg-white/10 text-zinc-600 dark:text-white/75 flex items-center justify-center text-base font-semibold leading-none ${pressedZone[goal.text] === 'left' ? 'badge-squash' : jiggleZone[goal.text] === 'left' ? 'badge-slime-pop' : ''}`}>−</span>
+                                  className={`w-7 h-7 shrink-0 rounded-full bg-zinc-900/10 dark:bg-white/10 text-zinc-600 dark:text-white/75 flex items-center justify-center text-base font-semibold leading-none ${pressedZone[goal.text] === 'left' ? 'badge-squash' : jiggleZone[goal.text] === 'left' ? 'badge-slime-pop' : todayVal === 0 ? 'opacity-30' : ''}`}>−</span>
                                 <span className={`text-sm truncate ${c.text}`}>{goal.text}</span>
                               </span>
                               <span className="flex items-center gap-2.5 shrink-0">
@@ -1395,7 +1417,7 @@ export default function MemberProfile() {
                               {done && (
                                 <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${c.todayPill}`}>+1 today</span>
                               )}
-                              {rightLabel && <span className={`goal-count-font text-[11px] shrink-0 ${c.label}`}>{rightLabel}</span>}
+                              {rightLabel && <span className={`goal-count-font text-sm shrink-0 ${c.label}`}>{rightLabel}</span>}
                               {isHabitLoggable && (
                                 <span
                                   onAnimationEnd={() => setJiggleZone(j => ({ ...j, [goal.text]: null }))}
@@ -1427,11 +1449,10 @@ export default function MemberProfile() {
             const goal = loggingSheet
             const isFutureDay = selectedDay > todayKey
             const close = closeLoggingSheet
-            const sheetClass = "fixed inset-0 z-50 flex items-end justify-center"
-            const innerClass = `relative bg-white dark:bg-zinc-900 rounded-t-3xl w-full max-w-lg flex flex-col shadow-2xl ${loggingClosing ? 'slide-down' : 'slide-up'}`
+            const sheetClass = "fixed inset-0 z-50 flex items-center justify-center p-4"
+            const innerClass = `relative bg-white dark:bg-zinc-900 rounded-2xl w-full max-w-lg flex flex-col shadow-2xl ${loggingClosing ? 'modal-pop-out' : 'modal-pop'}`
             const sheetHeader = (label, title) => (
               <div className="px-5 pt-4 pb-3 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
-                <div className="w-10 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto mb-4" />
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-base font-black text-zinc-900 dark:text-white">{title}</p>
@@ -1475,7 +1496,7 @@ export default function MemberProfile() {
                                   {sg.unit && <span className="text-xs text-zinc-400 ml-1.5">{sg.unit}</span>}
                                 </div>
                                 <button onClick={() => setDayCount(k, Math.min(999, todayVal + 1))}
-                                  className="w-9 h-9 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-bold flex items-center justify-center active:scale-90 transition-all select-none">+</button>
+                                  className={`w-9 h-9 flex items-center justify-center active:scale-90 transition-all select-none ${BUTTON_BASE}`}>+</button>
                               </div>
                             )}
                           </div>
@@ -1521,7 +1542,7 @@ export default function MemberProfile() {
                         <p className="text-xs text-zinc-400 mt-1.5">{goal.unit ? `${goal.unit} today` : 'today'}</p>
                       </div>
                       <button onClick={() => setDayCount(goal.text, Math.min(999, todayCount + 1))}
-                        className="w-11 h-11 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white text-lg font-bold flex items-center justify-center active:scale-90 transition-all select-none">+</button>
+                        className={`w-11 h-11 flex items-center justify-center active:scale-90 transition-all select-none text-lg ${BUTTON_BASE}`}>+</button>
                     </div>
                   ) : (
                     <div className="px-5 py-8 text-center text-sm text-zinc-400">{isFutureDay ? "Can't log a future day" : 'View only'}</div>
@@ -1540,12 +1561,10 @@ export default function MemberProfile() {
             const closeProof = closeActiveSheet
 
             return createPortal(
-              <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={closeProof}>
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={closeProof}>
                 <div className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-[280ms] ${activeClosing ? 'opacity-0' : ''}`} />
-                <div className={`relative bg-white dark:bg-zinc-900 rounded-t-3xl w-full max-w-lg shadow-2xl max-h-[85vh] overflow-y-auto ${activeClosing ? 'slide-down' : 'slide-up'}`} onClick={e => e.stopPropagation()}>
-                  <div className="flex justify-center pt-3"><div className="w-10 h-1 rounded-full bg-zinc-200 dark:bg-zinc-700" /></div>
-
-                  <div className="px-5 pt-4 pb-2 flex items-start justify-between">
+                <div className={`relative bg-white dark:bg-zinc-900 rounded-2xl w-full max-w-lg shadow-2xl max-h-[85vh] overflow-y-auto ${activeClosing ? 'modal-pop-out' : 'modal-pop'}`} onClick={e => e.stopPropagation()}>
+                  <div className="px-5 pt-5 pb-2 flex items-start justify-between">
                     <div>
                       <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-0.5">Add proof</p>
                       <h2 className="text-xl font-black text-zinc-900 dark:text-white leading-tight">{goal.text}</h2>
@@ -1565,7 +1584,7 @@ export default function MemberProfile() {
                           <button onClick={() => setEditingProof(p => ({ ...p, [goal.text]: false }))} className="text-sm text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors px-3 py-1.5">Cancel</button>
                           <button onClick={() => { sendProofNote(goal.text); setEditingProof(p => ({ ...p, [goal.text]: false })); setActiveGoalSheet(null) }}
                             disabled={!(proofNoteInputs[goal.text] ?? '').trim()}
-                            className="text-sm font-bold text-white bg-emerald-500 hover:bg-emerald-400 disabled:opacity-30 px-4 py-1.5 rounded-xl transition-colors">Save</button>
+                            className={BUTTON_SM}>Save</button>
                         </div>
                       </div>
                     ) : (
@@ -1642,34 +1661,27 @@ export default function MemberProfile() {
         </>
       )}
 
-      {/* Sticky cat strip — shown when main bar is scrolled out of view */}
+      {/* Sticky cat strip — shown when main bar is scrolled out of view.
+          Uses the same shared catAnim state as the inline bar above, so the
+          two never show different walking/resting frames. */}
       {!catBarInView && myGoals.length > 0 && logsLoaded && createPortal(
-        (() => {
-          const sheetOpen = !!(loggingSheet || activeGoalSheet)
-          const dc = catPct >= 1 ? '#2dd4bf' : catPct >= 0.5 ? '#f97316' : '#8b5cf6'
-          const r  = Math.round(catPct * 100)
-          return (
-            <div className="fixed top-0 left-0 right-0 z-40 cat-sticky-strip bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md border-b border-zinc-200/70 dark:border-zinc-800">
-              <div className="max-w-lg mx-auto flex items-center gap-2 px-4"
-                style={{ paddingTop: 'max(8px, env(safe-area-inset-top))', paddingBottom: 8 }}>
-                <div className="flex-1">
-                  <CatProgressBar pct={catPct} atlasUrl={catAtlasUrl} sheetOpen={sheetOpen} compact gaming={uiTheme === 'gaming'} />
-                </div>
-                <span className="text-[11px] font-black tabular-nums shrink-0" style={{ color: dc }}>{r}%</span>
-              </div>
+        (
+          <div className="fixed top-0 left-0 right-0 z-40 cat-sticky-strip bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md border-b border-zinc-200/70 dark:border-zinc-800">
+            <div className="max-w-lg mx-auto px-4"
+              style={{ paddingTop: 'max(16px, calc(env(safe-area-inset-top) + 8px))', paddingBottom: 16 }}>
+              <CatProgressBar {...catAnim} atlasUrl={catAtlasUrl} compact gaming={uiTheme === 'gaming'} />
             </div>
-          )
-        })(),
+          </div>
+        ),
         document.body
       )}
 
-      {/* Edit Banner sheet */}
+      {/* Edit Profile modal */}
       {editBannerOpen && createPortal(
-        <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setEditBannerOpen(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setEditBannerOpen(false)}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-          <div className="relative bg-white dark:bg-zinc-900 rounded-t-3xl w-full max-w-lg slide-up pb-safe" onClick={e => e.stopPropagation()}>
-            <div className="w-10 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto mt-3 mb-4" />
-            <div className="px-4 pb-5 space-y-3">
+          <div className="relative bg-white dark:bg-zinc-900 rounded-2xl w-full max-w-lg modal-pop max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="px-4 pt-5 pb-5 space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-black text-zinc-900 dark:text-white">Edit Profile</h3>
                 <button onClick={() => setEditBannerOpen(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"><X size={16} /></button>
@@ -1771,7 +1783,7 @@ export default function MemberProfile() {
 
               {/* Save */}
               <button onClick={() => { saveBio(bioInput); saveStatus(statusInput); saveNickname(nicknameInput); setEditBannerOpen(false) }}
-                className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white font-bold rounded-2xl transition-colors">
+                className={`w-full ${BUTTON_MD}`}>
                 Save
               </button>
             </div>
@@ -1780,9 +1792,10 @@ export default function MemberProfile() {
       , document.body)}
 
       {/* Avatar picker */}
-      {pickingAvatar && createPortal(
-        <div className="fixed inset-0 z-50 flex items-end justify-center pb-8 px-4" onClick={() => setPickingAvatar(false)}>
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-3xl p-4 shadow-2xl w-full max-w-sm" onClick={e => e.stopPropagation()}>
+      {pickingAvatar && isOwner && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setPickingAvatar(false)}>
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div className="relative bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-2xl p-4 shadow-2xl modal-pop w-full max-w-sm" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
               <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200">Pick your avatar</p>
               <button onClick={() => setPickingAvatar(false)} className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"><X size={16} /></button>
@@ -1810,6 +1823,153 @@ export default function MemberProfile() {
           </div>
         </div>
       , document.body)}
+
+      {/* Single "Edit" entry point — routes to profile, goals, or templates */}
+      {editMenuOpen && createPortal(
+        <EditMenu
+          hasGoals={myGoals.length > 0}
+          onProfile={() => { setEditMenuOpen(false); setStatusInput(status); setBioInput(bio); setNicknameInput(nickname); setEditBannerOpen(true) }}
+          onGoals={() => { setEditMenuOpen(false); navigate(`/${sessionId}/member/${encodeURIComponent(name)}/goals`) }}
+          onTemplates={() => { setEditMenuOpen(false); navigate(`/${sessionId}/member/${encodeURIComponent(name)}/template`) }}
+          onSaveTemplate={() => { setEditMenuOpen(false); setNamingTemplate(true) }}
+          onClose={() => setEditMenuOpen(false)}
+        />
+      , document.body)}
+
+      {/* Name & save this week's goals as a new template */}
+      {namingTemplate && createPortal(
+        <NameTemplatePrompt onSave={saveGoalTemplate} onClose={() => setNamingTemplate(false)} />
+      , document.body)}
+
+      {/* Pick (if more than one) and preview a saved template before using it */}
+      {templatePickerOpen && createPortal(
+        <TemplatePicker templates={goalTemplates} onUse={handleUseTemplate} onClose={() => setTemplatePickerOpen(false)} />
+      , document.body)}
+    </div>
+  )
+}
+
+// ── Single "Edit" entry point on the banner — routes to the profile sheet,
+//    the goals editor, or template management, instead of scattering
+//    separate buttons across the banner ────────────────────────────────────
+function EditMenu({ hasGoals, onProfile, onGoals, onTemplates, onSaveTemplate, onClose }) {
+  const rows = [
+    { label: 'Edit Profile', desc: 'Name, status, bio, banner', icon: User, onClick: onProfile },
+    { label: 'Edit Goals', desc: 'This week\'s goal list', icon: Target, onClick: onGoals },
+    { label: 'Goal Templates', desc: 'Manage your saved templates', icon: ClipboardList, onClick: onTemplates },
+    { label: 'Save this week\'s goals', desc: 'Store them as a new template', icon: Plus, onClick: onSaveTemplate, disabled: !hasGoals },
+  ]
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <div className="relative bg-white dark:bg-zinc-900 rounded-2xl w-full max-w-lg modal-pop" onClick={e => e.stopPropagation()}>
+        <div className="px-4 pt-5 pb-6 space-y-1.5">
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="text-sm font-black text-zinc-900 dark:text-white">Edit</h3>
+            <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"><X size={16} /></button>
+          </div>
+          {rows.map(row => (
+            <button key={row.label} type="button" onClick={row.onClick} disabled={row.disabled}
+              className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700/80 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-left">
+              <div className="w-9 h-9 rounded-xl bg-white dark:bg-zinc-900 flex items-center justify-center shrink-0 text-zinc-500 dark:text-zinc-400">
+                <row.icon size={16} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-zinc-900 dark:text-white">{row.label}</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{row.desc}</p>
+              </div>
+              <ChevronRight size={16} className="text-zinc-400 dark:text-zinc-600 shrink-0" />
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Name a new template before saving this week's goals into it ───────────
+function NameTemplatePrompt({ onSave, onClose }) {
+  const [title, setTitle] = useState('')
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <div className="relative bg-white dark:bg-zinc-900 rounded-2xl w-full max-w-lg modal-pop" onClick={e => e.stopPropagation()}>
+        <div className="px-4 pt-5 pb-6 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-black text-zinc-900 dark:text-white">Name this template</h3>
+            <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"><X size={16} /></button>
+          </div>
+          <input
+            autoFocus
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && title.trim()) onSave(title) }}
+            placeholder="e.g. Push Pull Legs week"
+            style={{ fontSize: 16 }}
+            className="w-full bg-zinc-100 dark:bg-zinc-800 rounded-xl px-3 py-2.5 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-emerald-400 transition-all"
+          />
+          <button onClick={() => title.trim() && onSave(title)} disabled={!title.trim()}
+            className={`w-full ${BUTTON_MD}`}>
+            Save template
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Pick which saved template (if more than one), then preview every goal
+//    in it before it's used to seed this week's goals ─────────────────────
+function TemplatePicker({ templates, onUse, onClose }) {
+  const [selected, setSelected] = useState(templates.length === 1 ? templates[0] : null)
+  const backToPick = templates.length > 1 ? () => setSelected(null) : null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <div className="relative bg-white dark:bg-zinc-900 rounded-2xl w-full max-w-lg modal-pop flex flex-col" style={{ maxHeight: '85vh' }} onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-4 pt-4 pb-2 shrink-0">
+          {backToPick ? (
+            <button onClick={backToPick} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"><ChevronLeft size={18} /></button>
+          ) : <span className="w-[18px]" />}
+          <h3 className="text-sm font-black text-zinc-900 dark:text-white">{selected ? (selected.title || 'Untitled template') : 'Which template?'}</h3>
+          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"><X size={16} /></button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-4 space-y-2">
+          {!selected ? templates.map(t => (
+            <button key={t.id} type="button" onClick={() => setSelected(t)}
+              className="w-full flex items-center gap-3 text-left px-3.5 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 hover:border-emerald-400 dark:hover:border-emerald-600 transition-colors">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-zinc-900 dark:text-white truncate">{t.title || 'Untitled template'}</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{t.items.length} goal{t.items.length === 1 ? '' : 's'}</p>
+              </div>
+              <ChevronRight size={16} className="text-zinc-400 dark:text-zinc-600 shrink-0" />
+            </button>
+          )) : selected.items.map((g, i) => {
+            const subtitle = g.type === 'habit'
+              ? 'Daily habit'
+              : (g.subGoals?.length > 0)
+                ? g.subGoals.map(sg => `${sg.text} (${sg.target}${sg.unit ? ` ${sg.unit}` : ''})`).join(', ')
+                : g.target ? `${g.target}${g.unit ? ` ${g.unit}` : ''} / week` : 'Count goal'
+            return (
+              <div key={i} className="bg-zinc-100 dark:bg-zinc-800 rounded-xl px-3.5 py-2.5">
+                <p className="text-sm font-semibold text-zinc-900 dark:text-white truncate">{g.text}</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{subtitle}</p>
+              </div>
+            )
+          })}
+        </div>
+
+        {selected && (
+          <div className="px-4 pb-6 pt-1 shrink-0">
+            <button onClick={() => onUse(selected.items)}
+              className={`w-full ${BUTTON_MD}`}>
+              Use this template
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

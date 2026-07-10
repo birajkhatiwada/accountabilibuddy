@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { doc, onSnapshot, updateDoc, arrayRemove, setDoc } from 'firebase/firestore'
 import { db } from '../firebase'
+import { BUTTON_MD } from '../buttonStyles'
 import { useAuth } from '../AuthContext'
 import { ChevronRight, Check, Pencil } from 'lucide-react'
 
@@ -178,7 +179,7 @@ export default function Members() {
                 Cancel
               </button>
               <button onClick={saveNick} disabled={savingNick}
-                className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white text-sm font-bold transition-colors">
+                className={`flex-1 ${BUTTON_MD}`}>
                 {savingNick ? 'Saving…' : 'Save'}
               </button>
             </div>

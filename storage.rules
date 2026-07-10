@@ -1,0 +1,36 @@
+rules_version = '2';
+
+// Same deal as firestore.rules — paste this into Firebase Console →
+// Storage → Rules (or `firebase deploy --only storage` with the CLI).
+// Not deployed or tested against your live bucket yet.
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function myName() {
+      return request.auth.token.name;
+    }
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // avatars/{sessionId}/{name} and banners/{sessionId}/{name} — only the
+    // matching member can upload/replace their own image
+    match /avatars/{sessionId}/{name} {
+      allow read: if true;
+      allow write: if signedIn() && myName() == name;
+    }
+    match /banners/{sessionId}/{name} {
+      allow read: if true;
+      allow write: if signedIn() && myName() == name;
+    }
+
+    // proofs/{entryId}/{day}/{goalFile} — only the owner of that entry
+    // (checked against the matching Firestore doc) can upload proof photos
+    match /proofs/{entryId}/{day}/{goalFile} {
+      allow read: if true;
+      allow write: if signedIn()
+        && firestore.get(/databases/(default)/documents/entries/$(entryId)).data.name == myName();
+    }
+  }
+}

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../AuthContext'
+import { BUTTON_MD } from '../buttonStyles'
 
 export default function Auth() {
   const { signIn, signUp } = useAuth()
@@ -59,7 +60,7 @@ export default function Auth() {
           />
           {error && <p className="text-sm text-red-400">{error}</p>}
           <button type="submit" disabled={loading || !username.trim() || !password}
-            className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-40 text-white font-bold rounded-xl py-3 transition-all">
+            className={`w-full ${BUTTON_MD}`}>
             {loading ? '…' : mode === 'signin' ? 'Sign in' : 'Create account'}
           </button>
         </form>

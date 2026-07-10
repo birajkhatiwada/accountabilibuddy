@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { collection, addDoc, query, where, getDocs, serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase'
+import { BUTTON_MD } from '../buttonStyles'
 import { getCurrentWeekId, formatWeekLabel } from '../utils'
 import { CheckCircle } from 'lucide-react'
 
@@ -105,7 +106,7 @@ export default function SubmitGoals() {
         <button
           type="submit"
           disabled={submitting || alreadySubmitted || !name.trim() || !goals.trim()}
-          className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold rounded-xl py-3 transition-colors"
+          className={`w-full ${BUTTON_MD}`}
         >
           {submitting ? 'Submitting...' : 'Lock in my goals'}
         </button>

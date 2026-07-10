@@ -18,7 +18,7 @@ const NOTE_COLORS = [
 function ToolbarBtn({ onClick, active, children }) {
   return (
     <button
-      onMouseDown={e => { e.preventDefault(); onClick() }}
+      onPointerDown={e => { e.preventDefault(); onClick() }}
       className={`p-1.5 rounded-lg transition-colors ${active ? 'bg-black/10 dark:bg-white/10 text-zinc-700 dark:text-zinc-200' : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-black/5 dark:hover:bg-white/5'}`}>
       {children}
     </button>
@@ -45,8 +45,9 @@ export default function DailyNote({ daily, canEdit, dayLabel, onSave, onColorSav
     editable: canEdit,
     onFocus: () => setIsEditing(true),
     onBlur: () => {
-      // small delay so Done button click registers before hiding
-      setTimeout(() => setIsEditing(false), 150)
+      // delay so a toolbar/Done tap registers before hiding — mobile touch
+      // dispatch can lag behind desktop mousedown timing, hence the longer window
+      setTimeout(() => setIsEditing(false), 250)
     },
   })
 
@@ -118,11 +119,11 @@ export default function DailyNote({ daily, canEdit, dayLabel, onSave, onColorSav
                 <input type="file" accept="image/*" capture="environment" className="hidden" onChange={onPhotoUpload} />
               </label>
               <button
-                onMouseDown={e => { e.preventDefault(); setShowColorPicker(v => !v) }}
+                onPointerDown={e => { e.preventDefault(); setShowColorPicker(v => !v) }}
                 className={`ml-1 w-4 h-4 rounded-sm border border-black/10 dark:border-white/10 shadow-sm ${noteColor.dot} hover:scale-110 transition-transform`} />
             </div>
             {isEditing && (
-              <button onMouseDown={e => { e.preventDefault(); handleDone() }}
+              <button onPointerDown={e => { e.preventDefault(); handleDone() }}
                 className="px-3 py-1 bg-zinc-700 dark:bg-zinc-600 hover:bg-zinc-800 dark:hover:bg-zinc-500 text-white text-xs font-semibold rounded-lg transition-colors">
                 Done
               </button>
@@ -133,7 +134,7 @@ export default function DailyNote({ daily, canEdit, dayLabel, onSave, onColorSav
             <div className={`px-4 pb-3 pt-1.5 flex items-center gap-2.5 border-t ${noteColor.border}`}>
               {NOTE_COLORS.map(c => (
                 <button key={c.id}
-                  onMouseDown={e => { e.preventDefault(); onColorSave(c.id); setShowColorPicker(false) }}
+                  onPointerDown={e => { e.preventDefault(); onColorSave(c.id); setShowColorPicker(false) }}
                   className={`w-6 h-6 rounded-full ${c.dot} border-2 transition-transform hover:scale-110 ${colorId === c.id ? 'border-zinc-500 dark:border-zinc-300 scale-110' : 'border-transparent'}`} />
               ))}
             </div>

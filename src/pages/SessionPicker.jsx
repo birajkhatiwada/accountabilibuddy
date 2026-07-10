@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, Timestamp, getCountFromServer, collection } from 'firebase/firestore'
 import { db } from '../firebase'
+import { BUTTON_MD } from '../buttonStyles'
 import { useAuth } from '../AuthContext'
 import { Plus, Users, ChevronRight, MessageSquare } from 'lucide-react'
 
@@ -213,7 +214,7 @@ export default function SessionPicker() {
                 Cancel
               </button>
               <button onClick={createSession} disabled={loading || !name.trim()}
-                className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white font-bold text-sm transition-all">
+                className={`flex-1 ${BUTTON_MD}`}>
                 {loading ? 'Creating…' : 'Create'}
               </button>
             </div>
@@ -239,7 +240,7 @@ export default function SessionPicker() {
                 Cancel
               </button>
               <button onClick={joinSession} disabled={loading || code.length < 4}
-                className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white font-bold text-sm transition-all">
+                className={`flex-1 ${BUTTON_MD}`}>
                 {loading ? 'Joining…' : 'Join'}
               </button>
             </div>

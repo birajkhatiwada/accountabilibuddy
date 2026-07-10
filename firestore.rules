@@ -1,0 +1,107 @@
+rules_version = '2';
+
+// ─────────────────────────────────────────────────────────────────────────
+// This file is NOT auto-deployed. There is no firebase.json in this repo,
+// so these rules only take effect once you paste them into:
+//   Firebase Console → your project → Firestore Database → Rules
+// (or run `firebase deploy --only firestore:rules` if you set up the CLI).
+//
+// Test them in the Console's "Rules Playground" against a few real
+// documents before publishing — a mistake here can either lock everyone
+// out or fail to enforce anything, and this file has not been deployed
+// or tested against your live data.
+// ─────────────────────────────────────────────────────────────────────────
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Firebase Auth sets the ID token's `name` claim from the user's
+    // displayName (see AuthContext.jsx: updateProfile({ displayName })).
+    // Every write rule below checks that claim against the document's
+    // own `name` field (or the specific map key being touched) — so a
+    // signed-in user can only ever write their own data, never someone
+    // else's, even if they call the Firestore API directly instead of
+    // going through the UI.
+    function myName() {
+      return request.auth.token.name;
+    }
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // ── entries/{entryId} — one doc per member per week ──────────────────
+    match /entries/{entryId} {
+      allow read: if true; // profiles are viewable by anyone with the link, same as today
+      allow create: if signedIn() && request.resource.data.name == myName();
+      allow update: if signedIn() && resource.data.name == myName();
+      allow delete: if false;
+
+      match /dailyLogs/{day} {
+        allow read: if true;
+        allow write: if signedIn()
+          && get(/databases/$(database)/documents/entries/$(entryId)).data.name == myName();
+      }
+    }
+
+    // ── sessions/{sessionId} — one shared doc holding every member's
+    //    profile fields as name-keyed maps (nicknames, avatars, etc.) ────
+    match /sessions/{sessionId} {
+      allow read: if true;
+
+      // A signed-in user may only ever change the entry that matches
+      // their own name inside each of these per-member map fields —
+      // never anyone else's, even within the same write.
+      function onlyOwnKey(field) {
+        let before = field in resource.data ? resource.data[field] : {};
+        let after  = field in request.resource.data ? request.resource.data[field] : {};
+        return before.diff(after).affectedKeys().hasOnly([myName()]);
+      }
+
+      function memberOnlyFieldsUntouched() {
+        let changed = resource.data.diff(request.resource.data).affectedKeys();
+        let memberFields = ['nicknames','avatars','avatarPhotos','bannerColors',
+                             'bannerImages','bios','memberThemes','memberGoals',
+                             'goalTemplates','statuses'];
+        return changed.hasOnly(memberFields.concat(['names','penalty']))
+          && (!changed.hasAny(['nicknames'])       || onlyOwnKey('nicknames'))
+          && (!changed.hasAny(['avatars'])         || onlyOwnKey('avatars'))
+          && (!changed.hasAny(['avatarPhotos'])    || onlyOwnKey('avatarPhotos'))
+          && (!changed.hasAny(['bannerColors'])    || onlyOwnKey('bannerColors'))
+          && (!changed.hasAny(['bannerImages'])    || onlyOwnKey('bannerImages'))
+          && (!changed.hasAny(['bios'])            || onlyOwnKey('bios'))
+          && (!changed.hasAny(['memberThemes'])    || onlyOwnKey('memberThemes'))
+          && (!changed.hasAny(['memberGoals'])     || onlyOwnKey('memberGoals'))
+          && (!changed.hasAny(['goalTemplates'])   || onlyOwnKey('goalTemplates'))
+          && (!changed.hasAny(['statuses'])        || onlyOwnKey('statuses'))
+          // `names`: only allowed to add/remove your own name (join/leave)
+          && (!changed.hasAny(['names']) ||
+              resource.data.names.toSet().difference(request.resource.data.names.toSet())
+                .union(request.resource.data.names.toSet().difference(resource.data.names.toSet()))
+                .hasOnly([myName()]))
+          // `penalty`: any signed-in member of the session may change it
+          && (!changed.hasAny(['penalty']) || myName() in request.resource.data.names);
+      }
+
+      allow create: if signedIn(); // session creation / first join
+      allow update: if signedIn() && memberOnlyFieldsUntouched();
+      allow delete: if false;
+    }
+
+    // ── feedback_drafts/{uid} — private scratchpad, keyed by Auth uid ────
+    match /feedback_drafts/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+
+    // ── comments / shoutouts — append-only social posts on the feed ──────
+    match /comments/{id} {
+      allow read: if true;
+      allow create: if signedIn();
+      allow update, delete: if false;
+    }
+    match /shoutouts/{id} {
+      allow read: if true;
+      allow create: if signedIn();
+      allow update, delete: if false;
+    }
+  }
+}

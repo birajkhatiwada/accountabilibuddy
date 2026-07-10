@@ -12,7 +12,7 @@ import { ArrowLeft, Bold, Italic, List, ListOrdered, CheckSquare, Heading2 } fro
 
 function ToolBtn({ onClick, active, children }) {
   return (
-    <button onMouseDown={e => { e.preventDefault(); onClick() }}
+    <button onPointerDown={e => { e.preventDefault(); onClick() }}
       className={`p-2 rounded-lg transition-colors ${active
         ? 'bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-white'
         : 'text-zinc-400 dark:text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-zinc-200'}`}>

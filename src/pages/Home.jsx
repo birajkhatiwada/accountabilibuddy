@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { collection, query, where, onSnapshot, doc, updateDoc, setDoc } from 'firebase/firestore'
 import { db } from '../firebase'
+import { BUTTON_MD, BUTTON_SM } from '../buttonStyles'
 import { getCurrentWeekId, formatWeekLabel } from '../utils'
 import { useAuth } from '../AuthContext'
 import Highcharts from 'highcharts'
@@ -557,7 +558,7 @@ export default function Home() {
                   {e?.status === 'active' && e?.goalItems?.length > 0 && e?.name?.toLowerCase() === user?.displayName?.toLowerCase() && (
                     <button
                       onClick={ev => { ev.stopPropagation(); setQuickLogEntry(e) }}
-                      className="mt-3 w-full px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-bold transition-all"
+                      className={`mt-3 ${BUTTON_SM}`}
                     >
                       + Log today
                     </button>
@@ -569,14 +570,13 @@ export default function Home() {
         </div>
       )}
 
-      {/* Quick log sheet */}
+      {/* Quick log modal */}
       {quickLogEntry && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setQuickLogEntry(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setQuickLogEntry(null)}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-          <div className="relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-t-3xl w-full max-w-lg shadow-2xl max-h-[80vh] overflow-y-auto"
+          <div className="relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-lg shadow-2xl modal-pop max-h-[80vh] overflow-y-auto"
             onClick={ev => ev.stopPropagation()}>
             <div className="sticky top-0 bg-white dark:bg-zinc-900 px-6 pt-5 pb-3 border-b border-zinc-100 dark:border-zinc-800">
-              <div className="w-10 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto mb-4" />
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-base font-black text-zinc-900 dark:text-white">Log today</p>
@@ -589,6 +589,7 @@ export default function Home() {
                       : <span className="text-white font-black text-sm">{quickLogEntry.name[0]}</span>}
                   </div>
                   <p className="text-sm font-bold text-zinc-700 dark:text-zinc-300">{quickLogEntry.name}</p>
+                  <button onClick={() => setQuickLogEntry(null)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"><X size={16} /></button>
                 </div>
               </div>
             </div>
@@ -635,7 +636,7 @@ export default function Home() {
                 )
               })}
               <button onClick={() => setQuickLogEntry(null)}
-                className="w-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold rounded-xl py-3 text-sm transition-all mt-2">
+                className={`w-full mt-2 ${BUTTON_MD}`}>
                 Done
               </button>
             </div>
