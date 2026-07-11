@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../AuthContext'
 import { BUTTON_MD } from '../buttonStyles'
+import { GREEN_LIGHT } from '../colors'
 
 export default function Auth() {
   const { signIn, signUp } = useAuth()
@@ -35,7 +36,7 @@ export default function Auth() {
       <div className="w-full max-w-sm space-y-6">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-zinc-900 dark:text-white leading-none">
-            accountabili<span style={{ background: 'linear-gradient(to right, #34d399, #2dd4bf)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>buddy</span>
+            accountabili<span style={{ background: `linear-gradient(to right, ${GREEN_LIGHT}, #2dd4bf)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>buddy</span>
           </h1>
           <p className="text-sm text-zinc-500 mt-1">{mode === 'signin' ? 'Welcome back' : 'Create your account'}</p>
         </div>

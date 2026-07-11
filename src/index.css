@@ -381,7 +381,7 @@ html.gaming .rounded-xl  { border-radius: 4px !important; }
 .tiptap-note .ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"] {
   width: 18px;
   height: 18px;
-  accent-color: #10b981;
+  accent-color: oklch(0.68 0.18 152); /* app's green — see src/colors.js */
   cursor: pointer;
 }
 .tiptap-note .ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div {

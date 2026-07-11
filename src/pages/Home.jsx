@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { collection, query, where, onSnapshot, doc, updateDoc, setDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { BUTTON_MD, BUTTON_SM } from '../buttonStyles'
+import { GREEN, GREEN_LIGHT } from '../colors'
 import { getCurrentWeekId, formatWeekLabel } from '../utils'
 import { useAuth } from '../AuthContext'
 import Highcharts from 'highcharts'
@@ -28,7 +29,7 @@ const AVATAR_COLORS = [
 ]
 
 const AVATAR_HEX = [
-  '#8b5cf6', '#3b82f6', '#10b981', '#f97316',
+  '#8b5cf6', '#3b82f6', GREEN, '#f97316',
   '#ec4899', '#6366f1', '#14b8a6', '#d946ef',
 ]
 
@@ -448,7 +449,7 @@ export default function Home() {
                       <div className="relative w-10 h-10 shrink-0">
                         <svg width="40" height="40" viewBox="0 0 40 40" className="-rotate-90">
                           <circle cx="20" cy="20" r="16" fill="none" stroke="currentColor" strokeWidth="4" className="text-zinc-200 dark:text-zinc-700" />
-                          <circle cx="20" cy="20" r="16" fill="none" stroke={overallPct >= 1 ? '#34d399' : overallPct >= 0.5 ? '#fbbf24' : hex}
+                          <circle cx="20" cy="20" r="16" fill="none" stroke={overallPct >= 1 ? GREEN_LIGHT : overallPct >= 0.5 ? '#fbbf24' : hex}
                             strokeWidth="4" strokeLinecap="round"
                             strokeDasharray={`${Math.round(overallPct * 100.53)} 100.53`} />
                         </svg>
@@ -521,7 +522,7 @@ export default function Home() {
                                     <div className="flex-1 bg-zinc-100 dark:bg-zinc-800 rounded-full h-1.5 overflow-hidden">
                                       <div className="h-full rounded-full transition-all" style={{
                                         width: `${Math.round((pct ?? 0) * 100)}%`,
-                                        backgroundColor: pct >= 1 ? '#34d399' : hex,
+                                        backgroundColor: pct >= 1 ? GREEN_LIGHT : hex,
                                       }} />
                                     </div>
                                     <span className="text-[10px] text-zinc-400 shrink-0 tabular-nums">{done}{tgt ? `/${tgt}` : ''}</span>
@@ -545,7 +546,7 @@ export default function Home() {
                             <div className="bg-zinc-100 dark:bg-zinc-800 rounded-full h-1.5 overflow-hidden">
                               <div className="h-full rounded-full transition-all" style={{
                                 width: `${Math.round(pct * 100)}%`,
-                                backgroundColor: pct >= 1 ? '#34d399' : pct >= 0.5 ? '#fbbf24' : hex,
+                                backgroundColor: pct >= 1 ? GREEN_LIGHT : pct >= 0.5 ? '#fbbf24' : hex,
                               }} />
                             </div>
                           </div>

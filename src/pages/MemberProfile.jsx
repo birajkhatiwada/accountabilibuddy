@@ -5,6 +5,7 @@ import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, addDo
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { db, storage } from '../firebase'
 import { BUTTON_MD, BUTTON_SM, BUTTON_BASE } from '../buttonStyles'
+import { GREEN, GREEN_LIGHT } from '../colors'
 import { useAuth } from '../AuthContext'
 import { useTheme } from '../ThemeContext'
 import { getCurrentWeekId, formatWeekLabel, formatTimestamp } from '../utils'
@@ -268,7 +269,7 @@ function CatProgressBar({ displayedPct, isWalking, facingRight, frame, behaviorI
 }
 
 const DAY_LABELS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
-const GOAL_COLORS = ['#8b5cf6','#3b82f6','#10b981','#f97316','#ec4899','#14b8a6']
+const GOAL_COLORS = ['#8b5cf6','#3b82f6',GREEN,'#f97316','#ec4899','#14b8a6']
 
 const AVATAR_EMOJIS = [
   '🐨','🦊','🐸','🐼','🦁','🐯','🐻','🐰','🐹','🐶',
@@ -297,13 +298,13 @@ const BANNER_COLORS = [
 ]
 
 const BANNER_COLOR_PREVIEWS = [
-  '#8b5cf6','#3b82f6','#10b981','#f97316',
+  '#8b5cf6','#3b82f6',GREEN,'#f97316',
   '#ec4899','#6366f1','#ef4444','#14b8a6',
   '#d946ef','#475569',
 ]
 
 const AVATAR_HEX = [
-  '#8b5cf6','#3b82f6','#10b981','#f97316','#ec4899','#6366f1','#14b8a6','#d946ef',
+  '#8b5cf6','#3b82f6',GREEN,'#f97316','#ec4899','#6366f1','#14b8a6','#d946ef',
 ]
 
 // A member can keep several named templates now. Normalize away the older
@@ -498,7 +499,7 @@ export default function MemberProfile() {
   useEffect(() => {
     if (entry?.status !== 'completed' || confettiFired.current) return
     confettiFired.current = true
-    const colors = ['#10b981','#3b82f6','#8b5cf6','#f97316','#ec4899','#fbbf24']
+    const colors = [GREEN,'#3b82f6','#8b5cf6','#f97316','#ec4899','#fbbf24']
     confetti({ particleCount: 120, spread: 80, origin: { y: 0.4 }, colors })
     setTimeout(() => confetti({ particleCount: 60, spread: 60, origin: { y: 0.3 }, colors, angle: 60 }), 250)
     setTimeout(() => confetti({ particleCount: 60, spread: 60, origin: { y: 0.3 }, colors, angle: 120 }), 400)
@@ -1245,15 +1246,15 @@ export default function MemberProfile() {
                     // progress, brightening once the goal is complete.
                     const stateColors = (pct, isDone) => {
                       if (isDone || pct >= 1) return {
-                        fill: 'linear-gradient(90deg, oklch(0.68 0.18 152), oklch(0.78 0.19 150))',
+                        fill: `linear-gradient(90deg, ${GREEN}, ${GREEN_LIGHT})`,
                         text: 'text-emerald-800 dark:text-emerald-300',
                         label: 'text-emerald-600 dark:text-emerald-400',
                         chevron: 'text-emerald-300 dark:text-emerald-700',
                         todayPill: 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/15',
                         checkFull: 'bg-emerald-500 border-emerald-500',
                         checkOutline: 'border-emerald-400 dark:border-emerald-500',
-                        checkStroke: '#10b981',
-                        accent: '#10b981',
+                        checkStroke: GREEN,
+                        accent: GREEN,
                       }
                       return {
                         fill: 'linear-gradient(90deg, oklch(0.5 0.12 152), oklch(0.62 0.16 152))',
@@ -1263,7 +1264,7 @@ export default function MemberProfile() {
                         todayPill: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10',
                         checkFull: 'bg-emerald-500 border-emerald-500',
                         checkOutline: 'border-emerald-400 dark:border-emerald-500',
-                        checkStroke: '#10b981',
+                        checkStroke: GREEN,
                         accent: '#71717a',
                       }
                     }

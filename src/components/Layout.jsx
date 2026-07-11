@@ -5,6 +5,7 @@ import { db } from '../firebase'
 import { Target, DollarSign, Clock, Users, Rss, Moon, Sun, Copy, Check, LogOut, MessageSquare } from 'lucide-react'
 import { useTheme } from '../ThemeContext'
 import { useAuth } from '../AuthContext'
+import { GREEN, GREEN_LIGHT } from '../colors'
 
 function PillNav({ sessionId, user, gaming, location, isHome }) {
   const myPath = user ? `/${sessionId}/member/${encodeURIComponent(user.displayName)}` : `/${sessionId}/members`
@@ -105,7 +106,7 @@ export default function Layout() {
                 ← sessions
               </button>
               <h1 className="text-3xl font-black tracking-tight text-zinc-900 dark:text-white leading-none cursor-pointer" onClick={() => navigate(`/${sessionId}`)}>
-                accountabili<span style={{ background: gaming ? 'linear-gradient(to right, #00ff88, #00e5ff)' : 'linear-gradient(to right, #34d399, #2dd4bf)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>buddy</span>
+                accountabili<span style={{ background: gaming ? 'linear-gradient(to right, #00ff88, #00e5ff)' : `linear-gradient(to right, ${GREEN_LIGHT}, #2dd4bf)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>buddy</span>
               </h1>
               {session && (
                 <button onClick={copyCode} className="flex items-center gap-1.5 mt-1 group">
@@ -127,7 +128,7 @@ export default function Layout() {
               <button onClick={() => setConfirmSignOut(true)} className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Sign out">
                 <LogOut size={15} />
               </button>
-              <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: gaming ? '#00ff88' : '#34d399', boxShadow: gaming ? '0 0 6px #00ff88' : 'none' }} />
+              <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: gaming ? '#00ff88' : GREEN_LIGHT, boxShadow: gaming ? '0 0 6px #00ff88' : 'none' }} />
             </div>
           </div>
         </header>
@@ -135,7 +136,7 @@ export default function Layout() {
         <header className="px-4 pt-4 pb-2 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <h1 className="text-lg font-black tracking-tight text-zinc-900 dark:text-white leading-none cursor-pointer shrink-0" onClick={() => navigate(`/${sessionId}`)}>
-              accountabili<span style={{ background: gaming ? 'linear-gradient(to right, #00ff88, #00e5ff)' : 'linear-gradient(to right, #34d399, #2dd4bf)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>buddy</span>
+              accountabili<span style={{ background: gaming ? 'linear-gradient(to right, #00ff88, #00e5ff)' : `linear-gradient(to right, ${GREEN_LIGHT}, #2dd4bf)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>buddy</span>
             </h1>
             {session && (
               <button onClick={copyCode} className="flex items-center gap-1 min-w-0 group">
@@ -156,7 +157,7 @@ export default function Layout() {
             <button onClick={() => setConfirmSignOut(true)} className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Sign out">
               <LogOut size={14} />
             </button>
-            <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: gaming ? '#00ff88' : '#34d399', boxShadow: gaming ? '0 0 5px #00ff88' : 'none' }} />
+            <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: gaming ? '#00ff88' : GREEN_LIGHT, boxShadow: gaming ? '0 0 5px #00ff88' : 'none' }} />
           </div>
         </header>
       )}

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, Timestamp, getCountFromServer, collection } from 'firebase/firestore'
 import { db } from '../firebase'
 import { BUTTON_MD } from '../buttonStyles'
+import { GREEN_LIGHT } from '../colors'
 import { useAuth } from '../AuthContext'
 import { Plus, Users, ChevronRight, MessageSquare } from 'lucide-react'
 
@@ -117,7 +118,7 @@ export default function SessionPicker() {
 
         <div className="relative z-10 space-y-3 max-w-xs">
           <h1 className="text-4xl font-black tracking-tight text-white leading-none">
-            accountabili<span style={{ background: 'linear-gradient(to right, #34d399, #2dd4bf)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>buddy</span>
+            accountabili<span style={{ background: `linear-gradient(to right, ${GREEN_LIGHT}, #2dd4bf)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>buddy</span>
           </h1>
 
           <p className="text-sm font-semibold text-zinc-400 h-5 transition-opacity duration-300"
@@ -166,7 +167,7 @@ export default function SessionPicker() {
             {saved.length > 0 && <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 px-1">Start new</p>}
             <button onClick={() => setMode('create')}
               className="w-full flex items-center justify-center gap-2 font-bold rounded-2xl py-3.5 transition-all active:scale-[0.98] text-black"
-              style={{ background: 'linear-gradient(135deg, #34d399, #2dd4bf)' }}>
+              style={{ background: `linear-gradient(135deg, ${GREEN_LIGHT}, #2dd4bf)` }}>
               <Plus size={16} /> New session
             </button>
             <button onClick={() => setMode('join')}
