@@ -4,6 +4,7 @@ import { doc, onSnapshot, updateDoc, arrayRemove, setDoc } from 'firebase/firest
 import { db } from '../firebase'
 import { BUTTON_MD } from '../buttonStyles'
 import { useAuth } from '../AuthContext'
+import useLockBodyScroll from '../useLockBodyScroll'
 import { ChevronRight, Check, Pencil } from 'lucide-react'
 
 export default function Members() {
@@ -18,6 +19,7 @@ export default function Members() {
   const [savingPenalty, setSavingPenalty] = useState(false)
   const [penaltySaved, setPenaltySaved] = useState(false)
   const [editingNick, setEditingNick] = useState(false)
+  useLockBodyScroll(confirmLeave || editingNick)
   const [nickInput, setNickInput] = useState('')
   const [savingNick, setSavingNick] = useState(false)
 

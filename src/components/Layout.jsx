@@ -6,6 +6,7 @@ import { Target, DollarSign, Clock, Users, Rss, Moon, Sun, Copy, Check, LogOut, 
 import { useTheme } from '../ThemeContext'
 import { useAuth } from '../AuthContext'
 import { GREEN, GREEN_LIGHT } from '../colors'
+import useLockBodyScroll from '../useLockBodyScroll'
 
 function PillNav({ sessionId, user, gaming, location, isHome }) {
   const myPath = user ? `/${sessionId}/member/${encodeURIComponent(user.displayName)}` : `/${sessionId}/members`
@@ -51,6 +52,7 @@ export default function Layout() {
   const gaming = uiTheme === 'gaming'
   const { user, signOut } = useAuth()
   const [confirmSignOut, setConfirmSignOut] = useState(false)
+  useLockBodyScroll(confirmSignOut)
   const handleSignOut = async () => { await signOut(); navigate('/') }
   const { sessionId } = useParams()
   const navigate = useNavigate()

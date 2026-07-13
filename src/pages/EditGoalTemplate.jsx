@@ -7,6 +7,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { db } from '../firebase'
 import { BUTTON_MD, BUTTON_SM } from '../buttonStyles'
 import { useAuth } from '../AuthContext'
+import useLockBodyScroll from '../useLockBodyScroll'
 import { ArrowLeft, ChevronLeft, ChevronRight, Plus, Trash2, Pencil, X, Repeat, Target, Hash, Layers } from 'lucide-react'
 
 const EMPTY_GOAL = () => ({ text: '', type: 'habit', target: '1', unit: '', subGoals: [] })
@@ -375,6 +376,7 @@ export default function EditGoalTemplate() {
   const [title, setTitle] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [editingGoal, setEditingGoal] = useState(null)
+  useLockBodyScroll(!!editingGoal)
 
   const sessionDoc = doc(db, 'sessions', sessionId)
 

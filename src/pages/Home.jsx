@@ -6,6 +6,7 @@ import { BUTTON_MD, BUTTON_SM } from '../buttonStyles'
 import { GREEN, GREEN_LIGHT } from '../colors'
 import { getCurrentWeekId, formatWeekLabel } from '../utils'
 import { useAuth } from '../AuthContext'
+import useLockBodyScroll from '../useLockBodyScroll'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 import { X } from 'lucide-react'
@@ -62,6 +63,7 @@ export default function Home() {
   const [qlLogs, setQlLogs] = useState({})
   const [qlLocalCounts, setQlLocalCounts] = useState({})
   const qlSaveTimers = useRef({})
+  useLockBodyScroll(!!quickLogEntry)
 
   const entries = useMemo(() => allEntries.filter(e => e.weekId === weekId), [allEntries, weekId])
 

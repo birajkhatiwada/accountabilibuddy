@@ -4,10 +4,12 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, addDoc, setDoc, getDoc, Timestamp } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { db, storage } from '../firebase'
-import { BUTTON_MD, BUTTON_SM, BUTTON_BASE } from '../buttonStyles'
-import { GREEN, GREEN_LIGHT } from '../colors'
+import { BUTTON_MD, BUTTON_SM } from '../buttonStyles'
+import { GREEN, GREEN_DEEP } from '../colors'
+import { TAP_BADGE_BASE } from '../badgeStyles'
 import { useAuth } from '../AuthContext'
 import { useTheme } from '../ThemeContext'
+import useLockBodyScroll from '../useLockBodyScroll'
 import { getCurrentWeekId, formatWeekLabel, formatTimestamp } from '../utils'
 import { Pencil, X, Camera, ChevronLeft, ChevronRight, User, Target, ClipboardList, Plus } from 'lucide-react'
 import GoalBuilder from '../components/GoalBuilder'
@@ -418,6 +420,14 @@ export default function MemberProfile() {
   const [editMenuOpen, setEditMenuOpen] = useState(false)
   const saveTimers = useRef({})
   const confettiFired = useRef(false)
+
+  // Freeze the page behind whichever full-screen modal/sheet is open —
+  // otherwise a scroll gesture on the overlay also scrolls the page
+  // underneath it.
+  useLockBodyScroll(
+    editBannerOpen || pickingAvatar || editMenuOpen || namingTemplate ||
+    templatePickerOpen || !!loggingSheet || !!activeGoalSheet
+  )
 
   const sessionDoc = doc(db, 'sessions', sessionId)
 
@@ -1225,11 +1235,16 @@ export default function MemberProfile() {
                     const weekVal = goal.type !== 'habit' && !goal.subGoals?.length ? weeklyCount(goal.text) : 0
                     const tgt = Number(goal.target) || 0
 
+                    // Kept as one combined string for habit/breakdown goals (no unit to
+                    // stack), but split into count + unit for a target goal so the unit
+                    // can render small, underneath the count, instead of crowding the
+                    // same line.
                     const rightLabel = goal.type === 'habit'
                       ? `${weeklyHabitDays(goal.text)}/7`
                       : goal.subGoals?.length > 0
                         ? `${goal.subGoals.filter(sg => { const k=`${goal.text}::${sg.text}`; return (Number(sg.target)||0)>0 && weeklyCount(k)>=(Number(sg.target)||0) }).length}/${goal.subGoals.length}`
-                        : tgt > 0 ? `${weekVal}/${tgt}${goal.unit ? ` ${goal.unit}` : ''}` : null
+                        : tgt > 0 ? `${weekVal}/${tgt}` : null
+                    const rightUnit = (goal.type !== 'habit' && !goal.subGoals?.length && tgt > 0) ? goal.unit : null
 
                     const barPct = goal.type === 'habit'
                       ? weeklyHabitDays(goal.text) / 7
@@ -1246,9 +1261,12 @@ export default function MemberProfile() {
                     // progress, brightening once the goal is complete.
                     const stateColors = (pct, isDone) => {
                       if (isDone || pct >= 1) return {
-                        fill: `linear-gradient(90deg, ${GREEN}, ${GREEN_LIGHT})`,
-                        text: 'text-emerald-800 dark:text-emerald-300',
-                        label: 'text-emerald-600 dark:text-emerald-400',
+                        // A flat dark green fill, so plain white text reads clearly
+                        // on top of it in both themes — no gradient, no special
+                        // near-black text color needed.
+                        fill: GREEN_DEEP,
+                        text: 'text-white',
+                        label: 'text-white/90',
                         chevron: 'text-emerald-300 dark:text-emerald-700',
                         todayPill: 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/15',
                         checkFull: 'bg-emerald-500 border-emerald-500',
@@ -1321,7 +1339,7 @@ export default function MemberProfile() {
                                       {canLog && (
                                         <span
                                           onAnimationEnd={() => setJiggleZone(j => ({ ...j, [k]: null }))}
-                                          className={`w-7 h-7 shrink-0 rounded-full bg-zinc-900/10 dark:bg-white/10 text-zinc-600 dark:text-white/75 flex items-center justify-center text-base font-semibold leading-none ${pressedZone[k] === 'left' ? 'badge-squash' : jiggleZone[k] === 'left' ? 'badge-slime-pop' : todayV === 0 ? 'opacity-30' : ''}`}>−</span>
+                                          className={`${TAP_BADGE_BASE} ${pressedZone[k] === 'left' ? 'badge-squash' : jiggleZone[k] === 'left' ? 'badge-slime-pop' : todayV === 0 ? 'opacity-30' : ''}`}>−</span>
                                       )}
                                       <span className={`text-sm truncate ${sc.text}`}>{sg.text}</span>
                                     </span>
@@ -1329,11 +1347,14 @@ export default function MemberProfile() {
                                       {todayV > 0 && (
                                         <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${sc.todayPill}`}>+{todayV} today</span>
                                       )}
-                                      <span className={`goal-count-font text-sm shrink-0 ${sc.label}`}>{sv}{st ? `/${st}` : ''}{sg.unit ? ` ${sg.unit}` : ''}</span>
+                                      <span className="flex flex-col items-end leading-none shrink-0">
+                                        <span className={`goal-count-font text-sm ${sc.label}`}>{sv}{st ? `/${st}` : ''}</span>
+                                        {sg.unit && <span className={`text-[9px] mt-0.5 ${sc.label} opacity-70`}>{sg.unit}</span>}
+                                      </span>
                                       {canLog && (
                                         <span
                                           onAnimationEnd={() => setJiggleZone(j => ({ ...j, [k]: null }))}
-                                          className={`w-7 h-7 shrink-0 rounded-full bg-emerald-500/20 dark:bg-emerald-400/20 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-base font-semibold leading-none ${pressedZone[k] === 'right' ? 'badge-squash' : jiggleZone[k] === 'right' ? 'badge-slime-pop' : ''}`}>+</span>
+                                          className={`${TAP_BADGE_BASE} ${pressedZone[k] === 'right' ? 'badge-squash' : jiggleZone[k] === 'right' ? 'badge-slime-pop' : ''}`}>+</span>
                                       )}
                                     </span>
                                   </div>
@@ -1394,17 +1415,22 @@ export default function MemberProfile() {
                               <span className="flex items-center gap-2.5 min-w-0">
                                 <span
                                   onAnimationEnd={() => setJiggleZone(j => ({ ...j, [goal.text]: null }))}
-                                  className={`w-7 h-7 shrink-0 rounded-full bg-zinc-900/10 dark:bg-white/10 text-zinc-600 dark:text-white/75 flex items-center justify-center text-base font-semibold leading-none ${pressedZone[goal.text] === 'left' ? 'badge-squash' : jiggleZone[goal.text] === 'left' ? 'badge-slime-pop' : todayVal === 0 ? 'opacity-30' : ''}`}>−</span>
+                                  className={`${TAP_BADGE_BASE} ${pressedZone[goal.text] === 'left' ? 'badge-squash' : jiggleZone[goal.text] === 'left' ? 'badge-slime-pop' : todayVal === 0 ? 'opacity-30' : ''}`}>−</span>
                                 <span className={`text-sm truncate ${c.text}`}>{goal.text}</span>
                               </span>
                               <span className="flex items-center gap-2.5 shrink-0">
                                 {todayVal > 0 && (
                                   <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${c.todayPill}`}>+{todayVal} today</span>
                                 )}
-                                {rightLabel && <span className={`goal-count-font text-sm ${c.label}`}>{rightLabel}</span>}
+                                {rightLabel && (
+                                  <span className="flex flex-col items-end leading-none">
+                                    <span className={`goal-count-font text-sm ${c.label}`}>{rightLabel}</span>
+                                    {rightUnit && <span className={`text-[9px] mt-0.5 ${c.label} opacity-70`}>{rightUnit}</span>}
+                                  </span>
+                                )}
                                 <span
                                   onAnimationEnd={() => setJiggleZone(j => ({ ...j, [goal.text]: null }))}
-                                  className={`w-7 h-7 shrink-0 rounded-full bg-emerald-500/20 dark:bg-emerald-400/20 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-base font-semibold leading-none ${pressedZone[goal.text] === 'right' ? 'badge-squash' : jiggleZone[goal.text] === 'right' ? 'badge-slime-pop' : ''}`}>+</span>
+                                  className={`${TAP_BADGE_BASE} ${pressedZone[goal.text] === 'right' ? 'badge-squash' : jiggleZone[goal.text] === 'right' ? 'badge-slime-pop' : ''}`}>+</span>
                               </span>
                             </div>
                           ) : (
@@ -1412,7 +1438,7 @@ export default function MemberProfile() {
                               {isHabitLoggable && (
                                 <span
                                   onAnimationEnd={() => setJiggleZone(j => ({ ...j, [goal.text]: null }))}
-                                  className={`w-7 h-7 shrink-0 rounded-full bg-zinc-900/10 dark:bg-white/10 text-zinc-600 dark:text-white/75 flex items-center justify-center text-base font-semibold leading-none ${pressedZone[goal.text] === 'left' ? 'badge-squash' : jiggleZone[goal.text] === 'left' ? 'badge-slime-pop' : `${done ? 'opacity-100' : 'opacity-30'}`}`}>−</span>
+                                  className={`${TAP_BADGE_BASE} ${pressedZone[goal.text] === 'left' ? 'badge-squash' : jiggleZone[goal.text] === 'left' ? 'badge-slime-pop' : `${done ? 'opacity-100' : 'opacity-30'}`}`}>−</span>
                               )}
                               <span className={`flex-1 text-sm truncate ${c.text}`}>{goal.text}</span>
                               {done && (
@@ -1422,7 +1448,7 @@ export default function MemberProfile() {
                               {isHabitLoggable && (
                                 <span
                                   onAnimationEnd={() => setJiggleZone(j => ({ ...j, [goal.text]: null }))}
-                                  className={`w-7 h-7 shrink-0 rounded-full bg-emerald-500/20 dark:bg-emerald-400/20 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-base font-semibold leading-none ${pressedZone[goal.text] === 'right' ? 'badge-squash' : jiggleZone[goal.text] === 'right' ? 'badge-slime-pop' : `${done ? 'opacity-30' : 'opacity-100'}`}`}>+</span>
+                                  className={`${TAP_BADGE_BASE} ${pressedZone[goal.text] === 'right' ? 'badge-squash' : jiggleZone[goal.text] === 'right' ? 'badge-slime-pop' : `${done ? 'opacity-30' : 'opacity-100'}`}`}>+</span>
                               )}
                             </div>
                           )}
@@ -1497,7 +1523,7 @@ export default function MemberProfile() {
                                   {sg.unit && <span className="text-xs text-zinc-400 ml-1.5">{sg.unit}</span>}
                                 </div>
                                 <button onClick={() => setDayCount(k, Math.min(999, todayVal + 1))}
-                                  className={`w-9 h-9 flex items-center justify-center active:scale-90 transition-all select-none ${BUTTON_BASE}`}>+</button>
+                                  className="w-9 h-9 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-bold flex items-center justify-center active:scale-90 transition-all select-none">+</button>
                               </div>
                             )}
                           </div>
@@ -1543,7 +1569,7 @@ export default function MemberProfile() {
                         <p className="text-xs text-zinc-400 mt-1.5">{goal.unit ? `${goal.unit} today` : 'today'}</p>
                       </div>
                       <button onClick={() => setDayCount(goal.text, Math.min(999, todayCount + 1))}
-                        className={`w-11 h-11 flex items-center justify-center active:scale-90 transition-all select-none text-lg ${BUTTON_BASE}`}>+</button>
+                        className="w-11 h-11 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white text-lg font-bold flex items-center justify-center active:scale-90 transition-all select-none">+</button>
                     </div>
                   ) : (
                     <div className="px-5 py-8 text-center text-sm text-zinc-400">{isFutureDay ? "Can't log a future day" : 'View only'}</div>
@@ -1740,7 +1766,7 @@ export default function MemberProfile() {
 
               {/* Cat color */}
               <div className="space-y-2">
-                <label className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">Cat Color</label>
+                <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">Cat Color</label>
                 <div className="flex gap-3">
                   {CAT_ATLASES.map((a, i) => {
                     const catIdx = typeof entry?.catColor === 'number' ? entry.catColor : 0
@@ -1764,7 +1790,7 @@ export default function MemberProfile() {
 
               {/* Theme */}
               <div className="space-y-2">
-                <label className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">Theme</label>
+                <label className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">Theme</label>
                 <div className="flex gap-2">
                   {[
                     { value: 'default', label: '🎨', name: 'Default' },

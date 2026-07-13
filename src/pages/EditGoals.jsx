@@ -8,6 +8,7 @@ import { db } from '../firebase'
 import { BUTTON_MD, BUTTON_SM } from '../buttonStyles'
 import { useAuth } from '../AuthContext'
 import { getCurrentWeekId } from '../utils'
+import useLockBodyScroll from '../useLockBodyScroll'
 import { ArrowLeft, ChevronLeft, ChevronRight, Plus, Trash2, Pencil, X, Repeat, Target, Hash, Layers } from 'lucide-react'
 
 const AVATAR_COLORS = [
@@ -404,6 +405,7 @@ export default function EditGoals() {
   const savedGoals = useRef(null)  // snapshot of goals at load time, for change detection
   const [editingGoal, setEditingGoal] = useState(null)  // { index, goal } or { index: -1 } for new
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false)
+  useLockBodyScroll(!!editingGoal || templatePickerOpen)
 
   const sessionDoc = doc(db, 'sessions', sessionId)
 
