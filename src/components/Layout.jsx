@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useLayoutEffect, useState, useRef } from 'react'
 import { Outlet, NavLink, useParams, useNavigate, useLocation, useNavigationType } from 'react-router-dom'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase'
@@ -23,8 +23,8 @@ function PillNav({ sessionId, user, gaming, location, isHome }) {
   return (
     <div className="fixed left-1/2 -translate-x-1/2 z-40 px-4 w-full max-w-lg"
       style={{ bottom: 'max(16px, env(safe-area-inset-bottom))' }}>
-      <nav className="relative flex items-center bg-zinc-900/95 backdrop-blur-2xl rounded-full p-1 shadow-2xl shadow-black/60 border border-white/[0.06]">
-        <div className="absolute inset-y-1 rounded-full pointer-events-none"
+      <nav className="relative flex items-center bg-zinc-900/95 backdrop-blur-2xl rounded-3xl p-1 shadow-2xl shadow-black/60 border border-white/[0.06]">
+        <div className="absolute inset-y-1 rounded-3xl pointer-events-none"
           style={{
             width: `calc((100% - 8px) / ${tabs.length})`,
             left: `calc(4px + ${activeIdx} * (100% - 8px) / ${tabs.length})`,
@@ -72,14 +72,15 @@ export default function Layout() {
     return () => main.removeEventListener('scroll', onScroll)
   }, [location.pathname])
 
-  useEffect(() => {
+  // Synchronous (pre-paint) so a new page never flashes at whatever
+  // scrollTop the previous page left <main> at before snapping to
+  // top/restored position.
+  useLayoutEffect(() => {
     const main = document.querySelector('main')
     if (!main) return
-    if (navigationType === 'POP') {
-      main.scrollTo(0, scrollPositions.current.get(location.pathname) || 0)
-    } else {
-      main.scrollTo(0, 0)
-    }
+    main.scrollTop = navigationType === 'POP'
+      ? (scrollPositions.current.get(location.pathname) || 0)
+      : 0
   }, [location.pathname, navigationType])
   const [session, setSession] = useState(null)
   const [copied, setCopied] = useState(false)
@@ -164,7 +165,7 @@ export default function Layout() {
         </header>
       )}
 
-      <main className="flex-1 px-4 py-3 overflow-y-auto pb-24" style={{ overflowAnchor: 'none' }}>
+      <main className="flex-1 px-4 py-3 overflow-y-auto pb-24" style={{ overflowAnchor: 'none', scrollbarGutter: 'stable' }}>
         <Outlet />
       </main>
 
