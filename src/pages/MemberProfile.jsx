@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useParams, useNavigate } from 'react-router-dom'
 import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, addDoc, setDoc, getDoc, Timestamp } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import { db, storage } from '../firebase'
 import { BUTTON_MD, BUTTON_SM } from '../buttonStyles'
 import { GREEN, GREEN_DEEP } from '../colors'
@@ -647,6 +647,13 @@ export default function MemberProfile() {
 
   const getGoalProof = (goalText) => logs[selectedDay]?.proof?.[goalText] || {}
 
+  // Older entries stored a single `photoUrl` string; new ones accumulate a
+  // `photoUrls` array so a goal/note can carry more than one picture.
+  const getGoalPhotos = (goalText) => {
+    const proof = getGoalProof(goalText)
+    return proof.photoUrls || (proof.photoUrl ? [proof.photoUrl] : [])
+  }
+
   const setGoalProofNote = (goalText, text) => {
     setProofNoteInputs(p => ({ ...p, [goalText]: text }))
     clearTimeout(saveTimers.current[`proof__${goalText}`])
@@ -661,15 +668,27 @@ export default function MemberProfile() {
 
   const uploadGoalPhoto = async (goalText, file) => {
     setUploadingPhoto(p => ({ ...p, [goalText]: true }))
-    const storageRef = ref(storage, `proofs/${entry.id}/${selectedDay}/${goalText.replace(/[^a-z0-9]/gi, '_')}`)
+    const safeName = goalText.replace(/[^a-z0-9]/gi, '_')
+    const storageRef = ref(storage, `proofs/${entry.id}/${selectedDay}/${safeName}_${Date.now()}`)
     await uploadBytes(storageRef, file)
     const url = await getDownloadURL(storageRef)
     const current = getDayLog(selectedDay)
+    const existing = current.proof?.[goalText]?.photoUrls || (current.proof?.[goalText]?.photoUrl ? [current.proof[goalText].photoUrl] : [])
     await setDoc(doc(db, 'entries', entry.id, 'dailyLogs', selectedDay), {
       ...current,
-      proof: { ...(current.proof || {}), [goalText]: { ...(current.proof?.[goalText] || {}), photoUrl: url } }
+      proof: { ...(current.proof || {}), [goalText]: { ...(current.proof?.[goalText] || {}), photoUrls: [...existing, url] } }
     })
     setUploadingPhoto(p => ({ ...p, [goalText]: false }))
+  }
+
+  const removeGoalPhoto = async (goalText, url) => {
+    deleteObject(ref(storage, url)).catch(() => {}) // best-effort — file may already be gone
+    const current = getDayLog(selectedDay)
+    const existing = current.proof?.[goalText]?.photoUrls || (current.proof?.[goalText]?.photoUrl ? [current.proof[goalText].photoUrl] : [])
+    await setDoc(doc(db, 'entries', entry.id, 'dailyLogs', selectedDay), {
+      ...current,
+      proof: { ...(current.proof || {}), [goalText]: { ...(current.proof?.[goalText] || {}), photoUrls: existing.filter(u => u !== url) } }
+    })
   }
 
   // ── handlers ──────────────────────────────────────────────────────────────
@@ -800,10 +819,11 @@ export default function MemberProfile() {
   const renderProofSection = (goalText, isFutureDay) => {
     if (isFutureDay || !entry || entry.status === 'failed') return null
     const saved = getGoalProof(goalText)
+    const photos = getGoalPhotos(goalText)
     const inputVal = proofNoteInputs[goalText] ?? ''
     const uploading = uploadingPhoto[goalText]
     const reactions = Array.isArray(saved.reactions) ? saved.reactions : []
-    const hasProof = !!(saved.note || saved.photoUrl)
+    const hasProof = !!(saved.note || photos.length)
     const isEditing = !!editingProof[goalText]
 
     return (
@@ -811,33 +831,37 @@ export default function MemberProfile() {
         {/* Posted proof card */}
         {hasProof && !isEditing && (
           <div>
-            {saved.photoUrl && (
-              <div className="relative rounded-xl overflow-hidden mb-2">
-                <img src={saved.photoUrl} alt="proof" className="w-full object-cover max-h-52" />
-                {isOwner && (
-                  <label className="absolute top-2 right-2 bg-black/40 hover:bg-black/60 text-white rounded-lg p-1.5 cursor-pointer transition-colors">
-                    {uploading ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Camera size={13} />}
-                    <input type="file" accept="image/*" capture="environment" className="hidden"
-                      onChange={e => { const f = e.target.files?.[0]; if (f) uploadGoalPhoto(goalText, f); e.target.value = '' }} />
-                  </label>
-                )}
+            {photos.length > 0 && (
+              <div className={`grid gap-1.5 mb-2 ${photos.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                {photos.map(url => (
+                  <div key={url} className="relative rounded-xl overflow-hidden">
+                    <img src={url} alt="proof" className={`w-full object-cover ${photos.length === 1 ? 'max-h-52' : 'h-28'}`} />
+                    {isOwner && (
+                      <button onClick={() => removeGoalPhoto(goalText, url)}
+                        className="absolute top-1.5 right-1.5 bg-black/40 hover:bg-black/60 text-white rounded-full p-1 transition-colors">
+                        <X size={12} />
+                      </button>
+                    )}
+                  </div>
+                ))}
               </div>
+            )}
+            {isOwner && (
+              <label className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors cursor-pointer mb-2 w-fit">
+                {uploading ? <div className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /> : <Camera size={12} />}
+                Add photo
+                <input type="file" accept="image/*" capture="environment" className="hidden"
+                  onChange={e => { const f = e.target.files?.[0]; if (f) uploadGoalPhoto(goalText, f); e.target.value = '' }} />
+              </label>
             )}
             {saved.note && (
               <div className="flex items-start gap-2">
                 <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-snug flex-1">{saved.note}</p>
                 {isOwner && (
-                  <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
-                    <button onClick={() => { setEditingProof(p => ({ ...p, [goalText]: true })); setProofNoteInputs(p => ({ ...p, [goalText]: saved.note || '' })) }}
-                      className="text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400 transition-colors">
-                      <Pencil size={12} />
-                    </button>
-                    <label className="text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400 transition-colors cursor-pointer">
-                      {uploading ? <div className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /> : <Camera size={12} />}
-                      <input type="file" accept="image/*" capture="environment" className="hidden"
-                        onChange={e => { const f = e.target.files?.[0]; if (f) uploadGoalPhoto(goalText, f); e.target.value = '' }} />
-                    </label>
-                  </div>
+                  <button onClick={() => { setEditingProof(p => ({ ...p, [goalText]: true })); setProofNoteInputs(p => ({ ...p, [goalText]: saved.note || '' })) }}
+                    className="text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400 transition-colors shrink-0 mt-0.5">
+                    <Pencil size={12} />
+                  </button>
                 )}
               </div>
             )}
@@ -1168,7 +1192,7 @@ export default function MemberProfile() {
               return (
                 <button key={key} onClick={() => !isFuture && setSelectedDay(key)}
                   disabled={isFuture}
-                  className={`flex-1 flex flex-col items-center gap-0.5 py-2 transition-all disabled:opacity-30 ${
+                  className={`flex-1 flex flex-col items-center justify-center gap-0.5 h-12 transition-all disabled:opacity-30 ${
                     isSelected
                       ? 'bg-zinc-800 dark:bg-white'
                       : isToday
@@ -1265,8 +1289,8 @@ export default function MemberProfile() {
                         // on top of it in both themes — no gradient, no special
                         // near-black text color needed.
                         fill: GREEN_DEEP,
-                        text: 'text-white',
-                        label: 'text-white/90',
+                        text: 'text-emerald-200',
+                        label: 'text-emerald-200/90',
                         chevron: 'text-emerald-300 dark:text-emerald-700',
                         todayPill: 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/15',
                         checkFull: 'bg-emerald-500 border-emerald-500',
@@ -1276,7 +1300,7 @@ export default function MemberProfile() {
                       }
                       return {
                         fill: 'linear-gradient(90deg, oklch(0.5 0.12 152), oklch(0.62 0.16 152))',
-                        text: 'text-zinc-800 dark:text-zinc-200',
+                        text: 'text-zinc-800 dark:text-zinc-400',
                         label: 'text-zinc-500 dark:text-zinc-400',
                         chevron: 'text-zinc-300 dark:text-zinc-600',
                         todayPill: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10',
@@ -1290,6 +1314,20 @@ export default function MemberProfile() {
                     const isDoneForColor = goal.type === 'habit' ? barPct >= 1 : done
                     const isGoalMet = isDoneForColor
                     const c = stateColors(barPct, isDoneForColor)
+
+                    // The count number itself brightens to white the moment there's
+                    // any progress logged, so a "1/5" reads as active — separate from
+                    // the goal name's own color, which stays muted until complete.
+                    const numberColor = isDoneForColor
+                      ? c.label
+                      : barPct > 0 ? 'text-zinc-800 dark:text-white' : c.label
+
+                    // The goal name itself stays muted grey until progress is
+                    // logged this week, then brightens to white — same cue as
+                    // the count number, so the whole row reads as "active".
+                    const nameColor = isDoneForColor
+                      ? c.text
+                      : barPct > 0 ? 'text-zinc-800 dark:text-white' : c.text
 
                     const canLog = isOwner && !isFutureDay
 
@@ -1311,6 +1349,8 @@ export default function MemberProfile() {
                               const sp = st ? Math.min(1, sv / st) : 0
                               const sdone = st > 0 && sv >= st
                               const sc = stateColors(sp, sdone)
+                              const sNumberColor = sdone ? sc.label : sp > 0 ? 'text-zinc-800 dark:text-white' : sc.label
+                              const sNameColor = sdone ? sc.text : sp > 0 ? 'text-zinc-800 dark:text-white' : sc.text
                               return (
                                 <div key={si} className={`relative rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 ${shakingGoals.has(k) ? 'row-shake' : ''}`}>
                                   <div className="absolute inset-y-0 left-0 rounded-xl"
@@ -1334,22 +1374,22 @@ export default function MemberProfile() {
                                         className="absolute inset-y-0 right-0 w-1/2 z-10 rounded-r-xl" />
                                     </>
                                   )}
-                                  <div className="relative w-full flex items-center justify-between gap-2 px-3 py-2.5 pointer-events-none">
+                                  <div className="relative w-full flex items-center justify-between gap-2 px-3 h-12 pointer-events-none">
                                     <span className="flex items-center gap-2.5 min-w-0">
                                       {canLog && (
                                         <span
                                           onAnimationEnd={() => setJiggleZone(j => ({ ...j, [k]: null }))}
                                           className={`${TAP_BADGE_BASE} ${pressedZone[k] === 'left' ? 'badge-squash' : jiggleZone[k] === 'left' ? 'badge-slime-pop' : todayV === 0 ? 'opacity-30' : ''}`}>−</span>
                                       )}
-                                      <span className={`text-sm truncate ${sc.text}`}>{sg.text}</span>
+                                      <span className={`text-sm truncate ${sNameColor}`}>{sg.text}</span>
                                     </span>
                                     <span className="flex items-center gap-2.5 shrink-0">
                                       {todayV > 0 && (
                                         <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${sc.todayPill}`}>+{todayV} today</span>
                                       )}
                                       <span className="flex flex-col items-end leading-none shrink-0">
-                                        <span className={`goal-count-font text-sm ${sc.label}`}>{sv}{st ? `/${st}` : ''}</span>
-                                        {sg.unit && <span className={`text-[9px] mt-0.5 ${sc.label} opacity-70`}>{sg.unit}</span>}
+                                        <span className={`goal-count-font text-sm ${sNumberColor}`}>{sv}{st ? `/${st}` : ''}</span>
+                                        {sg.unit && <span className={`text-[9px] mt-0.5 ${sNumberColor} opacity-70`}>{sg.unit}</span>}
                                       </span>
                                       {canLog && (
                                         <span
@@ -1411,12 +1451,12 @@ export default function MemberProfile() {
 
                           {/* Visual content */}
                           {isCounter ? (
-                            <div className="relative w-full flex items-center justify-between gap-2 px-3 py-2.5 pointer-events-none">
+                            <div className="relative w-full flex items-center justify-between gap-2 px-3 h-12 pointer-events-none">
                               <span className="flex items-center gap-2.5 min-w-0">
                                 <span
                                   onAnimationEnd={() => setJiggleZone(j => ({ ...j, [goal.text]: null }))}
                                   className={`${TAP_BADGE_BASE} ${pressedZone[goal.text] === 'left' ? 'badge-squash' : jiggleZone[goal.text] === 'left' ? 'badge-slime-pop' : todayVal === 0 ? 'opacity-30' : ''}`}>−</span>
-                                <span className={`text-sm truncate ${c.text}`}>{goal.text}</span>
+                                <span className={`text-sm truncate ${nameColor}`}>{goal.text}</span>
                               </span>
                               <span className="flex items-center gap-2.5 shrink-0">
                                 {todayVal > 0 && (
@@ -1424,8 +1464,8 @@ export default function MemberProfile() {
                                 )}
                                 {rightLabel && (
                                   <span className="flex flex-col items-end leading-none">
-                                    <span className={`goal-count-font text-sm ${c.label}`}>{rightLabel}</span>
-                                    {rightUnit && <span className={`text-[9px] mt-0.5 ${c.label} opacity-70`}>{rightUnit}</span>}
+                                    <span className={`goal-count-font text-sm ${numberColor}`}>{rightLabel}</span>
+                                    {rightUnit && <span className={`text-[9px] mt-0.5 ${numberColor} opacity-70`}>{rightUnit}</span>}
                                   </span>
                                 )}
                                 <span
@@ -1434,17 +1474,17 @@ export default function MemberProfile() {
                               </span>
                             </div>
                           ) : (
-                            <div className="relative w-full flex items-center gap-2.5 px-3 py-2.5 pointer-events-none">
+                            <div className="relative w-full flex items-center gap-2.5 px-3 h-12 pointer-events-none">
                               {isHabitLoggable && (
                                 <span
                                   onAnimationEnd={() => setJiggleZone(j => ({ ...j, [goal.text]: null }))}
                                   className={`${TAP_BADGE_BASE} ${pressedZone[goal.text] === 'left' ? 'badge-squash' : jiggleZone[goal.text] === 'left' ? 'badge-slime-pop' : `${done ? 'opacity-100' : 'opacity-30'}`}`}>−</span>
                               )}
-                              <span className={`flex-1 text-sm truncate ${c.text}`}>{goal.text}</span>
+                              <span className={`flex-1 text-sm truncate ${nameColor}`}>{goal.text}</span>
                               {done && (
                                 <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${c.todayPill}`}>+1 today</span>
                               )}
-                              {rightLabel && <span className={`goal-count-font text-sm shrink-0 ${c.label}`}>{rightLabel}</span>}
+                              {rightLabel && <span className={`goal-count-font text-sm shrink-0 ${numberColor}`}>{rightLabel}</span>}
                               {isHabitLoggable && (
                                 <span
                                   onAnimationEnd={() => setJiggleZone(j => ({ ...j, [goal.text]: null }))}
@@ -1460,12 +1500,14 @@ export default function MemberProfile() {
 
                 <DailyNote
                   daily={getGoalProof('daily')}
+                  photos={getGoalPhotos('daily')}
                   canEdit={isOwner && selectedDay <= todayKey}
                   dayLabel={selectedDay === todayKey ? 'Today' : selectedDayLabel}
                   onSave={saveDailyNote}
                   onColorSave={saveDailyColor}
                   uploadingPhoto={!!uploadingPhoto['daily']}
                   onPhotoUpload={e => { const f = e.target.files?.[0]; if (f) uploadGoalPhoto('daily', f); e.target.value = '' }}
+                  onPhotoRemove={url => removeGoalPhoto('daily', url)}
                 />
               </div>
             )
@@ -1482,7 +1524,7 @@ export default function MemberProfile() {
               <div className="px-5 pt-4 pb-3 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-base font-black text-zinc-900 dark:text-white">{title}</p>
+                    <p className="text-base font-black text-zinc-900 dark:text-zinc-200">{title}</p>
                     <p className="text-xs text-zinc-500 mt-0.5">{label}</p>
                   </div>
                   <button onClick={close} className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors -mt-0.5"><X size={16} /></button>
@@ -1519,11 +1561,11 @@ export default function MemberProfile() {
                                 <button onClick={() => setDayCount(k, Math.max(0, todayVal - 1))}
                                   className="w-9 h-9 rounded-xl bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 text-sm font-bold flex items-center justify-center hover:bg-zinc-300 dark:hover:bg-zinc-600 active:scale-90 transition-all select-none">−</button>
                                 <div className="flex-1 text-center">
-                                  <span className="text-xl font-black tabular-nums text-zinc-900 dark:text-white">{todayVal}</span>
+                                  <span className="text-xl font-black tabular-nums text-zinc-900 dark:text-zinc-200">{todayVal}</span>
                                   {sg.unit && <span className="text-xs text-zinc-400 ml-1.5">{sg.unit}</span>}
                                 </div>
                                 <button onClick={() => setDayCount(k, Math.min(999, todayVal + 1))}
-                                  className="w-9 h-9 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-bold flex items-center justify-center active:scale-90 transition-all select-none">+</button>
+                                  className="w-9 h-9 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-100 text-sm font-bold flex items-center justify-center active:scale-90 transition-all select-none">+</button>
                               </div>
                             )}
                           </div>
@@ -1565,11 +1607,11 @@ export default function MemberProfile() {
                       <button onClick={() => setDayCount(goal.text, Math.max(0, todayCount - 1))}
                         className="w-11 h-11 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-lg font-bold flex items-center justify-center hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-90 transition-all select-none">−</button>
                       <div className="flex-1 text-center">
-                        <p className="text-4xl font-black tabular-nums text-zinc-900 dark:text-white leading-none">{todayCount}</p>
+                        <p className="text-4xl font-black tabular-nums text-zinc-900 dark:text-zinc-200 leading-none">{todayCount}</p>
                         <p className="text-xs text-zinc-400 mt-1.5">{goal.unit ? `${goal.unit} today` : 'today'}</p>
                       </div>
                       <button onClick={() => setDayCount(goal.text, Math.min(999, todayCount + 1))}
-                        className="w-11 h-11 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white text-lg font-bold flex items-center justify-center active:scale-90 transition-all select-none">+</button>
+                        className="w-11 h-11 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-100 text-lg font-bold flex items-center justify-center active:scale-90 transition-all select-none">+</button>
                     </div>
                   ) : (
                     <div className="px-5 py-8 text-center text-sm text-zinc-400">{isFutureDay ? "Can't log a future day" : 'View only'}</div>
@@ -1594,7 +1636,7 @@ export default function MemberProfile() {
                   <div className="px-5 pt-5 pb-2 flex items-start justify-between">
                     <div>
                       <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-0.5">Add proof</p>
-                      <h2 className="text-xl font-black text-zinc-900 dark:text-white leading-tight">{goal.text}</h2>
+                      <h2 className="text-xl font-black text-zinc-900 dark:text-zinc-200 leading-tight">{goal.text}</h2>
                     </div>
                     <button onClick={closeProof} className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors mt-0.5"><X size={16} /></button>
                   </div>
@@ -1631,7 +1673,7 @@ export default function MemberProfile() {
                             {uploading ? <div className="w-3.5 h-3.5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" /> : <Camera size={13} className="text-zinc-500 dark:text-zinc-400" />}
                           </div>
                           <div className="flex-1">
-                            <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">{proof.photoUrl ? 'Replace photo' : 'Add a photo'}</p>
+                            <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">Add a photo</p>
                           </div>
                           <input type="file" accept="image/*" capture="environment" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) { uploadGoalPhoto(goal.text, f); setActiveGoalSheet(null) } e.target.value = '' }} />
                         </label>

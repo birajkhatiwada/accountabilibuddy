@@ -5,4 +5,4 @@
 // designs. Only the glyph inside (+ or −) tells them apart. Change the
 // look here and both sides of every goal row update together.
 export const TAP_BADGE_BASE =
-  'w-7 h-7 shrink-0 rounded-full bg-zinc-900/10 dark:bg-white/10 text-zinc-600 dark:text-white/75 flex items-center justify-center text-base font-semibold leading-none'
+  'w-7 h-7 shrink-0 rounded-full bg-zinc-900/10 dark:bg-white/10 text-zinc-600 dark:text-zinc-200 flex items-center justify-center text-base font-semibold leading-none'

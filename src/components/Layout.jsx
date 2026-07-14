@@ -165,7 +165,7 @@ export default function Layout() {
         </header>
       )}
 
-      <main className="flex-1 px-4 py-3 overflow-y-auto pb-24" style={{ overflowAnchor: 'none', scrollbarGutter: 'stable' }}>
+      <main className="flex-1 px-4 py-3 overflow-y-auto pb-24" style={{ overflowAnchor: 'none' }}>
         <Outlet />
       </main>
 

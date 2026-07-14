@@ -337,7 +337,7 @@ html.gaming .rounded-xl  { border-radius: 4px !important; }
   min-height: 48px;
 }
 .dark .tiptap-note .ProseMirror {
-  color: #e4e4e7;
+  color: #a1a1aa;
 }
 .tiptap-note .ProseMirror p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);

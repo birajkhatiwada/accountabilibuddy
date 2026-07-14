@@ -32,7 +32,8 @@ function ToolbarBtn({ onClick, active, children }) {
 // how every other edit action in the app works (Edit Profile, logging,
 // goal templates), instead of an inline-expanding toolbar that used to
 // shove the rest of the page around while writing.
-export default function DailyNote({ daily, canEdit, dayLabel, onSave, onColorSave, onPhotoUpload, uploadingPhoto }) {
+export default function DailyNote({ daily, photos, canEdit, dayLabel, onSave, onColorSave, onPhotoUpload, onPhotoRemove, uploadingPhoto }) {
+  const photoList = photos ?? (daily.photoUrl ? [daily.photoUrl] : [])
   const [open, setOpen] = useState(false)
   const [showColorPicker, setShowColorPicker] = useState(false)
   useLockBodyScroll(open)
@@ -58,7 +59,7 @@ export default function DailyNote({ daily, canEdit, dayLabel, onSave, onColorSav
   // still think the note was empty and show the "+ Add note" button
   // instead of what was just typed.
   const [textEmpty, setTextEmpty] = useState(!(daily.content || daily.note))
-  const isEmpty = textEmpty && !daily.photoUrl
+  const isEmpty = textEmpty && !photoList.length
 
   const editor = useEditor({
     extensions: [
@@ -145,9 +146,11 @@ export default function DailyNote({ daily, canEdit, dayLabel, onSave, onColorSav
                 </div>
                 {canEdit && <Pencil size={12} className="text-zinc-400 dark:text-zinc-500 shrink-0 mt-1" />}
               </div>
-              {daily.photoUrl && (
-                <div className="px-4 pb-2 pointer-events-none">
-                  <img src={daily.photoUrl} alt="" className="w-full max-h-48 rounded-xl object-cover" />
+              {photoList.length > 0 && (
+                <div className={`px-4 pb-2 pointer-events-none grid gap-1.5 ${photoList.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                  {photoList.map(url => (
+                    <img key={url} src={url} alt="" className={`w-full rounded-xl object-cover ${photoList.length === 1 ? 'max-h-48' : 'h-24'}`} />
+                  ))}
                 </div>
               )}
               <div className="px-4 pb-3 pointer-events-none">
@@ -168,9 +171,19 @@ export default function DailyNote({ daily, canEdit, dayLabel, onSave, onColorSav
               <button onClick={handleDone} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"><X size={16} /></button>
             </div>
 
-            {daily.photoUrl && (
-              <div className="px-4 pb-2 shrink-0">
-                <img src={daily.photoUrl} alt="" className="w-full max-h-48 rounded-xl object-cover" />
+            {photoList.length > 0 && (
+              <div className={`px-4 pb-2 shrink-0 grid gap-1.5 ${photoList.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                {photoList.map(url => (
+                  <div key={url} className="relative rounded-xl overflow-hidden">
+                    <img src={url} alt="" className={`w-full object-cover ${photoList.length === 1 ? 'max-h-48' : 'h-24'}`} />
+                    {canEdit && (
+                      <button onClick={() => onPhotoRemove(url)}
+                        className="absolute top-1.5 right-1.5 bg-black/40 hover:bg-black/60 text-white rounded-full p-1 transition-colors">
+                        <X size={12} />
+                      </button>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
 
@@ -204,7 +217,7 @@ export default function DailyNote({ daily, canEdit, dayLabel, onSave, onColorSav
                   className={`ml-1 w-4 h-4 rounded-sm border border-black/10 dark:border-white/10 shadow-sm ${noteColor.dot} hover:scale-110 transition-transform`} />
               </div>
               <button onClick={handleDone}
-                className="px-3 py-1 bg-zinc-700 dark:bg-zinc-600 hover:bg-zinc-800 dark:hover:bg-zinc-500 text-white text-xs font-semibold rounded-lg transition-colors">
+                className="px-3 py-1 bg-zinc-700 dark:bg-zinc-600 hover:bg-zinc-800 dark:hover:bg-zinc-500 text-zinc-100 text-xs font-semibold rounded-lg transition-colors">
                 Done
               </button>
             </div>
