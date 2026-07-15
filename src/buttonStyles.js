@@ -13,3 +13,8 @@ export const BUTTON_MD = `py-2.5 text-sm ${BUTTON_BASE}`
 
 // Small inline pill button — e.g. "Use template", "Edit", "Last week's".
 export const BUTTON_SM = `px-3.5 py-1.5 text-xs ${BUTTON_BASE}`
+
+// Full-width "add" affordance — e.g. "Add goal", "Add note", "New template".
+// Same green pill as every other button (BUTTON_MD/BUTTON_SM) for visual
+// continuity, just with icon+label centered. Caller adds `w-full`.
+export const BUTTON_ADD = `flex items-center justify-center gap-1.5 py-2.5 text-sm ${BUTTON_BASE}`

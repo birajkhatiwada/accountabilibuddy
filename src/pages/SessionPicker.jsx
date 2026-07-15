@@ -5,7 +5,7 @@ import { db } from '../firebase'
 import { BUTTON_MD } from '../buttonStyles'
 import { GREEN_LIGHT } from '../colors'
 import { useAuth } from '../AuthContext'
-import { Plus, Users, ChevronRight, MessageSquare } from 'lucide-react'
+import { Plus, Users, ChevronRight, MessageSquare, LogOut } from 'lucide-react'
 
 const SESSION_EMOJIS = ['💼','👨‍👩‍👧‍👦','🏋️','📚','🎯','🚀','🌱','🎮','🏠','✈️']
 const SAVED_KEY = 'accountabili_sessions'
@@ -39,7 +39,7 @@ function daysLeftInWeek() {
 
 export default function SessionPicker() {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   const [saved, setSaved] = useState(getSaved)
   const [mode, setMode] = useState(null)
   const [name, setName] = useState('')
@@ -115,6 +115,13 @@ export default function SessionPicker() {
         {/* Subtle grid */}
         <div className="absolute inset-0 opacity-[0.035] pointer-events-none"
           style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
+
+        {user && (
+          <button onClick={signOut} aria-label="Sign out"
+            className="absolute top-4 right-4 z-10 flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold text-zinc-500 hover:text-red-400 hover:bg-zinc-800 transition-colors">
+            <LogOut size={12} /> Sign out
+          </button>
+        )}
 
         <div className="relative z-10 space-y-3 max-w-xs">
           <h1 className="text-4xl font-black tracking-tight text-white leading-none">

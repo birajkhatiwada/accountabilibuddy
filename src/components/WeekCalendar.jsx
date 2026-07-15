@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { doc, setDoc } from 'firebase/firestore'
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { db, storage } from '../firebase'
-import { BUTTON_BASE } from '../buttonStyles'
+import { BUTTON_BASE, BUTTON_ADD } from '../buttonStyles'
 import { Send, Camera } from 'lucide-react'
 
 const REACTIONS = ['🔥', '💪', '👏', '❤️']
@@ -114,8 +114,8 @@ export default function WeekCalendar({ entryId, selectedDay, logs = {} }) {
         onChange={e => { if (e.target.files[0]) uploadPhoto(e.target.files[0]); e.target.value = '' }}
       />
       <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
-        className="w-full flex items-center justify-center gap-2 py-2 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-700 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:border-zinc-300 dark:hover:border-zinc-500 transition-colors text-sm disabled:opacity-40">
-        <Camera size={14} />
+        className={`w-full ${BUTTON_ADD}`}>
+        <Camera size={12} />
         {uploading ? 'Uploading...' : 'Add photo proof'}
       </button>
     </div>

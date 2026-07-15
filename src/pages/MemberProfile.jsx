@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, addDoc, setDoc, getDoc, Timestamp } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import { db, storage } from '../firebase'
-import { BUTTON_MD, BUTTON_SM } from '../buttonStyles'
+import { BUTTON_MD, BUTTON_SM, BUTTON_ADD } from '../buttonStyles'
 import { GREEN, GREEN_DEEP } from '../colors'
 import { TAP_BADGE_BASE } from '../badgeStyles'
 import { useAuth } from '../AuthContext'
@@ -12,7 +12,9 @@ import { useTheme } from '../ThemeContext'
 import useLockBodyScroll from '../useLockBodyScroll'
 import { getCurrentWeekId, formatWeekLabel, formatTimestamp } from '../utils'
 import { Pencil, X, Camera, ChevronLeft, ChevronRight, User, Target, ClipboardList, Plus } from 'lucide-react'
-import GoalBuilder from '../components/GoalBuilder'
+import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core'
+import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
+import { GoalPopup, SortableGoalRow } from '../components/GoalEditor'
 import DailyNote from '../components/DailyNote'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
@@ -369,8 +371,7 @@ export default function MemberProfile() {
   const [goalsInput, setGoalsInput] = useState([])
   const [submitting, setSubmitting] = useState(false)
   const [pickingAvatar, setPickingAvatar] = useState(false)
-  const [goalBuilderKey, setGoalBuilderKey] = useState(0)
-  const [carryOverGoals, setCarryOverGoals] = useState(null)
+  const [editingSetupGoal, setEditingSetupGoal] = useState(null) // { index, goal } or { index: -1 } for new
   const [goalTemplates, setGoalTemplates] = useState([])
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false)
   const [namingTemplate, setNamingTemplate] = useState(false)
@@ -426,7 +427,12 @@ export default function MemberProfile() {
   // underneath it.
   useLockBodyScroll(
     editBannerOpen || pickingAvatar || editMenuOpen || namingTemplate ||
-    templatePickerOpen || !!loggingSheet || !!activeGoalSheet
+    templatePickerOpen || !!loggingSheet || !!activeGoalSheet || !!editingSetupGoal
+  )
+
+  const dndSensors = useSensors(
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   )
 
   const sessionDoc = doc(db, 'sessions', sessionId)
@@ -474,7 +480,7 @@ export default function MemberProfile() {
         setGoalTemplates(normalizeTemplates(d.goalTemplates?.[name]))
       }
     })
-  }, [sessionId])
+  }, [sessionId, name])
 
   // Single query — filter weekId + name client-side to avoid composite index requirement
   useEffect(() => {
@@ -694,15 +700,23 @@ export default function MemberProfile() {
   // ── handlers ──────────────────────────────────────────────────────────────
 
   const handleCarryOver = () => {
-    const goals = prevEntry?.goalItems || []
-    setCarryOverGoals(goals); setGoalsInput(goals); setGoalBuilderKey(k => k + 1)
+    setGoalsInput(prevEntry?.goalItems || [])
   }
 
   const handleUseTemplate = (items) => {
-    const goals = items || []
-    setCarryOverGoals(goals); setGoalsInput(goals); setGoalBuilderKey(k => k + 1)
+    setGoalsInput(items || [])
     setTemplatePickerOpen(false)
   }
+
+  const handleSetupGoalSave = (draft) => {
+    const next = [...goalsInput]
+    if (editingSetupGoal.index === -1) next.push(draft)
+    else next[editingSetupGoal.index] = draft
+    setGoalsInput(next)
+    setEditingSetupGoal(null)
+  }
+
+  const deleteSetupGoal = (i) => setGoalsInput(g => g.filter((_, idx) => idx !== i))
 
   // Saves this week's goals as a brand new template — every template needs
   // its own name, so this opens a small prompt for one first.
@@ -1167,16 +1181,52 @@ export default function MemberProfile() {
               )}
             </div>
           </div>
-          <GoalBuilder key={goalBuilderKey} initialGoals={carryOverGoals} onChange={setGoalsInput} />
-          {goalsInput.some(g => g.text.trim() && !isGoalTargetValid(g)) && (
-            <p className="text-xs text-amber-500 -mt-2">Give every count goal a target of at least 1 before locking in</p>
+          {goalsInput.length > 0 && (
+            <DndContext sensors={dndSensors} collisionDetection={closestCenter}
+              onDragEnd={({ active, over }) => {
+                if (!over || active.id === over.id) return
+                const oldIdx = goalsInput.findIndex(g => g.text === active.id)
+                const newIdx = goalsInput.findIndex(g => g.text === over.id)
+                if (oldIdx !== -1 && newIdx !== -1) setGoalsInput(arrayMove(goalsInput, oldIdx, newIdx))
+              }}>
+              <SortableContext items={goalsInput.map(g => g.text)} strategy={verticalListSortingStrategy}>
+                <div className="space-y-2">
+                  {goalsInput.map((g, i) => (
+                    <SortableGoalRow key={g.text} id={g.text}
+                      text={g.text} type={g.type} target={g.target} unit={g.unit} subGoals={g.subGoals || []}
+                      onEdit={() => setEditingSetupGoal({ index: i, goal: g })}
+                      onDelete={() => deleteSetupGoal(i)}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           )}
+
+          <button onClick={() => setEditingSetupGoal({ index: -1, goal: null })}
+            className={`w-full ${BUTTON_ADD}`}>
+            <Plus size={12} /> Add goal
+          </button>
+        </div>
+      )}
+
+      {!myGoals.length && isOwner && goalsInput.length > 0 && (
+        <div className="space-y-1.5">
+          <p className="text-xs text-amber-500 text-center font-medium">You have unsaved goals — tap Lock in to save them</p>
           <button onClick={submitGoals}
-            disabled={submitting || !goalsInput.some(g => g.text.trim()) || !goalsInput.filter(g => g.text.trim()).every(isGoalTargetValid)}
+            disabled={submitting}
             className={`w-full ${BUTTON_MD}`}>
             {submitting ? 'Locking in...' : 'Lock in goals'}
           </button>
         </div>
+      )}
+
+      {editingSetupGoal && (
+        <GoalPopup
+          goal={editingSetupGoal.goal}
+          onSave={handleSetupGoalSave}
+          onClose={() => setEditingSetupGoal(null)}
+        />
       )}
 
       {(entry || myGoals.length > 0) && (

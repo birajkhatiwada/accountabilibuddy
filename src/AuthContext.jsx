@@ -20,6 +20,12 @@ export function AuthProvider({ children }) {
   const signUp = async (username, password) => {
     const cred = await createUserWithEmailAndPassword(auth, toEmail(username), password)
     await updateProfile(cred.user, { displayName: username.trim() })
+    // Firestore/Storage rules check the `name` claim on the ID token, which
+    // Firebase mints at sign-in time — before updateProfile ran. Without
+    // forcing a refresh here, the very first write (e.g. joining a session)
+    // goes out with a stale token where that claim is still blank and gets
+    // denied by the rules.
+    await cred.user.getIdToken(true)
     setUser({ ...cred.user, displayName: username.trim() })
   }
 

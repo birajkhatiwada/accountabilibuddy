@@ -2,10 +2,10 @@ import { useEffect, useLayoutEffect, useState, useRef } from 'react'
 import { Outlet, NavLink, useParams, useNavigate, useLocation, useNavigationType } from 'react-router-dom'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase'
-import { Target, DollarSign, Clock, Users, Rss, Moon, Sun, Copy, Check, LogOut, MessageSquare } from 'lucide-react'
+import { Target, DollarSign, Clock, Users, Rss, Moon, Sun, Copy, Check, LogOut, MessageSquare, MoreVertical } from 'lucide-react'
 import { useTheme } from '../ThemeContext'
 import { useAuth } from '../AuthContext'
-import { GREEN, GREEN_LIGHT } from '../colors'
+import { GREEN_LIGHT } from '../colors'
 import useLockBodyScroll from '../useLockBodyScroll'
 
 function PillNav({ sessionId, user, gaming, location, isHome }) {
@@ -27,8 +27,9 @@ function PillNav({ sessionId, user, gaming, location, isHome }) {
         <div className="absolute inset-y-1 rounded-3xl pointer-events-none"
           style={{
             width: `calc((100% - 8px) / ${tabs.length})`,
-            left: `calc(4px + ${activeIdx} * (100% - 8px) / ${tabs.length})`,
-            transition: 'left 0.3s cubic-bezier(0.34, 1.3, 0.64, 1)',
+            left: `calc(4px + ${Math.max(0, activeIdx)} * (100% - 8px) / ${tabs.length})`,
+            opacity: activeIdx === -1 ? 0 : 1,
+            transition: 'left 0.3s cubic-bezier(0.34, 1.3, 0.64, 1), opacity 0.2s ease',
             background: gaming ? 'rgba(0,255,136,0.15)' : 'rgb(63,63,70)',
           }} />
         {tabs.map(({ to, end, Icon, label }) => (
@@ -47,11 +48,41 @@ function PillNav({ sessionId, user, gaming, location, isHome }) {
   )
 }
 
+// Collapses "Feedback" and "Sign out" behind one overflow button — keeping
+// the header's right side to just this + the theme toggle, instead of a
+// row of separate icon buttons plus a username and a status dot.
+function HeaderMenu({ open, setOpen, onFeedback, onSignOut, size = 16 }) {
+  return (
+    <div className="relative">
+      <button onClick={() => setOpen(v => !v)}
+        className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Menu">
+        <MoreVertical size={size} />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-full mt-1 z-50 w-40 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl overflow-hidden">
+            <button onClick={() => { setOpen(false); onFeedback() }}
+              className="w-full flex items-center gap-2 px-3.5 py-2.5 text-sm font-medium text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">
+              <MessageSquare size={14} /> Feedback
+            </button>
+            <button onClick={() => { setOpen(false); onSignOut() }}
+              className="w-full flex items-center gap-2 px-3.5 py-2.5 text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
+              <LogOut size={14} /> Sign out
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 export default function Layout() {
   const { dark, toggle, uiTheme } = useTheme()
   const gaming = uiTheme === 'gaming'
   const { user, signOut } = useAuth()
   const [confirmSignOut, setConfirmSignOut] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   useLockBodyScroll(confirmSignOut)
   const handleSignOut = async () => { await signOut(); navigate('/') }
   const { sessionId } = useParams()
@@ -120,18 +151,12 @@ export default function Layout() {
                 </button>
               )}
             </div>
-            <div className="flex items-center gap-2 mb-1">
-              {user && <button onClick={() => navigate(`/${sessionId}/member/${encodeURIComponent(user.displayName)}`)} className="text-xs font-semibold text-zinc-400 dark:text-zinc-500 hover:text-emerald-500 transition-colors">{user.displayName}</button>}
-              <button onClick={() => navigate('/feedback')} className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Feedback">
-                <MessageSquare size={16} />
-              </button>
+            <div className="flex items-center gap-1 mb-1">
               <button onClick={toggle} className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Toggle dark mode">
                 {dark ? <Sun size={16} /> : <Moon size={16} />}
               </button>
-              <button onClick={() => setConfirmSignOut(true)} className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Sign out">
-                <LogOut size={15} />
-              </button>
-              <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: gaming ? '#00ff88' : GREEN_LIGHT, boxShadow: gaming ? '0 0 6px #00ff88' : 'none' }} />
+              <HeaderMenu open={menuOpen} setOpen={setMenuOpen} size={16}
+                onFeedback={() => navigate('/feedback')} onSignOut={() => setConfirmSignOut(true)} />
             </div>
           </div>
         </header>
@@ -149,18 +174,12 @@ export default function Layout() {
               </button>
             )}
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {user && <span className="text-xs font-semibold text-zinc-400 dark:text-zinc-500">{user.displayName}</span>}
-            <button onClick={() => navigate('/feedback')} className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Feedback">
-              <MessageSquare size={15} />
-            </button>
+          <div className="flex items-center gap-1 shrink-0">
             <button onClick={toggle} className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Toggle dark mode">
               {dark ? <Sun size={15} /> : <Moon size={15} />}
             </button>
-            <button onClick={() => setConfirmSignOut(true)} className="p-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all" aria-label="Sign out">
-              <LogOut size={14} />
-            </button>
-            <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: gaming ? '#00ff88' : GREEN_LIGHT, boxShadow: gaming ? '0 0 5px #00ff88' : 'none' }} />
+            <HeaderMenu open={menuOpen} setOpen={setMenuOpen} size={15}
+              onFeedback={() => navigate('/feedback')} onSignOut={() => setConfirmSignOut(true)} />
           </div>
         </header>
       )}

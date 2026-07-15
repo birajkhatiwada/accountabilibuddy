@@ -7,6 +7,7 @@ import Placeholder from '@tiptap/extension-placeholder'
 import { useState, useEffect, useLayoutEffect, useRef } from 'react'
 import { Camera, Bold, Italic, List, CheckSquare, Plus, Pencil, X } from 'lucide-react'
 import useLockBodyScroll from '../useLockBodyScroll'
+import { BUTTON_ADD } from '../buttonStyles'
 
 const NOTE_COLORS = [
   { id: 'default', bg: 'bg-zinc-50 dark:bg-zinc-800/50',       border: 'border-zinc-200 dark:border-zinc-700/50',        dot: 'bg-zinc-300 dark:bg-zinc-600' },
@@ -128,7 +129,7 @@ export default function DailyNote({ daily, photos, canEdit, dayLabel, onSave, on
             <button
               onPointerDown={e => e.preventDefault()}
               onClick={() => setOpen(true)}
-              className="mt-4 w-full py-2.5 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-700 text-zinc-500 dark:text-zinc-500 hover:border-emerald-500/50 hover:text-emerald-500 transition-all text-xs font-semibold flex items-center justify-center gap-1.5">
+              className={`mt-4 w-full ${BUTTON_ADD}`}>
               <Plus size={12} /> Add note
             </button>
           ) : (
