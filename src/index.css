@@ -14,6 +14,17 @@
   }
 }
 
+/* Soft shadow under the header, faded in via opacity as you scroll (see
+   Layout.jsx's headerShadow) — a gradient, not a hard-edged box-shadow, so
+   there's never a visible line, only a gradual darkening underneath. */
+.header-shadow-fade {
+  background: linear-gradient(to bottom, rgba(0,0,0,0.08), transparent);
+  transition: opacity 0.15s ease-out;
+}
+.dark .header-shadow-fade {
+  background: linear-gradient(to bottom, rgba(0,0,0,0.35), transparent);
+}
+
 /* ═══════════════════════════════════════════════
    GAMING THEME — applied via html.gaming class
    ═══════════════════════════════════════════════ */
@@ -38,6 +49,8 @@ html.gaming .dark\:bg-zinc-800\/60 { background-color: rgba(17,17,17,0.6) !impor
 html.gaming .bg-zinc-50        { background-color: #020202 !important; }
 html.gaming .dark\:bg-zinc-800\/40 { background-color: rgba(17,17,17,0.4) !important; }
 html.gaming .bg-zinc-100\/40   { background-color: rgba(10,10,10,0.4) !important; }
+html.gaming .dark\:bg-zinc-950\/70 { background-color: rgba(2,2,2,0.7) !important; }
+html.gaming .bg-zinc-50\/70        { background-color: rgba(2,2,2,0.7) !important; }
 
 /* Borders → neon tint */
 html.gaming .dark\:border-zinc-800    { border-color: rgba(0,255,136,0.14) !important; }

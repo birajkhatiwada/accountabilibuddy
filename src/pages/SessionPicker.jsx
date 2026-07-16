@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { doc, getDoc, setDoc, updateDoc, arrayUnion, Timestamp, getCountFromServer, collection } from 'firebase/firestore'
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, Timestamp, getCountFromServer, collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase'
 import { BUTTON_MD } from '../buttonStyles'
 import { GREEN_LIGHT } from '../colors'
@@ -8,7 +8,6 @@ import { useAuth } from '../AuthContext'
 import { Plus, Users, ChevronRight, MessageSquare, LogOut } from 'lucide-react'
 
 const SESSION_EMOJIS = ['💼','👨‍👩‍👧‍👦','🏋️','📚','🎯','🚀','🌱','🎮','🏠','✈️']
-const SAVED_KEY = 'accountabili_sessions'
 
 const TAGLINES = [
   'No cheating yourself.',
@@ -18,13 +17,6 @@ const TAGLINES = [
   'Hard goals. Real stakes.',
 ]
 
-function getSaved() {
-  try { return JSON.parse(localStorage.getItem(SAVED_KEY) || '[]') } catch { return [] }
-}
-function addSaved(session) {
-  const saved = getSaved().filter(s => s.id !== session.id)
-  localStorage.setItem(SAVED_KEY, JSON.stringify([session, ...saved].slice(0, 10)))
-}
 function genId() {
   return Math.random().toString(36).slice(2, 8).toUpperCase()
 }
@@ -40,7 +32,7 @@ function daysLeftInWeek() {
 export default function SessionPicker() {
   const navigate = useNavigate()
   const { user, signOut } = useAuth()
-  const [saved, setSaved] = useState(getSaved)
+  const [saved, setSaved] = useState([])
   const [mode, setMode] = useState(null)
   const [name, setName] = useState('')
   const [emoji, setEmoji] = useState('🎯')
@@ -72,6 +64,18 @@ export default function SessionPicker() {
       .catch(() => {})
   }, [])
 
+  // Sessions this account belongs to — read straight from Firestore (every
+  // session doc's `names` array includes the member's displayName) so this
+  // list follows the account across devices/browsers instead of living only
+  // in this browser's localStorage.
+  useEffect(() => {
+    if (!user?.displayName) { setSaved([]); return }
+    const q = query(collection(db, 'sessions'), where('names', 'array-contains', user.displayName))
+    return onSnapshot(q, snap => {
+      setSaved(snap.docs.map(d => ({ id: d.id, name: d.data().name, emoji: d.data().emoji })))
+    })
+  }, [user?.displayName])
+
   const createSession = async () => {
     if (!name.trim()) return
     setLoading(true)
@@ -79,8 +83,6 @@ export default function SessionPicker() {
     const username = user?.displayName || ''
     const session = { name: name.trim(), emoji, penalty: Number(penalty) || 15, createdAt: Timestamp.now(), names: username ? [username] : [], avatars: {} }
     await setDoc(doc(db, 'sessions', id), session)
-    const s = { id, name: name.trim(), emoji }
-    addSaved(s)
     navigate(`/${id}`)
   }
 
@@ -90,16 +92,13 @@ export default function SessionPicker() {
     setLoading(true); setError('')
     const snap = await getDoc(doc(db, 'sessions', id))
     if (!snap.exists()) { setError('Session not found. Check the code and try again.'); setLoading(false); return }
-    const data = snap.data()
     if (user?.displayName) {
       await updateDoc(doc(db, 'sessions', id), { names: arrayUnion(user.displayName) })
     }
-    addSaved({ id, name: data.name, emoji: data.emoji || '🎯' })
     navigate(`/${id}`)
   }
 
   const openSession = async (s) => {
-    addSaved(s)
     if (user?.displayName) {
       try { await updateDoc(doc(db, 'sessions', s.id), { names: arrayUnion(user.displayName) }) } catch {}
     }
