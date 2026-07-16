@@ -57,7 +57,7 @@ const SLEEP_COUNT = 2 // first N behaviors are sleep
 // Shared animation clock for the cat — called once by the parent so the
 // inline bar and the sticky/fixed bar render the exact same walking/resting
 // state instead of each running its own independent timers out of sync.
-function useCatAnimation(pct, sheetOpen) {
+function useCatAnimation(pct, sheetOpen, ready) {
   const [displayedPct, setDisplayedPct] = useState(pct)
   const [isWalking, setIsWalking]       = useState(false)
   const [facingRight, setFacingRight]   = useState(true)
@@ -65,25 +65,40 @@ function useCatAnimation(pct, sheetOpen) {
   const [behaviorIdx, setBehaviorIdx]   = useState(0)
   const prevRef  = useRef(pct)
   const timerRef = useRef(null)
+  // Data loads async, so `pct` starts at 0 and jumps to the real value once
+  // logs finish loading — without this, that jump replayed the walk
+  // animation every single time the page mounted, even with no actual
+  // change in logged progress. Skip animating that first real value in
+  // silently and only walk on genuine changes after that.
+  const hasSyncedRef = useRef(false)
 
-  // Hold progress updates while a logging sheet is open; flush when it closes
+  // Hold progress updates while a logging sheet is open; flush when it
+  // closes. Keyed directly off `pct` (not the staged `displayedPct` state)
+  // so the "first real value" sync and the walk decision both react to the
+  // same up-to-date number in the same effect pass — reading displayedPct
+  // here instead raced against its own pending update and still replayed
+  // the walk on mount every time.
   useEffect(() => {
-    if (!sheetOpen) setDisplayedPct(pct)
-  }, [pct, sheetOpen])
-
-  useEffect(() => {
-    if (displayedPct !== prevRef.current) {
-      setFacingRight(displayedPct > prevRef.current)
+    if (sheetOpen) return
+    setDisplayedPct(pct)
+    if (!ready) return
+    if (!hasSyncedRef.current) {
+      prevRef.current = pct
+      hasSyncedRef.current = true
+      return
+    }
+    if (pct !== prevRef.current) {
+      setFacingRight(pct > prevRef.current)
       setIsWalking(true)
       clearTimeout(timerRef.current)
       timerRef.current = setTimeout(() => {
         setBehaviorIdx(SLEEP_COUNT + Math.floor(Math.random() * (REST_BEHAVIORS.length - SLEEP_COUNT)))
         setIsWalking(false)
       }, 6500)
-      prevRef.current = displayedPct
+      prevRef.current = pct
     }
     return () => clearTimeout(timerRef.current)
-  }, [displayedPct])
+  }, [pct, sheetOpen, ready])
 
   useEffect(() => {
     setFrame(0)
@@ -206,7 +221,7 @@ function CatProgressBar({ displayedPct, isWalking, facingRight, frame, behaviorI
           <div className="relative h-full overflow-hidden" style={{ borderRadius: 1 }}>
             <div className={`absolute inset-0 ${gaming ? '' : 'bg-zinc-100 dark:bg-zinc-800'}`} style={gaming ? { background: '#050505' } : undefined} />
             <div className="absolute inset-y-0 left-0 h-full cat-bar-fill"
-              style={{ width: `${pctRound}%`, background: trackColor, transition: 'width 2s cubic-bezier(0.4,0,0.2,1)', boxShadow: `0 0 8px ${glowColor}` }}>
+              style={{ width: `${pctRound}%`, background: trackColor, transition: isWalking ? 'width 2s cubic-bezier(0.4,0,0.2,1)' : 'none', boxShadow: `0 0 8px ${glowColor}` }}>
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent cat-bar-shimmer" />
               {gaming && <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.4) 3px,rgba(0,0,0,0.4) 4px)' }} />}
             </div>
@@ -251,7 +266,7 @@ function CatProgressBar({ displayedPct, isWalking, facingRight, frame, behaviorI
             fully hidden behind that opaque layer instead of leaking through
             the track's transparent border/padding gap */}
         <div className="absolute select-none"
-          style={{ left: `${clampedLeft}%`, bottom: 2, transform: `translateX(-50%) translateY(${!isWalking && behaviorIdx === 1 ? (compact ? 5 : 7) : 0}px)`, transition: 'left 6s linear, transform 0.3s ease', zIndex: 2 }}>
+          style={{ left: `${clampedLeft}%`, bottom: 2, transform: `translateX(-50%) translateY(${!isWalking && behaviorIdx === 1 ? (compact ? 5 : 7) : 0}px)`, transition: isWalking ? 'left 6s linear, transform 0.3s ease' : 'transform 0.3s ease', zIndex: 2 }}>
           {showZzz && (
             <div className="absolute pointer-events-none" style={{ top: compact ? '-10px' : '-14px', left: '50%', transform: 'translateX(-50%)' }}>
               <span className="zzz-1 absolute text-[8px] font-black text-zinc-400 dark:text-zinc-500">z</span>
@@ -565,13 +580,21 @@ export default function MemberProfile() {
 
   const getDayLog = (key) => logs[key] || {}
 
+  // Single write path for every daily-log edit — stamps `updatedAt` every
+  // time so the Activity feed can tell a freshly-edited old day apart from
+  // one that's sat untouched (re-editing yesterday's note should bump it
+  // back to the top of the feed, not leave it stuck at its original time).
+  const patchDayLog = (day, patch) =>
+    setDoc(doc(db, 'entries', entry.id, 'dailyLogs', day), {
+      ...getDayLog(day), ...patch, updatedAt: Timestamp.now(),
+    })
+
   const setHabitDone = (goalText, val) => {
     if (!entry?.id) return
     const localKey = `${selectedDay}__habit__${goalText}`
     setLocalHabits(p => ({ ...p, [localKey]: val }))
-    const current = getDayLog(selectedDay)
-    const habits = { ...(current.habits || {}), [goalText]: val }
-    setDoc(doc(db, 'entries', entry.id, 'dailyLogs', selectedDay), { ...current, habits })
+    const habits = { ...(getDayLog(selectedDay).habits || {}), [goalText]: val }
+    patchDayLog(selectedDay, { habits })
   }
 
   const setDayCount = (key, value) => {
@@ -580,11 +603,8 @@ export default function MemberProfile() {
     const newVal = Math.max(0, Math.min(999, value))
     setLocalCounts(p => ({ ...p, [localKey]: newVal }))
     clearTimeout(saveTimers.current[localKey])
-    saveTimers.current[localKey] = setTimeout(async () => {
-      const current = getDayLog(selectedDay)
-      await setDoc(doc(db, 'entries', entry.id, 'dailyLogs', selectedDay), {
-        ...current, counts: { ...(current.counts || {}), [key]: newVal },
-      })
+    saveTimers.current[localKey] = setTimeout(() => {
+      patchDayLog(selectedDay, { counts: { ...(getDayLog(selectedDay).counts || {}), [key]: newVal } })
     }, 300)
   }
 
@@ -594,11 +614,8 @@ export default function MemberProfile() {
     const newVal = Math.max(0, Math.min(9999, value))
     setLocalTotals(p => ({ ...p, [localKey]: newVal }))
     clearTimeout(saveTimers.current[localKey])
-    saveTimers.current[localKey] = setTimeout(async () => {
-      const current = getDayLog(selectedDay)
-      await setDoc(doc(db, 'entries', entry.id, 'dailyLogs', selectedDay), {
-        ...current, totals: { ...(current.totals || {}), [key]: newVal },
-      })
+    saveTimers.current[localKey] = setTimeout(() => {
+      patchDayLog(selectedDay, { totals: { ...(getDayLog(selectedDay).totals || {}), [key]: newVal } })
     }, 300)
   }
 
@@ -663,10 +680,9 @@ export default function MemberProfile() {
   const setGoalProofNote = (goalText, text) => {
     setProofNoteInputs(p => ({ ...p, [goalText]: text }))
     clearTimeout(saveTimers.current[`proof__${goalText}`])
-    saveTimers.current[`proof__${goalText}`] = setTimeout(async () => {
+    saveTimers.current[`proof__${goalText}`] = setTimeout(() => {
       const current = getDayLog(selectedDay)
-      await setDoc(doc(db, 'entries', entry.id, 'dailyLogs', selectedDay), {
-        ...current,
+      patchDayLog(selectedDay, {
         proof: { ...(current.proof || {}), [goalText]: { ...(current.proof?.[goalText] || {}), note: text } }
       })
     }, 500)
@@ -680,8 +696,7 @@ export default function MemberProfile() {
     const url = await getDownloadURL(storageRef)
     const current = getDayLog(selectedDay)
     const existing = current.proof?.[goalText]?.photoUrls || (current.proof?.[goalText]?.photoUrl ? [current.proof[goalText].photoUrl] : [])
-    await setDoc(doc(db, 'entries', entry.id, 'dailyLogs', selectedDay), {
-      ...current,
+    await patchDayLog(selectedDay, {
       proof: { ...(current.proof || {}), [goalText]: { ...(current.proof?.[goalText] || {}), photoUrls: [...existing, url] } }
     })
     setUploadingPhoto(p => ({ ...p, [goalText]: false }))
@@ -691,8 +706,7 @@ export default function MemberProfile() {
     deleteObject(ref(storage, url)).catch(() => {}) // best-effort — file may already be gone
     const current = getDayLog(selectedDay)
     const existing = current.proof?.[goalText]?.photoUrls || (current.proof?.[goalText]?.photoUrl ? [current.proof[goalText].photoUrl] : [])
-    await setDoc(doc(db, 'entries', entry.id, 'dailyLogs', selectedDay), {
-      ...current,
+    await patchDayLog(selectedDay, {
       proof: { ...(current.proof || {}), [goalText]: { ...(current.proof?.[goalText] || {}), photoUrls: existing.filter(u => u !== url) } }
     })
   }
@@ -774,11 +788,22 @@ export default function MemberProfile() {
 
   const QUICK_REACTIONS = ['💪','🔥','👏','❤️','🎉','😤']
 
-  const toggleReaction = async (goalText, emoji) => {
+  // Reactions live in their own top-level `reactions` field (keyed by goal
+  // text, or 'daily') instead of nested under `proof` — anyone signed in can
+  // react to anyone's post, not just the entry owner, and keeping it a
+  // separate top-level field is what lets the Firestore rule scope a
+  // non-owner's write to just this field without touching their counts,
+  // notes, or photos. It also deliberately skips `updatedAt`: someone
+  // reacting to your post shouldn't bump your log as if you'd edited it.
+  const getReactions = (key) => {
+    const arr = getDayLog(selectedDay).reactions?.[key]
+    return Array.isArray(arr) ? arr : []
+  }
+
+  const toggleReaction = async (key, emoji) => {
     if (!user) return
     const current = getDayLog(selectedDay)
-    const existing = current.proof?.[goalText]?.reactions || []
-    const arr = Array.isArray(existing) ? existing : []
+    const arr = getReactions(key)
     const i = arr.findIndex(r => r.e === emoji)
     let updated
     if (i >= 0) {
@@ -796,7 +821,7 @@ export default function MemberProfile() {
     }
     await setDoc(doc(db, 'entries', entry.id, 'dailyLogs', selectedDay), {
       ...current,
-      proof: { ...(current.proof || {}), [goalText]: { ...(current.proof?.[goalText] || {}), reactions: updated } }
+      reactions: { ...(current.reactions || {}), [key]: updated },
     })
   }
 
@@ -804,8 +829,7 @@ export default function MemberProfile() {
     const text = (proofNoteInputs[goalText] ?? '').trim()
     if (!text) return
     const current = getDayLog(selectedDay)
-    await setDoc(doc(db, 'entries', entry.id, 'dailyLogs', selectedDay), {
-      ...current,
+    await patchDayLog(selectedDay, {
       proof: { ...(current.proof || {}), [goalText]: { ...(current.proof?.[goalText] || {}), note: text } }
     })
     setProofNoteInputs(p => ({ ...p, [goalText]: '' }))
@@ -815,8 +839,7 @@ export default function MemberProfile() {
   const saveDailyColor = async (color) => {
     const current = getDayLog(selectedDay)
     const existing = current.proof?.['daily'] || {}
-    await setDoc(doc(db, 'entries', entry.id, 'dailyLogs', selectedDay), {
-      ...current,
+    await patchDayLog(selectedDay, {
       proof: { ...(current.proof || {}), daily: { ...existing, color } }
     })
   }
@@ -824,8 +847,7 @@ export default function MemberProfile() {
   const saveDailyNote = async (content, plainText) => {
     const current = getDayLog(selectedDay)
     const existing = current.proof?.['daily'] || {}
-    await setDoc(doc(db, 'entries', entry.id, 'dailyLogs', selectedDay), {
-      ...current,
+    await patchDayLog(selectedDay, {
       proof: { ...(current.proof || {}), daily: { ...existing, content, note: plainText } }
     })
   }
@@ -836,7 +858,7 @@ export default function MemberProfile() {
     const photos = getGoalPhotos(goalText)
     const inputVal = proofNoteInputs[goalText] ?? ''
     const uploading = uploadingPhoto[goalText]
-    const reactions = Array.isArray(saved.reactions) ? saved.reactions : []
+    const reactions = getReactions(goalText)
     const hasProof = !!(saved.note || photos.length)
     const isEditing = !!editingProof[goalText]
 
@@ -1065,7 +1087,7 @@ export default function MemberProfile() {
 
   // Single shared animation clock — both the inline bar and the sticky bar
   // read from this so they always show the exact same walking/resting state
-  const catAnim = useCatAnimation(catPct, !!(loggingSheet || activeGoalSheet))
+  const catAnim = useCatAnimation(catPct, !!(loggingSheet || activeGoalSheet), logsLoaded)
 
   useEffect(() => {
     if (!catBarEl) return

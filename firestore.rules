@@ -38,8 +38,14 @@ service cloud.firestore {
 
       match /dailyLogs/{day} {
         allow read: if true;
+        // The entry owner can write anything on their own log.
         allow write: if signedIn()
           && get(/databases/$(database)/documents/entries/$(entryId)).data.name == myName();
+        // Any other signed-in user may only touch the top-level `reactions`
+        // field (reacting to someone else's post) — never their counts,
+        // habits, notes, or photos. Requires the doc to already exist.
+        allow write: if signedIn() && resource != null
+          && resource.data.diff(request.resource.data).affectedKeys().hasOnly(['reactions']);
       }
     }
 
